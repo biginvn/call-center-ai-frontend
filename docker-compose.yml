@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  app:
+    image: npt1601/portal-call:${TAG:-latest}
+    container_name: portal-call-${ENV:-prod}
+    restart: unless-stopped
+    ports:
+      - '${PORT:-80}:80'
+    env_file:
+      - .env
+    networks:
+      - portal-call-network
+
+networks:
+  portal-call-network:
+    driver: bridge
