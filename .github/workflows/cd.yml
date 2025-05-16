@@ -82,6 +82,12 @@ jobs:
             ENV=${ENV}
             PORT=${PORT}
             EOL
-            docker pull && \
-            docker down && \
-            docker-compose up -d"
+            docker rm -f ${CONTAINER} || true
+            docker pull npt1601/ai-call-center:${IMAGE_TAG}
+            docker rm -f $CONTAINER || true
+            docker pull npt1601/ai-call-center:$IMAGE_TAG
+            docker run -d \
+              --env-file .env \
+              -p ${PORT:-80}:80 \
+              --name ${CONTAINER} \
+              npt1601/ai-call-center:${IMAGE_TAG}
