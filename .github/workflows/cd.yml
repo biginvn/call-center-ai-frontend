@@ -83,9 +83,9 @@ jobs:
             PORT=${PORT}
             EOL
             docker rm -f portal-call-${ENV} || true
-            docker pull npt1601/ai-call-center:${IMAGE_TAG}
+            docker pull vmanhhhh/portal-call-frontend:${IMAGE_TAG}
             docker run -d \
               --env-file .env \
-              -p ${PORT}:80 \
+              -p ${PORT:-80}:80 \
               --name portal-call-${ENV} \
-              npt1601/ai-call-center:${IMAGE_TAG}"
+              vmanhhhh/portal-call-frontend:${IMAGE_TAG}"
