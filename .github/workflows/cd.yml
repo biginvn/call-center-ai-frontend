@@ -67,7 +67,6 @@ jobs:
           else
             PORT=8080; ENV=stg; BASE_PATH="/"
           fi
-
           ssh -o StrictHostKeyChecking=no \
             ${{ secrets.SSH_USER }}@${{ secrets.HOST }} <<EOF
             set -e
