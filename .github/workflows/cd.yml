@@ -44,9 +44,11 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          tags: npt1601/portal-call:${{ steps.set-tag.outputs.image-tag }}
+          tags: vmanhhhh/portal-call-frontend:${{ steps.set-tag.outputs.image-tag }}
           build-args: |
             VITE_API_URL=${{ secrets.VITE_API_URL }}
+            VITE_SIP_SERVER=${{ secrets.VITE_SIP_SERVER }}
+            VITE_SIP_PORT=${{ secrets.VITE_SIP_PORT }}
             NODE_ENV=${{ steps.set-tag.outputs.image-tag == 'latest' && 'production' || 'staging' }}
 
   deploy:
@@ -75,6 +77,9 @@ jobs:
             # Create or update .env file
             cat > .env <<EOL
             VITE_API_URL=${{ secrets.VITE_API_URL }}
+            VITE_SIP_SERVER=${{ secrets.VITE_SIP_SERVER }}
+            VITE_SIP_PORT=${{ secrets.VITE_SIP_PORT }}
+            
             NODE_ENV=${{ needs.build-and-push.outputs.image-tag == 'latest' && 'production' || 'staging' }}
             VITE_BASE_PATH=${BASE_PATH}
             TAG=${IMAGE_TAG}
