@@ -70,25 +70,18 @@ jobs:
             PORT=8080; ENV=stg; BASE_PATH="/"
           fi
           ssh -o StrictHostKeyChecking=no \
-            ${{ secrets.SSH_USER }}@${{ secrets.HOST }} <<EOF
-            set -e
-            cd /var/www/portal-call
-
-            # Create or update .env file
-            cat > .env <<EOL
+            ${{ secrets.SSH_USER }}@${{ secrets.HOST }} "set -e && \
+            cd /var/www/portal-call && \
+            cat > .env << 'EOL'
             VITE_API_URL=${{ secrets.VITE_API_URL }}
             VITE_SIP_SERVER=${{ secrets.VITE_SIP_SERVER }}
             VITE_SIP_PORT=${{ secrets.VITE_SIP_PORT }}
-            
             NODE_ENV=${{ needs.build-and-push.outputs.image-tag == 'latest' && 'production' || 'staging' }}
             VITE_BASE_PATH=${BASE_PATH}
             TAG=${IMAGE_TAG}
             ENV=${ENV}
             PORT=${PORT}
             EOL
-
-            # Pull the new image and restart the container using docker-compose
-            docker-compose pull
-            docker-compose down
-            docker-compose up -d
-          EOF
+            docker-compose pull && \
+            docker-compose down && \
+            docker-compose up -d"
