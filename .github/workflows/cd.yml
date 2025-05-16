@@ -44,7 +44,7 @@ jobs:
           context: .
           file: Dockerfile
           push: true
-          tags: npt1601/portal-call:${{ steps.set-tag.outputs.image-tag }}
+          tags: vmanhhhh/portal-call-frontend:${{ steps.set-tag.outputs.image-tag }}
           build-args: |
             VITE_API_URL=${{ secrets.VITE_API_URL }}
             NODE_ENV=${{ steps.set-tag.outputs.image-tag == 'latest' && 'production' || 'staging' }}
@@ -67,7 +67,6 @@ jobs:
           else
             PORT=8080; ENV=stg; BASE_PATH="/"
           fi
-
           ssh -o StrictHostKeyChecking=no \
             ${{ secrets.SSH_USER }}@${{ secrets.HOST }} <<EOF
             set -e
@@ -88,3 +87,4 @@ jobs:
             docker-compose down
             docker-compose up -d
           EOF
+
