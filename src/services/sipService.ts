@@ -1,200 +1,348 @@
+import { ref, onUnmounted } from 'vue'
 import {
-
   UserAgent,
   Registerer,
   Inviter,
   SessionState,
   RegistererState,
   Invitation,
-  Session,
-} from "sip.js";
+  Session
+} from 'sip.js'
+import type { UserAgentOptions } from 'sip.js'
 
-type SipServiceOptions = {
-  server: string;
-  wsServer: string;
-  displayName?: string;
-};
+// Configuration constants
+const RECONNECTION_ATTEMPTS = 3
+const RECONNECTION_DELAY = 4
 
-type SipServiceEvents = {
-  onRegistered?: () => void;
-  onUnregistered?: () => void;
-  onRegistrationFailed?: (error: Error) => void;
-  onIncomingCall?: (session: Session, caller: string) => void;
-  onCallEstablished?: (session: Session) => void;
-  onCallEnded?: () => void;
-  onDebug?: (msg: string) => void;
-};
+export function useSip() {
+  const ua = ref<UserAgent | null>(null)
+  const registerer = ref<Registerer | null>(null)
+  const session = ref<any>(null)
+  const status = ref('Not Registered')
+  const callStatus = ref('Idle')
+  const isRegistered = ref(false)
+  const debug = ref('')
+  const incomingCall = ref<any>(null)
+  const caller = ref('')
+  const isMuted = ref(false)
+  const callDuration = ref(0)
+  const durationRef = ref<number | null>(null)
+  const remoteAudioRef = ref<HTMLAudioElement | null>(null)
+  const showCallInterface = ref(false)
 
-export class SipService {
-  private ua: UserAgent | null = null;
-  private registerer: Registerer | null = null;
-  private session: Session | null = null;
-  private events: SipServiceEvents = {};
+  // Reconnection state
+  let attemptingReconnection = false
+  let shouldBeConnected = false
 
-
-  constructor(private options: SipServiceOptions) { }
-
-  public setEvents(events: SipServiceEvents) {
-    this.events = events;
+  const startTimer = () => {
+    callDuration.value = 0
+    durationRef.value = window.setInterval(() => {
+      callDuration.value++
+    }, 1000)
   }
 
-  public async login(extension: string, password: string) {
-    if (this.ua) return;
+  const stopTimer = () => {
+    if (durationRef.value) {
+      clearInterval(durationRef.value)
+      durationRef.value = null
+    }
+  }
 
-    this.ua = new UserAgent({
-      uri: UserAgent.makeURI(`sip:${extension}@${this.options.server}`),
-      displayName: this.options.displayName || extension,
+  const toggleMute = () => {
+    if (!session.value) return
+    const pc = session.value.sessionDescriptionHandler?.peerConnection
+    if (!pc) return
+    pc.getSenders().forEach((sender: any) => {
+      if (sender.track?.kind === 'audio') {
+        sender.track.enabled = isMuted.value
+      }
+    })
+    isMuted.value = !isMuted.value
+  }
+
+  const attemptReconnection = async (reconnectionAttempt = 1) => {
+    if (!shouldBeConnected || !ua.value || attemptingReconnection) {
+      return
+    }
+
+    if (reconnectionAttempt > RECONNECTION_ATTEMPTS) {
+      debug.value += '\n[ERROR] Maximum reconnection attempts reached'
+      return
+    }
+
+    attemptingReconnection = true
+
+    setTimeout(async () => {
+      if (!shouldBeConnected || !ua.value) {
+        attemptingReconnection = false
+        return
+      }
+
+      try {
+        await ua.value.reconnect()
+        attemptingReconnection = false
+        debug.value += '\n[INFO] Reconnection successful'
+      } catch (error) {
+        debug.value += `\n[ERROR] Reconnection attempt ${reconnectionAttempt} failed`
+        attemptingReconnection = false
+        attemptReconnection(++reconnectionAttempt)
+      }
+    }, reconnectionAttempt === 1 ? 0 : RECONNECTION_DELAY * 1000)
+  }
+
+  const handleLogin = async (extension: string, password: string) => {
+    if (ua.value) return
+    if (!extension || !password) {
+      debug.value += '\n[Error] Missing extension or password'
+      return
+    }
+
+    const uri = UserAgent.makeURI(`sip:${extension}@54.169.56.19`)
+    if (!uri) {
+      throw new Error("Failed to create URI")
+    }
+
+    const userAgentOptions: UserAgentOptions = {
+      uri,
+      displayName: 'Nguyễn Văn A',
       authorizationUsername: extension,
       authorizationPassword: password,
-      transportOptions: { server: this.options.wsServer },
-    });
-
-    this.ua.delegate = {
-      onConnect: () => this.events.onDebug?.("[DEBUG] WebSocket connected."),
-      onDisconnect: (error) => {
-        this.events.onDebug?.(
-          `[DEBUG] WebSocket disconnected. ${error?.message || ""}`
-        );
-        this.events.onUnregistered?.();
-      },
-      onInvite: async (incomingSession: Invitation) => {
-        const callerId = incomingSession.remoteIdentity.uri.user || "";
-        this.events.onIncomingCall?.(incomingSession, callerId);
-        console.log(incomingSession);
-
-        incomingSession.stateChange.addListener((state) => {
-          this.events.onDebug?.(`[DEBUG] Incoming Call State: ${state}`);
-          if (state === SessionState.Established) {
-            this.events.onCallEstablished?.(incomingSession);
-          }
-          if (state === SessionState.Terminated) {
-            this.events.onCallEnded?.();
-          }
-        });
-      },
-    };
-
-    await this.ua.start();
-
-    this.registerer = new Registerer(this.ua);
-    this.registerer.stateChange.addListener((newState) => {
-      this.events.onDebug?.(`[DEBUG] Registerer State Change: ${newState}`);
-      if (newState === RegistererState.Registered) {
-        this.events.onRegistered?.();
-      } else if (
-        newState === RegistererState.Unregistered ||
-        newState === RegistererState.Terminated
-      ) {
-        this.events.onUnregistered?.();
+      transportOptions: {
+        server: 'wss://54.169.56.19:8089/ws',
+        keepAliveInterval: 10
       }
-    });
+    }
+
+    const userAgent = new UserAgent(userAgentOptions)
+
+    userAgent.delegate = {
+      onConnect: () => {
+        debug.value += '\n[DEBUG] WebSocket connected to Asterisk.'
+        shouldBeConnected = true
+        // Re-register on connect
+        registerer.value?.register()
+      },
+      onDisconnect: (error?: Error) => {
+        debug.value += `\n[DEBUG] WebSocket disconnected. ${error?.message || ''}`
+        status.value = 'Not Registered'
+        isRegistered.value = false
+
+        // Attempt reconnection on error
+        if (error) {
+          attemptReconnection()
+        }
+      },
+      onInvite: async (invitation: Invitation) => {
+        const callerId = invitation.remoteIdentity.uri.user
+        caller.value = callerId || ''
+        incomingCall.value = invitation
+        callStatus.value = 'Incoming'
+        showCallInterface.value = true
+
+        // Setup session delegate
+        const incomingSession: Session = invitation
+        setupSessionDelegate(incomingSession)
+      }
+    }
+
+    ua.value = userAgent
+    await userAgent.start()
+
+    const reg = new Registerer(userAgent)
+    reg.stateChange.addListener((newState) => {
+      debug.value += `\n[DEBUG] Registerer State Change: ${newState}`
+      let statusStr
+      switch (newState) {
+        case RegistererState.Initial:
+          statusStr = 'Initial'
+          break
+        case RegistererState.Registered:
+          statusStr = 'Registered'
+          break
+        case RegistererState.Unregistered:
+          statusStr = 'Unregistered'
+          break
+        case RegistererState.Terminated:
+          statusStr = 'Terminated'
+          break
+        default:
+          statusStr = 'Unknown'
+      }
+      console.log('[SIP] Registration state changed:', statusStr)
+      status.value = statusStr
+      isRegistered.value = newState === RegistererState.Registered
+      console.log('[SIP] isRegistered updated to:', isRegistered.value)
+    })
 
     try {
-      await this.registerer.register();
-    } catch (err: unknown) {
-      this.events.onRegistrationFailed?.(err as Error);
+      await reg.register()
+      console.log('[SIP] Registration completed')
+      registerer.value = reg
+    } catch (error) {
+      console.error('[SIP] Registration failed:', error)
+      debug.value += `\n[ERROR] Registration failed: ${error}`
     }
   }
 
-  public async logout() {
-    if (this.registerer) {
-      await this.registerer.unregister();
-      this.registerer = null;
+  const setupSessionDelegate = (session: Session) => {
+    session.delegate = {
+      onRefer: (referral) => {
+        debug.value += '\n[DEBUG] Received REFER request'
+        // Handle referral if needed
+      }
     }
-    if (this.ua) {
-      await this.ua.stop();
-      this.ua = null;
-    }
-    this.session = null;
-    this.events.onUnregistered?.();
+
+    session.stateChange.addListener((state: SessionState) => {
+      debug.value += `\n[DEBUG] Session State: ${state}`
+      handleSessionState(state, session)
+    })
   }
 
-  public async call(destination: string) {
-    if (!this.ua) return;
-    const target = UserAgent.makeURI(`sip:${destination}@${this.options.server}`);
+  const handleSessionState = (state: SessionState, session: Session) => {
+    if (state === SessionState.Established) {
+      callStatus.value = 'Established'
+      startTimer()
+      const sdh = session.sessionDescriptionHandler
+      if (sdh?.peerConnection && remoteAudioRef.value) {
+        sdh.peerConnection.getReceivers().forEach((receiver: any) => {
+          if (receiver.track) {
+            const stream = new MediaStream([receiver.track])
+            remoteAudioRef.value!.srcObject = stream
+            remoteAudioRef.value!.play().catch(() => { })
+          }
+        })
+      }
+    }
+
+    if (state === SessionState.Terminated) {
+      callStatus.value = 'Ended'
+      stopTimer()
+      incomingCall.value = null
+      session.value = null
+      showCallInterface.value = false
+    }
+  }
+
+  const handleLogout = async () => {
+    if (!registerer.value) return
+    await registerer.value.unregister()
+    registerer.value = null
+    ua.value = null
+    status.value = 'Not Registered'
+    isRegistered.value = false
+    callStatus.value = 'Idle'
+    stopTimer()
+    debug.value += '\n[INFO] Logged out successfully.'
+  }
+
+  const handleCall = async (destination: string) => {
+    if (!ua.value || !destination) return
+    const target = UserAgent.makeURI(`sip:${destination}@54.169.56.19`)
     if (!target) {
-      this.events.onDebug?.("[Error] Invalid destination URI.");
-      return;
+      debug.value += '\n[Error] Invalid destination URI.'
+      return
     }
 
-    const inviter = new Inviter(this.ua, target);
+    callStatus.value = 'Establishing'
+    debug.value += `\n[INFO] Calling extension ${destination}...`
+
+    const inviter = new Inviter(ua.value, target)
     inviter.stateChange.addListener((callState) => {
-      this.events.onDebug?.(`[DEBUG] Call State: ${callState}`);
+      debug.value += `\n[DEBUG] Call State: ${callState}`
 
-      if (callState === SessionState.Establishing) {
-        this.events.onDebug?.("[INFO] Call is being established...");
-      } else if (callState === SessionState.Established) {
-        this.events.onDebug?.("[INFO] Call has been established");
-        this.events.onCallEstablished?.(inviter);
-
-        // Handle audio setup immediately on establishment
-        const sdh = inviter.sessionDescriptionHandler as { peerConnection?: RTCPeerConnection };
-        if (sdh?.peerConnection) {
-          sdh.peerConnection.getReceivers().forEach((receiver: RTCRtpReceiver) => {
+      if (callState === SessionState.Established) {
+        callStatus.value = 'Established'
+        startTimer()
+        const sdh = inviter.sessionDescriptionHandler
+        if (sdh?.peerConnection && remoteAudioRef.value) {
+          sdh.peerConnection.getReceivers().forEach((receiver: any) => {
             if (receiver.track) {
-              this.events.onDebug?.("[INFO] Setting up audio stream");
-              // Audio setup will be handled in the store through onCallEstablished
+              const stream = new MediaStream([receiver.track])
+              remoteAudioRef.value!.srcObject = stream
+              remoteAudioRef.value!.play().catch(() => { })
             }
-          });
+          })
         }
       } else if (callState === SessionState.Terminated) {
-        this.events.onDebug?.("[INFO] Call has been terminated");
-        this.session = null;
-        this.events.onCallEnded?.();
+        callStatus.value = 'Ended'
+        stopTimer()
+        session.value = null
       }
-    });
+    })
 
-    this.session = inviter;
-    this.events.onDebug?.("[INFO] Sending invite...");
-    await inviter.invite();
+    session.value = inviter
+    await inviter.invite()
   }
 
-  public async acceptCall(session: Invitation) {
-    await session.accept();
-    this.session = session;
+  const handleHangup = () => {
+    if (!session.value) return
+    session.value.bye()
+    session.value = null
+    stopTimer()
+    callStatus.value = 'Ended'
+    debug.value += '\n[INFO] Call ended.'
   }
 
-  public rejectCall(session: Invitation) {
-    session.reject();
-  }
-
-  public hangup(session?: Session) {
-    const target = session || this.session;
-    if (target) {
-      // Stop all audio tracks before hanging up
-      const sdh = target.sessionDescriptionHandler as { peerConnection?: RTCPeerConnection };
-      if (sdh?.peerConnection) {
-        // Stop all senders (microphone)
-        sdh.peerConnection.getSenders().forEach((sender: RTCRtpSender) => {
-          if (sender.track) {
-            sender.track.stop();
-            sender.track.enabled = false;
-          }
-        });
-        // Stop all receivers (speaker)
-        sdh.peerConnection.getReceivers().forEach((receiver: RTCRtpReceiver) => {
-          if (receiver.track) {
-            receiver.track.stop();
-          }
-        });
-      }
-      if ("bye" in target) {
-        (target as Inviter).bye();
-      }
+  const handleAnswer = async () => {
+    if (!incomingCall.value) return
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      })
+      console.log('Microphone OK', stream)
+    } catch (err) {
+      debug.value += `\n[ERROR] Microphone access failed: ${err.message}`
+      return
     }
-    this.session = null;
-    this.events.onCallEnded?.();
+
+    await incomingCall.value.accept()
+    session.value = incomingCall.value
   }
 
-  public toggleMute(isMuted: boolean) {
-    if (!this.session) return;
-    const sdh = this.session.sessionDescriptionHandler as { peerConnection?: RTCPeerConnection };
-    const pc = sdh?.peerConnection;
-    if (!pc) return;
-    pc.getSenders().forEach((sender: RTCRtpSender) => {
-      if (sender.track?.kind === "audio") {
-        sender.track.enabled = !isMuted;
-      }
-    });
+  const handleReject = () => {
+    if (!incomingCall.value) return
+    incomingCall.value.reject()
+    incomingCall.value = null
+  }
+
+  // Add window online event listener
+  if (typeof window !== 'undefined') {
+    window.addEventListener("online", () => {
+      attemptReconnection()
+    })
+  }
+
+  onUnmounted(() => {
+    stopTimer()
+    shouldBeConnected = false
+    if (registerer.value) {
+      registerer.value.unregister()
+    }
+    if (typeof window !== 'undefined') {
+      window.removeEventListener("online", attemptReconnection)
+    }
+  })
+
+  return {
+    ua,
+    registerer,
+    session,
+    status,
+    callStatus,
+    isRegistered,
+    debug,
+    incomingCall,
+    caller,
+    isMuted,
+    callDuration,
+    remoteAudioRef,
+    showCallInterface,
+    handleLogin,
+    handleLogout,
+    handleCall,
+    handleHangup,
+    handleAnswer,
+    handleReject,
+    toggleMute,
   }
 }

@@ -8,19 +8,47 @@ export const containerClass = 'w-full h-full'
 import { NAvatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { NBadge } from '@/components/ui/badge'
 import { NButton } from '@/components/ui/button'
+import { NInput } from '@/components/ui/input'
+import { NLabel } from '@/components/ui/label'
 import { NCard, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { NDropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { NTable, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Activity, ArrowUpRight, CircleUser, CreditCard, DollarSign, Users } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { ref } from 'vue'
+import { uploadDocument } from '@/services/documentService'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
+const isUploading = ref(false)
+const uploadStatus = ref<{ success: boolean; message: string } | null>(null)
+
 const handleLogout = () => {
   authStore.logout()
   router.push('/login')
+}
+
+const handleFileUpload = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  if (!input.files?.length) return
+
+  const file = input.files[0]
+  isUploading.value = true
+  uploadStatus.value = null
+
+  try {
+    const result = await uploadDocument(file)
+    uploadStatus.value = result
+  } catch (error) {
+    uploadStatus.value = {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to upload document'
+    }
+  } finally {
+    isUploading.value = false
+  }
 }
 </script>
 
@@ -62,12 +90,13 @@ const handleLogout = () => {
             <DollarSign class="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div class="text-2xl font-bold">
-              $45,231.89
+            <div class="grid w-full max-w-sm items-center gap-1.5">
+              <NLabel for="picture">Tài liệu</NLabel>
+              <NInput id="picture" type="file" @change="handleFileUpload" :disabled="isUploading" />
+              <p v-if="uploadStatus" :class="uploadStatus.success ? 'text-green-500' : 'text-red-500'">
+                {{ uploadStatus.message }}
+              </p>
             </div>
-            <p class="text-xs text-muted-foreground">
-              +20.1% from last month
-            </p>
           </CardContent>
         </n-card>
         <n-card>

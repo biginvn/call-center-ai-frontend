@@ -6,7 +6,7 @@ export const containerClass = 'w-full h-full'
 </script>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { NButton } from '@/components/ui/button'
 import { NCard, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -40,31 +40,8 @@ const authStore = useAuthStore()
 const sipStore = useSipStore()
 
 // State for the call interface
-const isOpen = ref(false)
-const callState = ref<'incoming' | 'outgoing' | 'connecting' | 'active' | 'ended'>('incoming')
-const callerName = ref('John Doe')
-const callerAvatar = ref('/path/to/avatar.jpg')
-
-// Watch for incoming calls
-watch(() => sipStore.callStatus, (newStatus) => {
-  switch (newStatus) {
-    case 'Incoming Call':
-      isOpen.value = true
-      callState.value = 'incoming'
-      callerName.value = 'Incoming Call'
-      break
-    case 'Establishing':
-      isOpen.value = true
-      callState.value = 'connecting'
-      break
-    case 'Established':
-      callState.value = 'active'
-      break
-    case 'Ended':
-      callState.value = 'ended'
-      break
-  }
-})
+// const isOpen = ref(false)
+// const callState = ref<'incoming' | 'outgoing' | 'connecting' | 'active' | 'ended'>('incoming')
 
 interface UserInfo {
   username: string;
@@ -74,6 +51,18 @@ interface UserInfo {
 }
 
 const userInfo = ref<UserInfo | null>(null)
+const callInterfaceRef = ref<InstanceType<typeof CallInterface> | null>(null)
+
+// Use store values instead of service
+const {
+  callStatus,
+  caller,
+  showCallInterface,
+  handleAnswer,
+  handleReject,
+  handleHangup
+} = sipStore
+
 
 onMounted(async () => {
   const accessToken = localStorage.getItem('access_token')
@@ -86,15 +75,16 @@ onMounted(async () => {
           username: userInfo.value.username,
           extension_number: userInfo.value.extension_number,
           role: userInfo.value.role,
-          fullName: userInfo.value.fullName // changed from fullname
+          fullName: userInfo.value.fullName
         })
 
         // Initialize SIP connection
         const extension = userInfo.value.extension_number
         const password = "1234"
         if (extension && password) {
-          await sipStore.initializeSip(extension, password)
-          console.log('SIP initialized')
+          await sipStore.login(extension, password)
+          console.log('SIP initialized with status:', sipStore.status)
+          console.log('SIP registered:', sipStore.isRegistered)
         }
       }
     } catch (error) {
@@ -103,34 +93,10 @@ onMounted(async () => {
   }
 })
 
-const onStartCall = (input: string) => {
-  isOpen.value = true
-  callState.value = 'outgoing'
-  callerName.value = input
-}
-
-const showCallInterface = () => {
-  isOpen.value = true
-  callState.value = 'incoming'
-}
-
-// Event handlers
-const handleAnswer = () => {
-  console.log('Call answered')
-  // Add your call answer logic here
-  // For example, start WebRTC connection
-}
-
-const handleReject = () => {
-  console.log('Call rejected')
-  // Add your call rejection logic here
-  // For example, send rejection signal to the other party
-}
-
-const handleEnd = () => {
-  console.log('Call ended')
-  // Add your call end logic here
-  // For example, close WebRTC connection
+const onStartCall = (phoneNumber: string) => {
+  if (callInterfaceRef.value) {
+    callInterfaceRef.value.makeCall(phoneNumber)
+  }
 }
 
 const handleLogout = async () => {
@@ -138,7 +104,15 @@ const handleLogout = async () => {
   await sipStore.logout()
   // Logout from auth
   authStore.logout()
+
   router.push('/login')
+}
+
+// Computed properties for CallInterface props
+const callerName = computed(() => caller)
+
+const handleEnd = () => {
+  handleHangup()
 }
 </script>
 
@@ -200,15 +174,9 @@ const handleLogout = async () => {
           </CardContent>
         </n-card>
       </div>
-      <div>
-        <!-- n-button to trigger the call interface -->
-        <n-button @click="showCallInterface">Start Call</n-button>
-
-        <!-- Call Interface Component -->
-        <CallInterface v-model="isOpen" :default-state="callState" :caller-name="callerName"
-          :caller-avatar="callerAvatar" :auto-end-call="false" :auto-end-timeout="30000" @answer="handleAnswer"
-          @reject="handleReject" @end="handleEnd" />
-      </div>
     </main>
+    <CallInterface ref="callInterfaceRef" v-model="showCallInterface" :default-state="callStatus"
+      :caller-name="callerName" :auto-end-call="false" :auto-end-timeout="30000" @answer="handleAnswer"
+      @reject="handleReject" @end="handleEnd" />
   </div>
 </template>

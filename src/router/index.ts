@@ -3,7 +3,6 @@ import { useAuthStore } from '@/stores/auth'
 import AgentDashboardView from '@/views/agent/AgentDashboardView.vue'
 import AdminDashboardView from '@/views/admin/AdminDashboardView.vue'
 import LoginView from '@/views/LoginView.vue'
-
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { requiresGuest: true } },
   { path: '/', name: 'dashboard', component: AgentDashboardView, meta: { requiresAuth: true, role: 'agent' } },

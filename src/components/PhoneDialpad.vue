@@ -66,7 +66,7 @@ const handleBackspace = () => {
 const handleCall = () => {
   if (phoneNumber.value.length > 0) {
     // Make the call using SIP
-    sipStore.makeCall(phoneNumber.value)
+    console.log('Making call to:', phoneNumber.value)
     props.onCall(phoneNumber.value)
     phoneNumber.value = ''
   }
