@@ -177,7 +177,7 @@ const stopTimer = () => {
 
 // Watch for session changes to update caller name
 watch(() => sipStore.session, (newSession) => {
-  if (newSession) {
+  if (newSession && !props.callerName) {
     currentCallerName.value =
       newSession.remoteIdentity.displayName || newSession.remoteIdentity.uri.user || "undefined"
   }
@@ -384,24 +384,6 @@ const handleAnswer = async () => {
   }
 }
 
-const handleReject = async () => {
-  try {
-    callState.value = 'rejected'
-    emit('reject')
-    await sipStore.reject()
-    stopTimer()
-    // Keep the rejected state visible for a moment before closing
-    setTimeout(() => {
-      callState.value = 'ended'
-      emit('update:modelValue', false)
-    }, 2000) // Show rejected state for 2 seconds
-  } catch (error) {
-    console.error('Error rejecting call:', error)
-    stopTimer()
-    callState.value = 'ended'
-    emit('update:modelValue', false)
-  }
-}
 
 const handleEndCall = async () => {
   try {
@@ -424,13 +406,6 @@ const formatCallDuration = (seconds: number) => {
   const secs = seconds % 60
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
-
-// const getInitials = (name: string) => {
-//   return name
-//     .split(' ')
-//     .map((n) => n[0])
-//     .join('')
-// }
 
 const onOpenChange = (value: boolean) => {
   emit('update:modelValue', value)

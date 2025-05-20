@@ -25,6 +25,7 @@ import CallInterface from '@/components/CallInterface.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSipStore } from '@/stores/sip'
+import { getActiveUserByExtension } from '@/services/callService'
 
 const calls = ref(initialCalls)
 const router = useRouter()
@@ -34,7 +35,7 @@ const sipStore = useSipStore()
 // State for the call interface
 const isOpen = ref(false)
 const callState = ref<'incoming' | 'outgoing' | 'connecting' | 'active' | 'ended'>('incoming')
-const callerName = ref('Hello')
+const callerName = ref('')
 const callerAvatar = ref('/path/to/avatar.jpg')
 
 // Watch for incoming calls
@@ -87,8 +88,12 @@ onMounted(async () => {
   }
 })
 
-const onStartCall = (input: string) => {
+const onStartCall = async (input: string) => {
   isOpen.value = true
+
+
+  callerName.value = await getActiveUserByExtension(input)
+  console.log("1234: ", callerName.value)
 }
 
 // const showCallInterface = () => {
