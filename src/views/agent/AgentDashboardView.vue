@@ -42,7 +42,7 @@ const sipStore = useSipStore()
 // State for the call interface
 const isOpen = ref(false)
 const callState = ref<'incoming' | 'outgoing' | 'connecting' | 'active' | 'ended'>('incoming')
-const callerName = ref('John Doe')
+const callerName = ref('')
 const callerAvatar = ref('/path/to/avatar.jpg')
 
 // Watch for incoming calls
@@ -51,7 +51,6 @@ watch(() => sipStore.callStatus, (newStatus) => {
     case 'Incoming Call':
       isOpen.value = true
       callState.value = 'incoming'
-      callerName.value = 'Incoming Call'
       break
     case 'Establishing':
       isOpen.value = true
@@ -75,6 +74,15 @@ interface UserInfo {
 
 const userInfo = ref<UserInfo | null>(null)
 
+const determineWebClient = (extension: string) => {
+  if (extension.startsWith('111')) {
+    return 'web1'
+  } else if (extension.startsWith('112')) {
+    return 'web2'
+  }
+  return 'web1' // default fallback
+}
+
 onMounted(async () => {
   const accessToken = localStorage.getItem('access_token')
   if (accessToken) {
@@ -90,7 +98,7 @@ onMounted(async () => {
         })
 
         // Initialize SIP connection
-        const extension = userInfo.value.extension_number
+        const extension = determineWebClient(userInfo.value.extension_number)
         const password = "1234"
         if (extension && password) {
           await sipStore.initializeSip(extension, password)
@@ -105,8 +113,6 @@ onMounted(async () => {
 
 const onStartCall = (input: string) => {
   isOpen.value = true
-  callState.value = 'outgoing'
-  callerName.value = input
 }
 
 const showCallInterface = () => {
@@ -128,9 +134,6 @@ const handleReject = () => {
 }
 
 const handleEnd = () => {
-  console.log('Call ended')
-  // Add your call end logic here
-  // For example, close WebRTC connection
 }
 
 const handleLogout = async () => {

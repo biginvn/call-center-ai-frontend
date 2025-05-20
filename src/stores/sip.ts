@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { SipService } from '@/services/sipService'
 import { useAuthStore } from './auth'
-import type { SessionDescriptionHandler, Session, Invitation } from 'sip.js'
+import type { SessionDescriptionHandler, Session, Invitation, SessionState, Inviter } from 'sip.js'
 
 type SipSessionType = Session | Invitation
 
@@ -110,6 +110,7 @@ export const useSipStore = defineStore('sip', () => {
   }
 
   const makeCall = async (destination: string) => {
+
     try {
       if (!sipService.value) {
         debug.value += '\n[Error] SIP service not initialized.'
@@ -119,9 +120,9 @@ export const useSipStore = defineStore('sip', () => {
       // Reset any existing session
       if (session.value) {
         debug.value += '\n[INFO] Ending existing call before making new one'
-        await hangup()
+        hangup()
       }
-
+      console.log('Runned makeCall')
       callStatus.value = 'Establishing'
       debug.value += `\n[INFO] Calling extension ${destination}...`
 
@@ -135,8 +136,47 @@ export const useSipStore = defineStore('sip', () => {
   }
 
   const hangup = () => {
-    if (sipService.value && session.value) {
-      sipService.value.hangup(session.value as Session)
+    console.log('Up :::', session.value.state)
+
+    if (!sipService.value) {
+      debug.value += '\n[ERROR] Cannot hangup: SIP service not initialized'
+      return
+    }
+
+    if (!session.value) {
+      debug.value += '\n[INFO] No active session to hangup'
+      callStatus.value = 'Ended'
+      return
+    }
+
+    callStatus.value = 'Ended'
+    debug.value += '\n[INFO] Hanging up...'
+
+    // Handle different session states
+    switch (session.value.state) {
+      case SessionState.Initial:
+      case SessionState.Establishing:
+        if (session.value instanceof Inviter) {
+          // An unestablished outgoing session
+          debug.value += '\n[INFO] Canceling outgoing call...'
+          session.value.cancel()
+        } else {
+          // An unestablished incoming session
+          debug.value += '\n[INFO] Rejecting incoming call...'
+          session.value.reject()
+        }
+        break
+      case SessionState.Established:
+        // An established session
+        debug.value += '\n[INFO] Sending BYE request...'
+        if ('bye' in session.value) {
+          session.value.bye()
+        }
+        break
+      case SessionState.Terminating:
+      case SessionState.Terminated:
+        debug.value += '\n[INFO] Session already terminating or terminated'
+        break
     }
   }
 

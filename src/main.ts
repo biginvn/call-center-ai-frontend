@@ -3,7 +3,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
-import { useAuthStore } from './stores/auth'
+// import { useAuthStore } from './stores/auth'
 
 const bootstrap = async () => {
     const app = createApp(App)
@@ -12,8 +12,8 @@ const bootstrap = async () => {
     app.use(router)
 
     // Load user data from storage
-    const authStore = useAuthStore()
-    await authStore.loadFromStorage()
+    // const authStore = useAuthStore()
+    // await authStore.loadFromStorage()
 
     app.mount('#app')
 }

@@ -404,9 +404,10 @@ const handleReject = async () => {
 
 const handleEndCall = async () => {
   try {
+    sipStore.hangup()
     callState.value = 'ended'
     emit('end')
-    await sipStore.hangup()
+
     stopTimer()
     setTimeout(() => emit('update:modelValue', false), 1000)
   } catch (error) {

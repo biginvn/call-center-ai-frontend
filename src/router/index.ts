@@ -20,9 +20,6 @@ const router = createRouter({
 
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
-  if (!authStore.access_token) {
-    await authStore.loadFromStorage();
-  }
 
   // If route requires guest (like login page) and user is authenticated
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
