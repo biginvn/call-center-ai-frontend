@@ -1,4 +1,4 @@
-name: CD
+name: CI/CD Pipeline
 
 on:
   push:
@@ -7,87 +7,56 @@ on:
       - staging
 
 jobs:
-  build-and-push:
-    name: Build & Push Docker Image
+  build-and-deploy:
     runs-on: ubuntu-latest
-    outputs:
-      image-tag: ${{ steps.set-tag.outputs.image-tag }}
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
 
-      - name: Determine image tag
-        id: set-tag
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Determine tag name
+        id: vars
         run: |
-          BRANCH=${GITHUB_REF#refs/heads/}
-          if [ "$BRANCH" = "main" ]; then
-            echo "image-tag=latest" >> $GITHUB_OUTPUT
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
+            echo "tag=staging" >> $GITHUB_OUTPUT
           else
-            echo "image-tag=staging" >> $GITHUB_OUTPUT
+            echo "tag=dev" >> $GITHUB_OUTPUT
           fi
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }} .
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Push image to Docker Hub
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
 
-      - name: Build & Push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile
-          push: true
-          tags: vmanhhhh/portal-call-frontend:${{ steps.set-tag.outputs.image-tag }}
-          build-args: |
-            VITE_API_URL=${{ secrets.VITE_API_URL }}
-            VITE_SIP_SERVER=${{ secrets.VITE_SIP_SERVER }}
-            VITE_SIP_PORT=${{ secrets.VITE_SIP_PORT }}
-            NODE_ENV=${{ steps.set-tag.outputs.image-tag == 'latest' && 'production' || 'staging' }}
-
-  deploy:
-    name: Deploy to EC2
-    needs: build-and-push
-    runs-on: ubuntu-latest
-    steps:
-      - name: Load SSH key
-        uses: webfactory/ssh-agent@v0.8.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      - name: Deploy on EC2
+      - name: Done
         run: |
-          IMAGE_TAG=${{ needs.build-and-push.outputs.image-tag }}
-          if [ "$IMAGE_TAG" = "latest" ]; then
-            PORT=80; ENV=prod; BASE_PATH="/portal-call"
-          else
-            PORT=8080; ENV=stg; BASE_PATH="/"
-          fi
-          ssh -o StrictHostKeyChecking=no \
-            ${{ secrets.SSH_USER }}@${{ secrets.HOST }} "set -e && \
-            cd /var/www/portal-call && \
-            cat > .env << 'EOL'
-            VITE_API_URL=${{ secrets.VITE_API_URL }}
-            VITE_SIP_SERVER=${{ secrets.VITE_SIP_SERVER }}
-            VITE_SIP_PORT=${{ secrets.VITE_SIP_PORT }}
-            NODE_ENV=${{ needs.build-and-push.outputs.image-tag == 'latest' && 'production' || 'staging' }}
-            VITE_BASE_PATH=${BASE_PATH}
-            TAG=${IMAGE_TAG}
-            ENV=${ENV}
-            PORT=${PORT}
-            EOL
-            docker rm -f ${CONTAINER} || true
-            docker pull npt1601/ai-call-center:${IMAGE_TAG}
-            docker rm -f $CONTAINER || true
-            docker pull npt1601/ai-call-center:$IMAGE_TAG
-            docker run -d \
-              --env-file .env \
-              -p ${PORT:-80}:80 \
-              --name ${CONTAINER} \
-              npt1601/ai-call-center:${IMAGE_TAG}
+          echo "Image pushed as tag: ${{ steps.vars.outputs.tag }}"
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
+            docker stop call-center-ai-frontend || true && docker rm call-center-ai-frontend || true
+            if [[ "${{ steps.vars.outputs.tag }}" == "latest" ]]; then
+              docker run -d --name call-center-ai-frontend -p 3000:3000 ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
+            else
+              docker run -d --name call-center-ai-frontend -p 3001:3000 ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
+            fi
