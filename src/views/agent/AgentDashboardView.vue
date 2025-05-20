@@ -71,8 +71,12 @@ onMounted(async () => {
       return 'web1'
     } else if (extension.startsWith('112')) {
       return 'web2'
-    }
-    return 'web1' // default fallback
+    } else if (extension.startsWith('101'))
+      return 'test2' // default fallback
+    else if (extension.startsWith('100'))
+      return 'test1'
+    else
+      return 'web1'
   }
 
   // Initialize SIP if we have user data

@@ -390,10 +390,11 @@ const handleReject = async () => {
     emit('reject')
     await sipStore.reject()
     stopTimer()
+    // Keep the rejected state visible for a moment before closing
     setTimeout(() => {
       callState.value = 'ended'
       emit('update:modelValue', false)
-    }, 1000)
+    }, 2000) // Show rejected state for 2 seconds
   } catch (error) {
     console.error('Error rejecting call:', error)
     stopTimer()

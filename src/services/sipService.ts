@@ -63,12 +63,16 @@ export class SipService {
         this.events.onIncomingCall?.(incomingSession, callerId);
         console.log("Incoming session: ", incomingSession);
 
+        // Save the session
+        this.session = incomingSession;
+
         incomingSession.stateChange.addListener((state) => {
           this.events.onDebug?.(`[DEBUG] Incoming Call State: ${state}`);
           if (state === SessionState.Established) {
             this.events.onCallEstablished?.(incomingSession);
           }
           if (state === SessionState.Terminated) {
+            this.session = null;
             this.events.onCallEnded?.();
           }
         });
@@ -173,7 +177,14 @@ export class SipService {
   }
 
   public rejectCall(session: Invitation) {
-    session.reject();
+    // Send 480 Temporarily Unavailable response
+    session.reject({
+      statusCode: 480,
+      reasonPhrase: "Temporarily Unavailable"
+    });
+    // Ensure session is terminated
+    this.session = null;
+    this.events.onCallEnded?.();
   }
 
   public hangup(session?: Session) {

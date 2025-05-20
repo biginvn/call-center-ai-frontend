@@ -2,8 +2,8 @@ import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { SipService } from '@/services/sipService'
 import { useAuthStore } from './auth'
-import type { SessionDescriptionHandler, Session, Invitation } from 'sip.js'
-import { SessionState, Inviter } from 'sip.js'
+import type { SessionDescriptionHandler, Session } from 'sip.js'
+import { SessionState, Inviter, Invitation } from 'sip.js'
 
 type SipSessionType = Session | Invitation | Inviter
 
@@ -35,8 +35,10 @@ export const useSipStore = defineStore('sip', () => {
       return 'web1'
     } else if (extension.startsWith('112')) {
       return 'web2'
-    }
-    return 'web1' // default fallback
+    } else if (extension.startsWith('101'))
+      return 'test2' // default fallback
+    else
+      return 'web1'
   }
   // Watch for changes in user data and reinitialize SIP service if needed
   watch(() => authStore.user, async (newUser) => {
@@ -227,7 +229,14 @@ export const useSipStore = defineStore('sip', () => {
 
   const reject = async () => {
     if (session.value && sipService.value) {
-      sipService.value.rejectCall(session.value as Invitation)
+      // Check session state before rejecting
+      if (session.value.state === SessionState.Initial || session.value.state === SessionState.Establishing) {
+        if (session.value instanceof Invitation) {
+          session.value.reject()
+        } else if (session.value instanceof Inviter) {
+          session.value.cancel()
+        }
+      }
       session.value = null
       callStatus.value = 'Ended'
     }
