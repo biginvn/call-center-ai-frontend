@@ -9,7 +9,6 @@ export const containerClass = 'w-full h-full'
 import { ref, onMounted, watch } from 'vue'
 import { NButton } from '@/components/ui/button'
 import { NCard, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-
 import { CircleUser } from 'lucide-vue-next'
 import CallHistory from '@/components/CallHistory.vue'
 import { initialCalls } from '@/components/utils/data'
@@ -22,19 +21,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-// import { useCallStore } from '@/stores/call'
 import CallInterface from '@/components/CallInterface.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSipStore } from '@/stores/sip'
-import { getUserInfo } from '@/services/authService'
-// const refresh_token = localStorage.getItem('refresh_token')
-// if (refresh_token) {
-//   const response = await refreshToken(refresh_token);
-//   console.log(response)
-// }
+
 const calls = ref(initialCalls)
-// const callStore = useCallStore()
 const router = useRouter()
 const authStore = useAuthStore()
 const sipStore = useSipStore()
@@ -65,49 +57,18 @@ watch(() => sipStore.callStatus, (newStatus) => {
   }
 })
 
-interface UserInfo {
-  username: string;
-  extension_number: string;
-  role: string;
-  fullName: string; // changed from fullname to fullName
-}
-
-const userInfo = ref<UserInfo | null>(null)
-
-const determineWebClient = (extension: string) => {
-  if (extension.startsWith('111')) {
-    return 'web1'
-  } else if (extension.startsWith('112')) {
-    return 'web2'
-  }
-  return 'web1' // default fallback
-}
-
 onMounted(async () => {
-  const accessToken = localStorage.getItem('access_token')
-  if (accessToken) {
-    try {
-      userInfo.value = await getUserInfo(accessToken)
-      if (userInfo.value?.extension_number) {
-        // Convert to match UpdateUser type
-        useAuthStore().updateUser({
-          username: userInfo.value.username,
-          extension_number: userInfo.value.extension_number,
-          role: userInfo.value.role,
-          fullName: userInfo.value.fullName // changed from fullname
-        })
+  // Ensure we have valid auth state
+  if (!authStore.isAuthenticated) {
+    router.push('/login')
+    return
+  }
 
-        // Initialize SIP connection
-        const extension = determineWebClient(userInfo.value.extension_number)
-        const password = "1234"
-        if (extension && password) {
-          await sipStore.initializeSip(extension, password)
-          console.log('SIP initialized')
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch user info:', error)
-    }
+  // Initialize SIP if we have user data
+  if (authStore.user?.extensionNumber) {
+    const extension = authStore.user.extensionNumber.toString()
+    const password = "1234" // This should be stored securely
+    await sipStore.initializeSip(extension, password)
   }
 })
 
@@ -168,8 +129,8 @@ const handleLogout = async () => {
             <DropdownMenuLabel>
               <div class="flex flex-col">
                 <span>Tài khoản của tôi</span>
-                <span v-if="userInfo" class="text-sm text-gray-500">
-                  {{ userInfo.username }} ({{ userInfo.extension_number }})
+                <span v-if="authStore.user" class="text-sm text-gray-500">
+                  {{ authStore.user.username }} ({{ authStore.user.extensionNumber }})
                 </span>
               </div>
             </DropdownMenuLabel>
@@ -180,9 +141,6 @@ const handleLogout = async () => {
       </div>
     </header>
     <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-      <!-- <div class="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <h1 class="text-2xl font-bold">Xin chào, Anh Khoa!</h1>
-      </div> -->
       <div class="grid gap-4 md:gap-8 lg:grid-cols-3">
         <n-card>
           <CardHeader>

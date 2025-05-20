@@ -59,41 +59,57 @@ export const useAuthStore = defineStore("auth", {
       localStorage.setItem("fullName", user.fullName); // changed from fullname to fullName
     },
 
-
     async loadFromStorage(this: AuthState) {
       const access_token = localStorage.getItem("access_token");
       const refresh_token = localStorage.getItem("refresh_token");
       const userStr = localStorage.getItem("user");
 
-      if (access_token && refresh_token && userStr) {
+      if (!access_token || !refresh_token || !userStr) {
+        return;
+      }
+
+      try {
+        // First try to get user info with current access token
+        const userData = await getUserInfo(access_token);
+        const user = JSON.parse(userStr);
+
+        this.access_token = access_token;
+        this.refresh_token = refresh_token;
+        this.user = {
+          ...user,
+          ...userData
+        };
+      } catch (error) {
+        console.error('Failed to load user data with current token, trying refresh:', error);
+
         try {
-          // Get fresh user data from the server
-          const userData = await getUserInfo(access_token);
+          // If getting user info fails, try to refresh the token
+          const response = await refreshToken(refresh_token);
+          const userData = await getUserInfo(response.access_token);
           const user = JSON.parse(userStr);
 
-          this.access_token = access_token;
-          this.refresh_token = refresh_token;
+          this.access_token = response.access_token;
+          this.refresh_token = response.refresh_token;
           this.user = {
             ...user,
-            ...userData // Ensure we have the latest user data
+            ...userData
           };
-        } catch (error) {
-          console.error('Failed to load user data:', error);
-          // Clear everything since we couldn't validate the stored data
-          this.access_token = null;
-          this.refresh_token = null;
-          this.user = null;
-          localStorage.removeItem("access_token");
-          localStorage.removeItem("refresh_token");
-          localStorage.removeItem("user");
-          localStorage.removeItem("extension_number");
+
+          // Update localStorage with new tokens
+          localStorage.setItem("access_token", response.access_token);
+          localStorage.setItem("refresh_token", response.refresh_token);
+        } catch (refreshError) {
+          console.error('Failed to refresh token:', refreshError);
+          // Only clear everything if both attempts fail
+          const store = useAuthStore();
+          store.logout();
         }
       }
     },
 
     async refreshToken(this: AuthState) {
       if (!this.refresh_token) {
-        throw new Error('No refresh access_token available');
+        throw new Error('No refresh token available');
       }
 
       try {
@@ -108,6 +124,6 @@ export const useAuthStore = defineStore("auth", {
         store.logout();
         throw error;
       }
-    },
+    }
   },
 });

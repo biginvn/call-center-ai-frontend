@@ -18,8 +18,17 @@ const router = createRouter({
   routes,
 });
 
+// Flag to track if auth has been loaded
+let authLoaded = false;
+
 router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
+
+  // Load auth state if not already loaded
+  if (!authLoaded) {
+    await authStore.loadFromStorage();
+    authLoaded = true;
+  }
 
   // If route requires guest (like login page) and user is authenticated
   if (to.meta.requiresGuest && authStore.isAuthenticated) {

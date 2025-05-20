@@ -21,6 +21,27 @@ export const useSipStore = defineStore('sip', () => {
   const SIP_PORT = import.meta.env.VITE_SIP_PORT || '8089'
 
   // Watch for changes in user data and reinitialize SIP service if needed
+  watch(() => authStore.user, async (newUser) => {
+    if (newUser && newUser.role === 'agent' && newUser.extensionNumber) {
+      const extension = determineWebClient(newUser.extensionNumber.toString())
+      const password = "1234" // This should be stored securely
+      if (extension && password) {
+        await initializeSip(extension, password)
+      }
+    }
+  }, { immediate: true })
+
+  // Helper function to determine web client
+  const determineWebClient = (extension: string) => {
+    if (extension.startsWith('111')) {
+      return 'web1'
+    } else if (extension.startsWith('112')) {
+      return 'web2'
+    }
+    return 'web1' // default fallback
+  }
+
+  // Watch for changes in user data and reinitialize SIP service if needed
   watch(() => authStore.user?.fullName, (newName) => {
     if (sipService.value) {
       // Reinitialize SIP service with new display name
