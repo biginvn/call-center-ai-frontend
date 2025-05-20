@@ -110,7 +110,7 @@ export class SipService {
     this.events.onUnregistered?.();
   }
 
-  public async call(destination: string) {
+  public async call(destination: string): Promise<Inviter | undefined> {
     if (!this.ua) {
       this.events.onDebug?.("[Error] UserAgent not initialized.");
       // Show toast for error
@@ -164,6 +164,7 @@ export class SipService {
     this.session = inviter;
     this.events.onDebug?.("[INFO] Sending invite...");
     await inviter.invite();
+    return inviter;
   }
 
   public async acceptCall(session: Invitation) {

@@ -6,15 +6,32 @@ type UpdateUser = {
   username: string,
   extension_number: string,
   role: string,
-  fullName: string // changed from fullname to fullName
+  fullName: string
 }
 
-
 export const useAuthStore = defineStore("auth", {
-  state: (): AuthState => ({
+  state: (): AuthState & { refreshToken: () => Promise<{ access_token: string; refresh_token: string; token_type: string }> } => ({
     access_token: null,
     refresh_token: null,
     user: null,
+    refreshToken: async function () {
+      if (!this.refresh_token) {
+        throw new Error('No refresh token available');
+      }
+
+      try {
+        const response = await refreshToken(this.refresh_token);
+        this.access_token = response.access_token;
+        this.refresh_token = response.refresh_token;
+        localStorage.setItem("access_token", response.access_token);
+        localStorage.setItem("refresh_token", response.refresh_token);
+        return response;
+      } catch (error) {
+        const store = useAuthStore();
+        store.logout();
+        throw error;
+      }
+    }
   }),
 
   getters: {
@@ -48,7 +65,7 @@ export const useAuthStore = defineStore("auth", {
 
     updateUser(this: AuthState, user: UpdateUser) {
       if (this.user) {
-        this.user.fullName = user.fullName; // changed from user.fullname
+        this.user.fullName = user.fullName;
         this.user.username = user.username;
         this.user.extensionNumber = Number(user.extension_number);
         this.user.role = user.role as "agent" | "admin";
@@ -56,7 +73,7 @@ export const useAuthStore = defineStore("auth", {
       localStorage.setItem("extension_number", user.extension_number);
       localStorage.setItem("username", user.username);
       localStorage.setItem("role", user.role);
-      localStorage.setItem("fullName", user.fullName); // changed from fullname to fullName
+      localStorage.setItem("fullName", user.fullName);
     },
 
     async loadFromStorage(this: AuthState) {
@@ -69,7 +86,6 @@ export const useAuthStore = defineStore("auth", {
       }
 
       try {
-        // First try to get user info with current access token
         const userData = await getUserInfo(access_token);
         const user = JSON.parse(userStr);
 
@@ -80,50 +96,24 @@ export const useAuthStore = defineStore("auth", {
           ...userData
         };
       } catch (error) {
-        console.error('Failed to load user data with current token, trying refresh:', error);
+        console.error('Failed to load user data:', error);
 
+        // Try to refresh token before logging out
         try {
-          // If getting user info fails, try to refresh the token
-          const response = await refreshToken(refresh_token);
-          const userData = await getUserInfo(response.access_token);
-          const user = JSON.parse(userStr);
-
-          this.access_token = response.access_token;
-          this.refresh_token = response.refresh_token;
+          await this.refreshToken();
+          // If refresh successful, try loading user data again
+          const userData = await getUserInfo(this.access_token!);
+          const user = JSON.parse(userStr!);
           this.user = {
             ...user,
             ...userData
           };
-
-          // Update localStorage with new tokens
-          localStorage.setItem("access_token", response.access_token);
-          localStorage.setItem("refresh_token", response.refresh_token);
         } catch (refreshError) {
-          console.error('Failed to refresh token:', refreshError);
-          // Only clear everything if both attempts fail
+          console.error('Token refresh failed:', refreshError);
           const store = useAuthStore();
           store.logout();
         }
       }
     },
-
-    async refreshToken(this: AuthState) {
-      if (!this.refresh_token) {
-        throw new Error('No refresh token available');
-      }
-
-      try {
-        const response = await refreshToken(this.refresh_token);
-        this.access_token = response.access_token;
-        this.refresh_token = response.refresh_token;
-        localStorage.setItem("access_token", response.access_token);
-        localStorage.setItem("refresh_token", response.refresh_token);
-        return response;
-      } catch (error) {
-        const store = useAuthStore();
-        store.logout();
-        throw error;
-      }
-    }
   },
 });

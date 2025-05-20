@@ -34,7 +34,7 @@ const sipStore = useSipStore()
 // State for the call interface
 const isOpen = ref(false)
 const callState = ref<'incoming' | 'outgoing' | 'connecting' | 'active' | 'ended'>('incoming')
-const callerName = ref('')
+const callerName = ref('Hello')
 const callerAvatar = ref('/path/to/avatar.jpg')
 
 // Watch for incoming calls
@@ -58,15 +58,26 @@ watch(() => sipStore.callStatus, (newStatus) => {
 })
 
 onMounted(async () => {
+  // Load user data from storage first
+  await authStore.loadFromStorage()
+
   // Ensure we have valid auth state
   if (!authStore.isAuthenticated) {
     router.push('/login')
     return
   }
+  const determineWebClient = (extension: string) => {
+    if (extension.startsWith('111')) {
+      return 'web1'
+    } else if (extension.startsWith('112')) {
+      return 'web2'
+    }
+    return 'web1' // default fallback
+  }
 
   // Initialize SIP if we have user data
   if (authStore.user?.extensionNumber) {
-    const extension = authStore.user.extensionNumber.toString()
+    const extension = determineWebClient(authStore.user.extensionNumber.toString())
     const password = "1234" // This should be stored securely
     await sipStore.initializeSip(extension, password)
   }
@@ -76,10 +87,10 @@ const onStartCall = (input: string) => {
   isOpen.value = true
 }
 
-const showCallInterface = () => {
-  isOpen.value = true
-  callState.value = 'incoming'
-}
+// const showCallInterface = () => {
+//   isOpen.value = true
+//   callState.value = 'incoming'
+// }
 
 // Event handlers
 const handleAnswer = () => {
@@ -163,7 +174,6 @@ const handleLogout = async () => {
       </div>
       <div>
         <!-- n-button to trigger the call interface -->
-        <n-button @click="showCallInterface">Start Call</n-button>
 
         <!-- Call Interface Component -->
         <CallInterface v-model="isOpen" :default-state="callState" :caller-name="callerName"

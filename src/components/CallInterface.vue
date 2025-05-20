@@ -48,7 +48,7 @@
           <!-- Call Controls -->
           <div class="w-full">
             <div v-if="callState === 'incoming'" class="flex justify-center gap-4">
-              <n-button size="lg" variant="destructive" class="h-14 w-14 rounded-full" @click="handleReject">
+              <n-button size="lg" variant="destructive" class="h-14 w-14 rounded-full" @click="handleEndCall">
                 <PhoneOff class="h-6 w-6" />
                 <span class="sr-only">Từ chối</span>
               </n-button>

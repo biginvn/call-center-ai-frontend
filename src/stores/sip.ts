@@ -2,9 +2,10 @@ import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { SipService } from '@/services/sipService'
 import { useAuthStore } from './auth'
-import type { SessionDescriptionHandler, Session, Invitation, SessionState, Inviter } from 'sip.js'
+import type { SessionDescriptionHandler, Session, Invitation } from 'sip.js'
+import { SessionState, Inviter } from 'sip.js'
 
-type SipSessionType = Session | Invitation
+type SipSessionType = Session | Invitation | Inviter
 
 export const useSipStore = defineStore('sip', () => {
   // State
@@ -16,10 +17,27 @@ export const useSipStore = defineStore('sip', () => {
   const sipService = ref<SipService | null>(null)
 
   const authStore = useAuthStore()
-  const displayName = computed(() => authStore.user?.fullName || 'Unknown')
+  const displayName = computed(() => {
+    // First try to get from auth store
+    if (authStore.user?.fullName) {
+      return authStore.user.fullName;
+    }
+    // Fallback to localStorage
+    const storedFullName = localStorage.getItem("fullName");
+    return storedFullName || 'Unknown';
+  });
   const SIP_SERVER = import.meta.env.VITE_SIP_SERVER || ''
   const SIP_PORT = import.meta.env.VITE_SIP_PORT || '8089'
 
+  // Helper function to determine web client
+  const determineWebClient = (extension: string) => {
+    if (extension.startsWith('111')) {
+      return 'web1'
+    } else if (extension.startsWith('112')) {
+      return 'web2'
+    }
+    return 'web1' // default fallback
+  }
   // Watch for changes in user data and reinitialize SIP service if needed
   watch(() => authStore.user, async (newUser) => {
     if (newUser && newUser.role === 'agent' && newUser.extensionNumber) {
@@ -31,29 +49,17 @@ export const useSipStore = defineStore('sip', () => {
     }
   }, { immediate: true })
 
-  // Helper function to determine web client
-  const determineWebClient = (extension: string) => {
-    if (extension.startsWith('111')) {
-      return 'web1'
-    } else if (extension.startsWith('112')) {
-      return 'web2'
-    }
-    return 'web1' // default fallback
-  }
-
-  // Watch for changes in user data and reinitialize SIP service if needed
-  watch(() => authStore.user?.fullName, (newName) => {
-    if (sipService.value) {
-      // Reinitialize SIP service with new display name
-      const currentDisplayName = newName || 'Unknown'
+  // Update watch to handle localStorage as well
+  watch(() => displayName.value, (newName) => {
+    if (sipService.value && newName !== 'Unknown') {
       sipService.value = new SipService({
         server: SIP_SERVER,
         wsServer: `wss://${SIP_SERVER}:${SIP_PORT}/ws`,
-        displayName: currentDisplayName,
-      })
-      setupSipEvents()
+        displayName: newName,
+      });
+      setupSipEvents();
     }
-  })
+  });
 
   // Initialize SIP service
   function setupSipEvents() {
@@ -131,23 +137,21 @@ export const useSipStore = defineStore('sip', () => {
   }
 
   const makeCall = async (destination: string) => {
-
     try {
       if (!sipService.value) {
         debug.value += '\n[Error] SIP service not initialized.'
         return
       }
 
-      // Reset any existing session
-      if (session.value) {
-        debug.value += '\n[INFO] Ending existing call before making new one'
-        hangup()
-      }
-      console.log('Runned makeCall')
+      // Set call status to Establishing before making the call
       callStatus.value = 'Establishing'
       debug.value += `\n[INFO] Calling extension ${destination}...`
 
-      await sipService.value.call(destination)
+      // Make the call and get the session
+      const newSession = await sipService.value.call(destination)
+      if (newSession) {
+        session.value = newSession
+      }
 
     } catch (error) {
       debug.value += `\n[Error] Failed to make call: ${error}`
@@ -157,8 +161,6 @@ export const useSipStore = defineStore('sip', () => {
   }
 
   const hangup = () => {
-    console.log('Up :::', session.value.state)
-
     if (!sipService.value) {
       debug.value += '\n[ERROR] Cannot hangup: SIP service not initialized'
       return
@@ -170,34 +172,49 @@ export const useSipStore = defineStore('sip', () => {
       return
     }
 
+    // Type guard to ensure session.value exists and has a state
+    if (!('state' in session.value)) {
+      debug.value += '\n[ERROR] Invalid session object'
+      return
+    }
+
     callStatus.value = 'Ended'
     debug.value += '\n[INFO] Hanging up...'
 
-    // Handle different session states
-    switch (session.value.state) {
-      case SessionState.Initial:
-      case SessionState.Establishing:
-        if (session.value instanceof Inviter) {
-          // An unestablished outgoing session
-          debug.value += '\n[INFO] Canceling outgoing call...'
-          session.value.cancel()
-        } else {
-          // An unestablished incoming session
-          debug.value += '\n[INFO] Rejecting incoming call...'
-          session.value.reject()
-        }
-        break
-      case SessionState.Established:
-        // An established session
-        debug.value += '\n[INFO] Sending BYE request...'
-        if ('bye' in session.value) {
-          session.value.bye()
-        }
-        break
-      case SessionState.Terminating:
-      case SessionState.Terminated:
-        debug.value += '\n[INFO] Session already terminating or terminated'
-        break
+    try {
+      switch (session.value.state) {
+        case SessionState.Initial:
+        case SessionState.Establishing:
+          if (session.value instanceof Inviter) {
+            session.value.cancel()
+          } else {
+            (session.value as Invitation).reject()
+          }
+          break
+        case SessionState.Established:
+          debug.value += '\n[INFO] Sending BYE request...'
+          if (session.value && 'bye' in session.value) {
+            session.value.bye()
+          } else {
+            throw new Error('Session does not support BYE method')
+          }
+          break
+        case SessionState.Terminating:
+        case SessionState.Terminated:
+          debug.value += '\n[INFO] Session already terminating or terminated'
+          break
+        default:
+          debug.value += '\n[WARNING] Unknown session state'
+      }
+    } catch (error) {
+      if (error instanceof Error) {
+        debug.value += `\n[ERROR] Failed to hangup: ${error.message}`
+      } else {
+        debug.value += `\n[ERROR] Failed to hangup: ${String(error)}`
+      }
+      // Reset session state on error
+      session.value = null
+      callStatus.value = 'Ended'
     }
   }
 
