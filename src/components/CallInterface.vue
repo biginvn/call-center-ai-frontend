@@ -48,7 +48,7 @@
           <!-- Call Controls -->
           <div class="w-full">
             <div v-if="callState === 'incoming'" class="flex justify-center gap-4">
-              <n-button size="lg" variant="destructive" class="h-14 w-14 rounded-full" @click="handleReject">
+              <n-button size="lg" variant="destructive" class="h-14 w-14 rounded-full" @click="handleEndCall">
                 <PhoneOff class="h-6 w-6" />
                 <span class="sr-only">Từ chối</span>
               </n-button>
@@ -177,7 +177,7 @@ const stopTimer = () => {
 
 // Watch for session changes to update caller name
 watch(() => sipStore.session, (newSession) => {
-  if (newSession) {
+  if (newSession && !props.callerName) {
     currentCallerName.value =
       newSession.remoteIdentity.displayName || newSession.remoteIdentity.uri.user || "undefined"
   }
@@ -384,29 +384,13 @@ const handleAnswer = async () => {
   }
 }
 
-const handleReject = async () => {
-  try {
-    callState.value = 'rejected'
-    emit('reject')
-    await sipStore.reject()
-    stopTimer()
-    setTimeout(() => {
-      callState.value = 'ended'
-      emit('update:modelValue', false)
-    }, 1000)
-  } catch (error) {
-    console.error('Error rejecting call:', error)
-    stopTimer()
-    callState.value = 'ended'
-    emit('update:modelValue', false)
-  }
-}
 
 const handleEndCall = async () => {
   try {
+    sipStore.hangup()
     callState.value = 'ended'
     emit('end')
-    await sipStore.hangup()
+
     stopTimer()
     setTimeout(() => emit('update:modelValue', false), 1000)
   } catch (error) {
@@ -422,13 +406,6 @@ const formatCallDuration = (seconds: number) => {
   const secs = seconds % 60
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
-
-// const getInitials = (name: string) => {
-//   return name
-//     .split(' ')
-//     .map((n) => n[0])
-//     .join('')
-// }
 
 const onOpenChange = (value: boolean) => {
   emit('update:modelValue', value)

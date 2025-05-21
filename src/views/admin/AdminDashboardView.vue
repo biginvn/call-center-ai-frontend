@@ -9,49 +9,29 @@ import { NAvatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { NBadge } from '@/components/ui/badge'
 import { NButton } from '@/components/ui/button'
 import { NCard, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { NDropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { NTable, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Activity, ArrowUpRight, CircleUser, CreditCard, DollarSign, Users } from 'lucide-vue-next'
+import { Activity, ArrowUpRight, CreditCard, DollarSign, Users } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { onMounted } from 'vue'
+import { useConversationStore } from '@/stores/conversationStore'
+import { formatDate } from '@/lib/utils'
+import AdminNavbar from '@/components/admin/AdminNavbar.vue'
 
 const router = useRouter()
-const authStore = useAuthStore()
+const conversationStore = useConversationStore()
 
-const handleLogout = () => {
-  authStore.logout()
-  router.push('/login')
+onMounted(async () => {
+  await conversationStore.fetchRecentConversations()
+})
+
+const handleViewAll = () => {
+  router.push('/admin/conversations')
 }
 </script>
 
 <template>
   <div class="flex min-h-screen w-full flex-col">
-    <header class="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
-      <nav class=" flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
-        <a href="#" class="flex items-center gap-2 text-lg font-semibold md:text-base">
-          <img src="@/assets/nixxis_logo.webp" alt="Nixxis Logo" class="w-30" />
-          <span class="text-muted-foreground w-60">
-            <span class="inline">| Admin Portal</span>
-          </span>
-        </a>
-      </nav>
-      <div class="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-        <form class="ml-auto flex-1 sm:flex-initial">
-        </form>
-        <n-dropdown-menu>
-          <DropdownMenuTrigger as-child>
-            <n-button variant="secondary" size="icon" class="rounded-full">
-              <CircleUser class="h-5 w-5" />
-            </n-button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem @click="handleLogout">Đăng xuất</DropdownMenuItem>
-          </DropdownMenuContent>
-        </n-dropdown-menu>
-      </div>
-    </header>
+    <AdminNavbar />
     <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <div class="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <n-card>
@@ -136,6 +116,12 @@ const handleLogout = () => {
             </n-button>
           </CardHeader>
           <CardContent>
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold">Recent Conversations</h3>
+              <n-button variant="outline" @click="handleViewAll">
+                View All
+              </n-button>
+            </div>
             <n-table>
               <TableHeader>
                 <TableRow>
@@ -150,129 +136,51 @@ const handleLogout = () => {
                     Date
                   </TableHead>
                   <TableHead class="text-right">
-                    Amount
+                    Mood
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
-                  <TableCell>
-                    <div class="font-medium">
-                      Liam Johnson
-                    </div>
-                    <div class="hidden text-sm text-muted-foreground md:inline">
-                      liam@example.com
-                    </div>
-                  </TableCell>
-                  <TableCell class="hidden xl:table-column">
-                    Sale
-                  </TableCell>
-                  <TableCell class="hidden xl:table-column">
-                    <n-badge class="text-xs" variant="outline">
-                      Approved
-                    </n-badge>
-                  </TableCell>
-                  <TableCell class="hidden md:table-cell lg:hidden xl:table-column">
-                    2023-06-23
-                  </TableCell>
-                  <TableCell class="text-right">
-                    $250.00
+                <TableRow v-if="conversationStore.loading">
+                  <TableCell colspan="5" class="text-center">
+                    Loading...
                   </TableCell>
                 </TableRow>
-                <TableRow>
-                  <TableCell>
-                    <div class="font-medium">
-                      Olivia Smith
-                    </div>
-                    <div class="hidden text-sm text-muted-foreground md:inline">
-                      olivia@example.com
-                    </div>
-                  </TableCell>
-                  <TableCell class="hidden xl:table-column">
-                    Refund
-                  </TableCell>
-                  <TableCell class="hidden xl:table-column">
-                    <n-badge class="text-xs" variant="outline">
-                      Declined
-                    </n-badge>
-                  </TableCell>
-                  <TableCell class="hidden md:table-cell lg:hidden xl:table-column">
-                    2023-06-24
-                  </TableCell>
-                  <TableCell class="text-right">
-                    $150.00
+                <TableRow v-else-if="conversationStore.error">
+                  <TableCell colspan="5" class="text-center text-red-500">
+                    {{ conversationStore.error }}
                   </TableCell>
                 </TableRow>
-                <TableRow>
-                  <TableCell>
-                    <div class="font-medium">
-                      Noah Williams
-                    </div>
-                    <div class="hidden text-sm text-muted-foreground md:inline">
-                      noah@example.com
-                    </div>
-                  </TableCell>
-                  <TableCell class="hidden xl:table-column">
-                    Subscription
-                  </TableCell>
-                  <TableCell class="hidden xl:table-column">
-                    <n-badge class="text-xs" variant="outline">
-                      Approved
-                    </n-badge>
-                  </TableCell>
-                  <TableCell class="hidden md:table-cell lg:hidden xl:table-column">
-                    2023-06-25
-                  </TableCell>
-                  <TableCell class="text-right">
-                    $350.00
+                <TableRow v-else-if="conversationStore.conversations.length === 0">
+                  <TableCell colspan="5" class="text-center">
+                    No conversations found
                   </TableCell>
                 </TableRow>
-                <TableRow>
+                <TableRow v-for="conversation in conversationStore.conversations" :key="conversation._id || ''">
                   <TableCell>
                     <div class="font-medium">
-                      Emma Brown
+                      {{ conversation.from_user.name }}
                     </div>
                     <div class="hidden text-sm text-muted-foreground md:inline">
-                      emma@example.com
+                      {{ conversation.from_user.email }}
                     </div>
                   </TableCell>
                   <TableCell class="hidden xl:table-column">
-                    Sale
+                    {{ conversation.type }}
                   </TableCell>
                   <TableCell class="hidden xl:table-column">
-                    <n-badge class="text-xs" variant="outline">
-                      Approved
+                    <n-badge class="text-xs" :variant="conversation.status === 'closed' ? 'default' : 'outline'">
+                      {{ conversation.status }}
                     </n-badge>
                   </TableCell>
                   <TableCell class="hidden md:table-cell lg:hidden xl:table-column">
-                    2023-06-26
+                    {{ formatDate(conversation.created_at) }}
                   </TableCell>
                   <TableCell class="text-right">
-                    $450.00
-                  </TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>
-                    <div class="font-medium">
-                      Liam Johnson
-                    </div>
-                    <div class="hidden text-sm text-muted-foreground md:inline">
-                      liam@example.com
-                    </div>
-                  </TableCell>
-                  <TableCell class="hidden xl:table-column">
-                    Sale
-                  </TableCell>
-                  <TableCell class="hidden xl:table-column">
-                    <n-badge class="text-xs" variant="outline">
-                      Approved
+                    <n-badge class="text-xs"
+                      :variant="conversation.mood === 'positive' ? 'default' : conversation.mood === 'negative' ? 'destructive' : 'outline'">
+                      {{ conversation.mood }}
                     </n-badge>
-                  </TableCell>
-                  <TableCell class="hidden md:table-cell lg:hidden xl:table-column">
-                    2023-06-27
-                  </TableCell>
-                  <TableCell class="text-right">
-                    $550.00
                   </TableCell>
                 </TableRow>
               </TableBody>

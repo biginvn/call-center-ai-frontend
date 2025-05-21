@@ -148,6 +148,12 @@ const onSubmit = handleSubmit(async (values) => {
         setFieldError('ext', 'Vui lòng xoá số Extension');
       } else if (errorDetail === 'Extension number must be a 3-digit number') {
         setFieldError('ext', 'Số Extension phải là số có 3 chữ số');
+      } else if (errorDetail === 'Extension not found') {
+        setFieldError('ext', 'Số đã tồn tại')
+      } else {
+        setFieldError('username','Vui lòng kiểm tra thông tin đăng nhập')
+        setFieldError('password','')
+        setFieldError('ext','')
       }
 
       const errors = errorResponse.response?.data?.errors;
@@ -164,7 +170,7 @@ const onSubmit = handleSubmit(async (values) => {
       }
     } else {
       console.error('General error:', error);
-      setFieldError('username', 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.');
+      setFieldError('username', 'Đăng nhập thất bại. Vui lòng thử lại sau.');
     }
   } finally {
     isLoading.value = false

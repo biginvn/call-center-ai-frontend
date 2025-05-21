@@ -6,14 +6,16 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
+
 # Copy source code
 COPY . .
 
-# Set build arguments
+# Set build arguments from .env file
 ARG VITE_API_URL
 ARG VITE_SIP_SERVER
 ARG VITE_SIP_PORT
 ARG NODE_ENV
+
 ENV VITE_API_URL=$VITE_API_URL
 ENV VITE_SIP_SERVER=$VITE_SIP_SERVER
 ENV VITE_SIP_PORT=$VITE_SIP_PORT
@@ -36,3 +38,4 @@ EXPOSE 3000
 
 # Start NGINX
 CMD ["nginx", "-g", "daemon off;"]
+

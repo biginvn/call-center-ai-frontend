@@ -8,6 +8,7 @@ import {
   Invitation,
   Session,
 } from "sip.js";
+import { toast } from "vue-sonner";
 
 type SipServiceOptions = {
   server: string;
@@ -60,7 +61,10 @@ export class SipService {
       onInvite: async (incomingSession: Invitation) => {
         const callerId = incomingSession.remoteIdentity.uri.user || "";
         this.events.onIncomingCall?.(incomingSession, callerId);
-        console.log(incomingSession);
+        console.log("Incoming session: ", incomingSession);
+
+        // Save the session
+        this.session = incomingSession;
 
         incomingSession.stateChange.addListener((state) => {
           this.events.onDebug?.(`[DEBUG] Incoming Call State: ${state}`);
@@ -68,6 +72,7 @@ export class SipService {
             this.events.onCallEstablished?.(incomingSession);
           }
           if (state === SessionState.Terminated) {
+            this.session = null;
             this.events.onCallEnded?.();
           }
         });
@@ -109,11 +114,27 @@ export class SipService {
     this.events.onUnregistered?.();
   }
 
-  public async call(destination: string) {
-    if (!this.ua) return;
+  public async call(destination: string): Promise<Inviter | undefined> {
+    if (!this.ua) {
+      this.events.onDebug?.("[Error] UserAgent not initialized.");
+      // Show toast for error
+      toast({
+        title: 'Uh oh! Something went wrong.',
+        description: 'UserAgent is not initialized.',
+        variant: 'destructive',
+      });
+      return;
+    }
     const target = UserAgent.makeURI(`sip:${destination}@${this.options.server}`);
     if (!target) {
       this.events.onDebug?.("[Error] Invalid destination URI.");
+      // Show toast for error
+      toast({
+        title: 'Uh oh! Something went wrong.',
+        description: 'There was a problem with your request.',
+        variant: 'destructive',
+        default: () => 'Try again',
+      });
       return;
     }
 
@@ -147,6 +168,7 @@ export class SipService {
     this.session = inviter;
     this.events.onDebug?.("[INFO] Sending invite...");
     await inviter.invite();
+    return inviter;
   }
 
   public async acceptCall(session: Invitation) {
@@ -155,12 +177,21 @@ export class SipService {
   }
 
   public rejectCall(session: Invitation) {
-    session.reject();
+    // Send 480 Temporarily Unavailable response
+    session.reject({
+      statusCode: 480,
+      reasonPhrase: "Temporarily Unavailable"
+    });
+    // Ensure session is terminated
+    this.session = null;
+    this.events.onCallEnded?.();
   }
 
   public hangup(session?: Session) {
+    console.log("Session: ", session);
     const target = session || this.session;
     if (target) {
+      console.log("Hanging up call...");
       // Stop all audio tracks before hanging up
       const sdh = target.sessionDescriptionHandler as { peerConnection?: RTCPeerConnection };
       if (sdh?.peerConnection) {
@@ -177,6 +208,29 @@ export class SipService {
             receiver.track.stop();
           }
         });
+      }
+      // End the call based on session state and type
+      switch (target.state) {
+        case SessionState.Initial:
+        case SessionState.Establishing:
+          if (target instanceof Inviter) {
+            // Outgoing call not yet established
+            target.cancel();
+          } else if (target instanceof Invitation) {
+            // Incoming call not yet established
+            target.reject();
+          }
+          break;
+        case SessionState.Established:
+          // Established call
+          if ("bye" in target) {
+            (target as Inviter).bye();
+          }
+          break;
+        case SessionState.Terminating:
+        case SessionState.Terminated:
+          // Already terminating/terminated, do nothing
+          break;
       }
       if ("bye" in target) {
         (target as Inviter).bye();

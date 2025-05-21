@@ -9,7 +9,6 @@ export const containerClass = 'w-full h-full'
 import { ref, onMounted, watch } from 'vue'
 import { NButton } from '@/components/ui/button'
 import { NCard, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-
 import { CircleUser } from 'lucide-vue-next'
 import CallHistory from '@/components/CallHistory.vue'
 import { initialCalls } from '@/components/utils/data'
@@ -22,19 +21,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-// import { useCallStore } from '@/stores/call'
+import {
+  NTabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs'
 import CallInterface from '@/components/CallInterface.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSipStore } from '@/stores/sip'
-import { getUserInfo } from '@/services/authService'
-// const refresh_token = localStorage.getItem('refresh_token')
-// if (refresh_token) {
-//   const response = await refreshToken(refresh_token);
-//   console.log(response)
-// }
+import { getActiveUserByExtension } from '@/services/callService'
+import ActiveUsersTable from '@/components/ActiveUsersTable.vue'
+
 const calls = ref(initialCalls)
-// const callStore = useCallStore()
 const router = useRouter()
 const authStore = useAuthStore()
 const sipStore = useSipStore()
@@ -42,7 +42,7 @@ const sipStore = useSipStore()
 // State for the call interface
 const isOpen = ref(false)
 const callState = ref<'incoming' | 'outgoing' | 'connecting' | 'active' | 'ended'>('incoming')
-const callerName = ref('John Doe')
+const callerName = ref('')
 const callerAvatar = ref('/path/to/avatar.jpg')
 
 // Watch for incoming calls
@@ -51,7 +51,6 @@ watch(() => sipStore.callStatus, (newStatus) => {
     case 'Incoming Call':
       isOpen.value = true
       callState.value = 'incoming'
-      callerName.value = 'Incoming Call'
       break
     case 'Establishing':
       isOpen.value = true
@@ -66,53 +65,48 @@ watch(() => sipStore.callStatus, (newStatus) => {
   }
 })
 
-interface UserInfo {
-  username: string;
-  extension_number: string;
-  role: string;
-  fullName: string; // changed from fullname to fullName
-}
-
-const userInfo = ref<UserInfo | null>(null)
-
 onMounted(async () => {
-  const accessToken = localStorage.getItem('access_token')
-  if (accessToken) {
-    try {
-      userInfo.value = await getUserInfo(accessToken)
-      if (userInfo.value?.extension_number) {
-        // Convert to match UpdateUser type
-        useAuthStore().updateUser({
-          username: userInfo.value.username,
-          extension_number: userInfo.value.extension_number,
-          role: userInfo.value.role,
-          fullName: userInfo.value.fullName // changed from fullname
-        })
+  // Load user data from storage first
+  await authStore.loadFromStorage()
 
-        // Initialize SIP connection
-        const extension = userInfo.value.extension_number
-        const password = "1234"
-        if (extension && password) {
-          await sipStore.initializeSip(extension, password)
-          console.log('SIP initialized')
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch user info:', error)
-    }
+  // Ensure we have valid auth state
+  // if (!authStore.isAuthenticated) {
+  //   router.push('/login')
+  //   return
+  // }
+  const determineWebClient = (extension: string) => {
+    if (extension.startsWith('111')) {
+      return 'web1'
+    } else if (extension.startsWith('112')) {
+      return 'web2'
+    } else if (extension.startsWith('101'))
+      return 'test2' // default fallback
+    else if (extension.startsWith('100'))
+      return 'test1'
+    else
+      return 'web1'
+  }
+
+  // Initialize SIP if we have user data
+  if (authStore.user?.extensionNumber) {
+    const extension = determineWebClient(authStore.user.extensionNumber.toString())
+    const password = "1234" // This should be stored securely
+    await sipStore.initializeSip(extension, password)
   }
 })
 
-const onStartCall = (input: string) => {
+const onStartCall = async (input: string) => {
   isOpen.value = true
-  callState.value = 'outgoing'
-  callerName.value = input
+
+
+  callerName.value = await getActiveUserByExtension(input)
+  console.log("1234: ", callerName.value)
 }
 
-const showCallInterface = () => {
-  isOpen.value = true
-  callState.value = 'incoming'
-}
+// const showCallInterface = () => {
+//   isOpen.value = true
+//   callState.value = 'incoming'
+// }
 
 // Event handlers
 const handleAnswer = () => {
@@ -128,9 +122,6 @@ const handleReject = () => {
 }
 
 const handleEnd = () => {
-  console.log('Call ended')
-  // Add your call end logic here
-  // For example, close WebRTC connection
 }
 
 const handleLogout = async () => {
@@ -165,8 +156,8 @@ const handleLogout = async () => {
             <DropdownMenuLabel>
               <div class="flex flex-col">
                 <span>Tài khoản của tôi</span>
-                <span v-if="userInfo" class="text-sm text-gray-500">
-                  {{ userInfo.username }} ({{ userInfo.extension_number }})
+                <span v-if="authStore.user" class="text-sm text-gray-500">
+                  {{ authStore.user.username }} ({{ authStore.user.extensionNumber }})
                 </span>
               </div>
             </DropdownMenuLabel>
@@ -177,16 +168,26 @@ const handleLogout = async () => {
       </div>
     </header>
     <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-      <!-- <div class="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <h1 class="text-2xl font-bold">Xin chào, Anh Khoa!</h1>
-      </div> -->
       <div class="grid gap-4 md:gap-8 lg:grid-cols-3">
         <n-card>
-          <CardHeader>
-            <CardTitle>Quay số</CardTitle>
-          </CardHeader>
           <CardContent class="grid gap-8">
-            <PhoneDialpad :onCall="onStartCall" />
+            <NTabs default-value="dialpad" class="w-full">
+              <TabsList class="grid w-full grid-cols-2">
+                <TabsTrigger value="dialpad">Quay số</TabsTrigger>
+                <TabsTrigger value="contacts">Danh bạ</TabsTrigger>
+              </TabsList>
+              <TabsContent value="dialpad">
+                <div>
+                  <PhoneDialpad :onCall="onStartCall" />
+                </div>
+
+              </TabsContent>
+              <TabsContent value="contacts">
+                <div class="flex items-center justify-center h-40">
+                  <ActiveUsersTable :on-call="onStartCall" />
+                </div>
+              </TabsContent>
+            </NTabs>
           </CardContent>
         </n-card>
         <n-card class="lg:col-span-2">
@@ -201,10 +202,6 @@ const handleLogout = async () => {
         </n-card>
       </div>
       <div>
-        <!-- n-button to trigger the call interface -->
-        <n-button @click="showCallInterface">Start Call</n-button>
-
-        <!-- Call Interface Component -->
         <CallInterface v-model="isOpen" :default-state="callState" :caller-name="callerName"
           :caller-avatar="callerAvatar" :auto-end-call="false" :auto-end-timeout="30000" @answer="handleAnswer"
           @reject="handleReject" @end="handleEnd" />
