@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CD pipeline
 
 on:
   push:
@@ -58,5 +58,5 @@ jobs:
             if [[ "${{ steps.vars.outputs.tag }}" == "latest" ]]; then
               docker run -d --name call-center-ai-frontend -p 3000:3000 ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
             else
-              docker run -d --name call-center-ai-frontend -p 3001:3000 ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
+              docker run -d --name call-center-ai-frontend -p 3002:3000 ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
             fi
