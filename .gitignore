@@ -29,3 +29,9 @@ coverage
 
 *.tsbuildinfo
 .vite/
+
+# SSL certificates
+ssl/
+*.key
+*.crt
+*.pem

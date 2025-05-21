@@ -21,6 +21,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  NTabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs'
 import CallInterface from '@/components/CallInterface.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -63,10 +69,10 @@ onMounted(async () => {
   await authStore.loadFromStorage()
 
   // Ensure we have valid auth state
-  if (!authStore.isAuthenticated) {
-    router.push('/login')
-    return
-  }
+  // if (!authStore.isAuthenticated) {
+  //   router.push('/login')
+  //   return
+  // }
   const determineWebClient = (extension: string) => {
     if (extension.startsWith('111')) {
       return 'web1'
@@ -163,11 +169,25 @@ const handleLogout = async () => {
     <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <div class="grid gap-4 md:gap-8 lg:grid-cols-3">
         <n-card>
-          <CardHeader>
-            <CardTitle>Quay số</CardTitle>
-          </CardHeader>
           <CardContent class="grid gap-8">
-            <PhoneDialpad :onCall="onStartCall" />
+            <NTabs default-value="dialpad" class="w-full">
+              <TabsList class="grid w-full grid-cols-2">
+                <TabsTrigger value="dialpad">Quay số</TabsTrigger>
+                <TabsTrigger value="contacts">Danh bạ</TabsTrigger>
+              </TabsList>
+              <TabsContent value="dialpad">
+                <div>
+                  <PhoneDialpad :onCall="onStartCall" />
+                </div>
+
+              </TabsContent>
+              <TabsContent value="contacts">
+                <!-- Contact component will be added here later -->
+                <div class="flex items-center justify-center h-40">
+                  <p class="text-muted-foreground">Danh bạ sẽ được thêm vào sau</p>
+                </div>
+              </TabsContent>
+            </NTabs>
           </CardContent>
         </n-card>
         <n-card class="lg:col-span-2">
@@ -182,9 +202,6 @@ const handleLogout = async () => {
         </n-card>
       </div>
       <div>
-        <!-- n-button to trigger the call interface -->
-
-        <!-- Call Interface Component -->
         <CallInterface v-model="isOpen" :default-state="callState" :caller-name="callerName"
           :caller-avatar="callerAvatar" :auto-end-call="false" :auto-end-timeout="30000" @answer="handleAnswer"
           @reject="handleReject" @end="handleEnd" />
