@@ -149,11 +149,11 @@ const onSubmit = handleSubmit(async (values) => {
       } else if (errorDetail === 'Extension number must be a 3-digit number') {
         setFieldError('ext', 'Số Extension phải là số có 3 chữ số');
       } else if (errorDetail === 'Extension not found') {
-        setFieldError('ext', 'Số đã tồn tại')
+        setFieldError('ext', 'Số không hợp lệ')
       } else {
-        setFieldError('username','Vui lòng kiểm tra thông tin đăng nhập')
-        setFieldError('password','')
-        setFieldError('ext','')
+        setFieldError('username', 'Vui lòng kiểm tra thông tin đăng nhập')
+        setFieldError('password', '')
+        setFieldError('ext', '')
       }
 
       const errors = errorResponse.response?.data?.errors;
