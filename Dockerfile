@@ -6,14 +6,20 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# Copy source code
+# Copy source code and env file
 COPY . .
 
-# Set build arguments
+# Set build arguments from .env file
 ARG VITE_API_URL
+ARG VITE_SIP_SERVER
+ARG VITE_SIP_PORT
 ARG NODE_ENV
-ENV VITE_API_URL=$VITE_API_URL
-ENV NODE_ENV=$NODE_ENV
+
+# Set environment variables
+ENV VITE_API_URL=${VITE_API_URL}
+ENV VITE_SIP_SERVER=${VITE_SIP_SERVER}
+ENV VITE_SIP_PORT=${VITE_SIP_PORT}
+ENV NODE_ENV=${NODE_ENV}
 
 # Build the app
 RUN npm run build
