@@ -6,7 +6,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# Copy source code and env file
+
+# Copy source code
 COPY . .
 
 # Set build arguments from .env file
@@ -15,11 +16,10 @@ ARG VITE_SIP_SERVER
 ARG VITE_SIP_PORT
 ARG NODE_ENV
 
-# Set environment variables
-ENV VITE_API_URL=${VITE_API_URL}
-ENV VITE_SIP_SERVER=${VITE_SIP_SERVER}
-ENV VITE_SIP_PORT=${VITE_SIP_PORT}
-ENV NODE_ENV=${NODE_ENV}
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_SIP_SERVER=$VITE_SIP_SERVER
+ENV VITE_SIP_PORT=$VITE_SIP_PORT
+ENV NODE_ENV=$NODE_ENV
 
 # Build the app
 RUN npm run build
@@ -38,3 +38,4 @@ EXPOSE 3000
 
 # Start NGINX
 CMD ["nginx", "-g", "daemon off;"]
+
