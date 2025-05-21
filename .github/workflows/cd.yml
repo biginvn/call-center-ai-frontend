@@ -34,7 +34,13 @@ jobs:
           fi
 
       - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }} .
+        run: |
+          docker build \
+            --build-arg VITE_API_URL=${{ secrets.VITE_API_URL }} \
+            --build-arg VITE_SIP_SERVER=${{ secrets.VITE_SIP_SERVER }} \
+            --build-arg VITE_SIP_PORT=${{ secrets.VITE_SIP_PORT }} \
+            --build-arg NODE_ENV=${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }} \
+            -t ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }} .
 
       - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
@@ -58,5 +64,5 @@ jobs:
             if [[ "${{ steps.vars.outputs.tag }}" == "latest" ]]; then
               docker run -d --name call-center-ai-frontend -p 3000:3000 ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
             else
-              docker run -d --name call-center-ai-frontend -p 3002:3000 ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
+              docker run -d --name call-center-ai-frontend -p 3000:3000 ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
             fi
