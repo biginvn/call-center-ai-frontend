@@ -18,10 +18,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  server: {
-    https: {
-      key: fs.readFileSync(path.resolve(__dirname, 'ssl/bigin.top.key')),
-      cert: fs.readFileSync(path.resolve(__dirname, 'ssl/bigin.top.crt')),
-    },
-  },
+  // server: {
+  //   https: {
+  //     key: fs.readFileSync(path.resolve(__dirname, 'ssl/bigin.top.key')),
+  //     cert: fs.readFileSync(path.resolve(__dirname, 'ssl/bigin.top.crt')),
+  //   },
+  // },
 })
