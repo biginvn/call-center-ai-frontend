@@ -39,7 +39,7 @@ export const loginAdmin = async ({
 };
 
 export const logoutUser = async (access_token: string): Promise<void> => {
-  await axiosInstance.patch('/logout', {}, {
+  await axiosInstance.patch('/logout/', {}, {
     headers: {
       Authorization: `Bearer ${access_token}`
     }
