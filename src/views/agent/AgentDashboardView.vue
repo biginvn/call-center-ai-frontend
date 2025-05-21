@@ -32,6 +32,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSipStore } from '@/stores/sip'
 import { getActiveUserByExtension } from '@/services/callService'
+import ActiveUsersTable from '@/components/ActiveUsersTable.vue'
 
 const calls = ref(initialCalls)
 const router = useRouter()
@@ -182,9 +183,8 @@ const handleLogout = async () => {
 
               </TabsContent>
               <TabsContent value="contacts">
-                <!-- Contact component will be added here later -->
                 <div class="flex items-center justify-center h-40">
-                  <p class="text-muted-foreground">Danh bạ sẽ được thêm vào sau</p>
+                  <ActiveUsersTable :on-call="onStartCall" />
                 </div>
               </TabsContent>
             </NTabs>
