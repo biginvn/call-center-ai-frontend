@@ -3,30 +3,43 @@ export type ConversationType = 'A->A' | 'A->AI' | 'A->C'
 export type ConversationMood = 'positive' | 'neutral' | 'negative' | 'unknown'
 
 export interface User {
-  _id: string
-  name: string
+  id: string
+  username: string
+  fullname: string
   email: string
+  role: string
   // Add other user fields as needed
 }
 
 export interface Message {
-  _id: string
+  id: string
+  sender_id: User
   content: string
-  sender: User
-  created_at: string
-  // Add other message fields as needed
+  mood: ConversationMood
+  order: number
 }
 
 export interface Conversation {
-  _id: string | null
+  id: string
   status: ConversationStatus
   type: ConversationType
-  record_url: string | null
-  summarize: string | null
+  record_url: string
+  record_text: string
+  summarize: string
   from_user: User
   to_user: User
-  messages: Message[] | null
+  messages: Message[]
   mood: ConversationMood
-  sentiment: string | null
+  sentiment: string
   created_at: string
+}
+
+export interface ConversationResponse {
+  pagination: {
+    page_number: number
+    page_size: number
+    total_items: number
+    total_pages: number
+  }
+  conversations: Conversation[]
 }

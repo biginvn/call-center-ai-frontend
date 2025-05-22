@@ -135,6 +135,7 @@ const onSubmit = handleSubmit(async (values) => {
       console.error('Login failed:', errorResponse.response?.data);
 
       const errorDetail = errorResponse.response?.data?.detail;
+      const errors = errorResponse.response?.data?.errors;
 
       if (errorDetail === 'Incorrect username') {
         setFieldError('username', 'Tên đăng nhập không chính xác');
@@ -150,13 +151,14 @@ const onSubmit = handleSubmit(async (values) => {
         setFieldError('ext', 'Số Extension phải là số có 3 chữ số');
       } else if (errorDetail === 'Extension not found') {
         setFieldError('ext', 'Số không hợp lệ')
+      } else if (errorDetail === 'User already on connection, please login another account') {
+        setFieldError('username', 'Người dùng đã đăng nhập trên thiết bị khác');
       } else {
         setFieldError('username', 'Vui lòng kiểm tra thông tin đăng nhập')
         setFieldError('password', '')
         setFieldError('ext', '')
       }
 
-      const errors = errorResponse.response?.data?.errors;
       if (errors) {
         if (errors.username) {
           setFieldError('username', errors.username);

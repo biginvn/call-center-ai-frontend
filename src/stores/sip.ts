@@ -236,7 +236,6 @@ export const useSipStore = defineStore('sip', () => {
   const accept = async () => {
     if (session.value && sipService.value) {
       await sipService.value.acceptCall(session.value as Invitation)
-      console.log('Call accepted hahaha')
     }
   }
 

@@ -3,6 +3,7 @@ import { useAuthStore } from '@/stores/auth'
 import AgentDashboardView from '@/views/agent/AgentDashboardView.vue'
 import AdminDashboardView from '@/views/admin/AdminDashboardView.vue'
 import LoginView from '@/views/LoginView.vue'
+import NotFoundView from '@/views/NotFoundView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { requiresGuest: true } },
@@ -10,6 +11,7 @@ const routes = [
   { path: '/admin', name: 'admin-dashboard', component: AdminDashboardView, meta: { requiresAuth: true, role: 'admin' } },
   { path: '/test', component: AgentDashboardView },
   { path: '/test1', component: AdminDashboardView },
+  { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
 ];
 
 const router = createRouter({

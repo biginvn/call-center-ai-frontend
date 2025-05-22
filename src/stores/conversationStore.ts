@@ -17,6 +17,7 @@ interface ConversationResponse {
 
 export const useConversationStore = defineStore('conversation', () => {
   const conversations = ref<Conversation[]>([])
+  const currentConversation = ref<Conversation | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
   const pagination = ref<PaginationData>({
@@ -50,11 +51,26 @@ export const useConversationStore = defineStore('conversation', () => {
     }
   }
 
+  async function fetchConversationById(id: string) {
+    loading.value = true
+    error.value = null
+    try {
+      const conversation = await conversationService.getConversationById(id)
+      currentConversation.value = conversation
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to fetch conversation details'
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     conversations,
+    currentConversation,
     loading,
     error,
     pagination,
-    fetchRecentConversations
+    fetchRecentConversations,
+    fetchConversationById
   }
 })

@@ -1,15 +1,5 @@
 import axiosInstance from './axiosInstance'
-import type { Conversation } from '@/types/conversation'
-
-interface ConversationResponse {
-  pagination: {
-    page_number: number
-    page_size: number
-    total_items: number
-    total_pages: number
-  }
-  conversations: Conversation[]
-}
+import type { Conversation, ConversationResponse } from '@/types/conversation'
 
 export const conversationService = {
   async getConversations(): Promise<ConversationResponse> {

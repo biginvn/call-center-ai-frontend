@@ -4,6 +4,7 @@ import { CircleUser, Menu } from 'lucide-vue-next'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ref } from 'vue'
+import { NDropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu'
 
 const router = useRouter()
 const route = useRoute()
@@ -45,12 +46,13 @@ const isActive = (path: string) => {
           :class="{ 'text-primary': isActive('/admin') }" @click.prevent="navigateTo('/admin')">
           Trang chủ
         </a>
-        <a href="#" class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
+        <!-- <a href="#" class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
           :class="{ 'text-primary': isActive('/admin/ai-models') }" @click.prevent="navigateTo('/admin/ai-models')">
           Mô hình AI
-        </a>
+        </a> -->
       </div>
     </nav>
+
     <div class="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
       <form class="ml-auto flex-1 sm:flex-initial">
       </form>
@@ -83,14 +85,14 @@ const isActive = (path: string) => {
             @click.prevent="navigateTo('/admin/conversations')">
             Danh sách cuộc gọi
           </a>
-          <a href="#" class="text-sm font-medium transition-colors hover:text-primary"
+          <!-- <a href="#" class="text-sm font-medium transition-colors hover:text-primary"
             :class="{ 'text-primary': isActive('/admin/ai-models') }" @click.prevent="navigateTo('/admin/ai-models')">
             Mô hình AI
-          </a>
+          </a> -->
           <div class="border-t my-2"></div>
           <div class="flex items-center gap-2 px-2 py-1">
             <CircleUser class="h-5 w-5" />
-            <span class="text-sm font-medium">Tài khoản của tôi</span>
+            <span class="text-sm font-medium">Quản trị viên</span>
           </div>
           <button class="text-sm font-medium text-red-500 hover:text-red-600 transition-colors px-2 py-1 text-left"
             @click="handleLogout">
@@ -98,6 +100,27 @@ const isActive = (path: string) => {
           </button>
         </div>
       </div>
+    </div>
+    <div class="hidden md:flex w-full items-center justify-end gap-4">
+      <n-dropdown-menu>
+        <DropdownMenuTrigger as-child>
+          <n-button variant="secondary" size="icon" class="rounded-full">
+            <CircleUser class="h-5 w-5" />
+          </n-button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" class="w-56">
+          <DropdownMenuLabel>
+            <div class="flex flex-col">
+              <span>Quản trị viên</span>
+              <span v-if="authStore.user" class="text-sm text-gray-500">
+                {{ authStore.user.username }} ({{ authStore.user.extensionNumber }})
+              </span>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem @click="handleLogout">Đăng xuất</DropdownMenuItem>
+        </DropdownMenuContent>
+      </n-dropdown-menu>
     </div>
   </header>
 </template>
