@@ -36,9 +36,6 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            --build-arg VITE_API_URL=${{ secrets.VITE_API_URL }} \
-            --build-arg VITE_SIP_SERVER=${{ secrets.VITE_SIP_SERVER }} \
-            --build-arg VITE_SIP_PORT=${{ secrets.VITE_SIP_PORT }} \
             --build-arg NODE_ENV=${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }} \
             -t ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }} .
 
@@ -59,11 +56,11 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            cd /var/www/fe
             docker pull ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
             docker stop call-center-ai-frontend || true && docker rm call-center-ai-frontend || true
             if [[ "${{ steps.vars.outputs.tag }}" == "latest" ]]; then
-              docker run -d --name call-center-ai-frontend -p 3000:3000 --network my-network ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
+              docker run -d \   --name call-center-ai-frontend \   -p 3000:3000 \   --network my-network \   -v /var/www/fe/config.json:/usr/share/nginx/html/config.json \   ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
             else
-
-              docker run -d --name call-center-ai-frontend -p 3000:3000 --network my-network ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
+              docker run -d \   --name call-center-ai-frontend \   -p 3000:3000 \   --network my-network \   -v /var/www/fe/config.json:/usr/share/nginx/html/config.json \   ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
             fi

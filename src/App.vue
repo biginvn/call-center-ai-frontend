@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import { NToaster } from '@/components/ui/sonner'
 // import { onMounted, ref } from 'vue';
 // import { useAuthStore } from '@/stores/auth'
 
@@ -14,6 +15,7 @@ import { RouterView } from 'vue-router'
 
 <template>
   <RouterView />
+  <NToaster />
   <!-- <RouterView v-if="isReady" /> -->
 </template>
 

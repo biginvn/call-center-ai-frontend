@@ -1,5 +1,5 @@
+import { useAuthStore } from "@/stores/auth";
 import {
-
   UserAgent,
   Registerer,
   Inviter,
@@ -9,6 +9,7 @@ import {
   Session,
 } from "sip.js";
 import { toast } from "vue-sonner";
+import { markRaw } from 'vue';
 
 type SipServiceOptions = {
   server: string;
@@ -51,11 +52,23 @@ export class SipService {
     });
 
     this.ua.delegate = {
-      onConnect: () => this.events.onDebug?.("[DEBUG] WebSocket connected."),
+      onConnect: () => {
+        this.events.onDebug?.("[DEBUG] WebSocket connected.")
+        console.log("WebSocket connected 11122")
+        toast(markRaw({
+          title: 'WebSocket Connected',
+          description: 'Successfully connected to WebSocket server',
+          duration: 3000,
+          variant: 'success',
+        }));
+      },
       onDisconnect: (error) => {
         this.events.onDebug?.(
           `[DEBUG] WebSocket disconnected. ${error?.message || ""}`
         );
+
+        const authStore = useAuthStore();
+        authStore.logout();
         this.events.onUnregistered?.();
       },
       onInvite: async (incomingSession: Invitation) => {
@@ -118,23 +131,23 @@ export class SipService {
     if (!this.ua) {
       this.events.onDebug?.("[Error] UserAgent not initialized.");
       // Show toast for error
-      toast({
+      toast(markRaw({
         title: 'Uh oh! Something went wrong.',
         description: 'UserAgent is not initialized.',
         variant: 'destructive',
-      });
+      }));
       return;
     }
     const target = UserAgent.makeURI(`sip:${destination}@${this.options.server}`);
     if (!target) {
       this.events.onDebug?.("[Error] Invalid destination URI.");
       // Show toast for error
-      toast({
+      toast(markRaw({
         title: 'Uh oh! Something went wrong.',
         description: 'There was a problem with your request.',
         variant: 'destructive',
         default: () => 'Try again',
-      });
+      }));
       return;
     }
 

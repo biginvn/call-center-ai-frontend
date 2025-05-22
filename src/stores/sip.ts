@@ -4,6 +4,7 @@ import { SipService } from '@/services/sipService'
 import { useAuthStore } from './auth'
 import type { SessionDescriptionHandler, Session } from 'sip.js'
 import { SessionState, Inviter, Invitation } from 'sip.js'
+import { loadConfig } from '@/config'
 
 type SipSessionType = Session | Invitation | Inviter
 
@@ -15,6 +16,7 @@ export const useSipStore = defineStore('sip', () => {
   const debug = ref('')
   const remoteAudioRef = ref<HTMLAudioElement | null>(null)
   const sipService = ref<SipService | null>(null)
+  const config = ref<{ API_URL: string; SIP_SERVER: string; SIP_PORT: string } | null>(null)
 
   const authStore = useAuthStore()
   const displayName = computed(() => {
@@ -26,8 +28,6 @@ export const useSipStore = defineStore('sip', () => {
     const storedFullName = localStorage.getItem("fullName");
     return storedFullName || 'Unknown';
   });
-  const SIP_SERVER = import.meta.env.VITE_SIP_SERVER || ''
-  const SIP_PORT = import.meta.env.VITE_SIP_PORT || '8089'
 
   // Helper function to determine web client
   const determineWebClient = (extension: string) => {
@@ -42,6 +42,7 @@ export const useSipStore = defineStore('sip', () => {
     else
       return 'web1'
   }
+
   // Watch for changes in user data and reinitialize SIP service if needed
   watch(() => authStore.user, async (newUser) => {
     if (newUser && newUser.role === 'agent' && newUser.extensionNumber) {
@@ -55,10 +56,10 @@ export const useSipStore = defineStore('sip', () => {
 
   // Update watch to handle localStorage as well
   watch(() => displayName.value, (newName) => {
-    if (sipService.value && newName !== 'Unknown') {
+    if (sipService.value && newName !== 'Unknown' && config.value) {
       sipService.value = new SipService({
-        server: SIP_SERVER,
-        wsServer: `wss://${SIP_SERVER}:${SIP_PORT}/ws`,
+        server: config.value.SIP_SERVER,
+        wsServer: `wss://${config.value.SIP_SERVER}:${config.value.SIP_PORT}/ws`,
         displayName: newName,
       });
       setupSipEvents();
@@ -122,11 +123,21 @@ export const useSipStore = defineStore('sip', () => {
 
   // Methods
   const initializeSip = async (extension: string, password: string) => {
+    // Load config if not already loaded
+    if (!config.value) {
+      try {
+        config.value = await loadConfig()
+      } catch (error) {
+        console.error('Failed to load config:', error)
+        return
+      }
+    }
+
     // Create SIP service instance if it doesn't exist
     if (!sipService.value) {
       sipService.value = new SipService({
-        server: '54.169.56.19',
-        wsServer: 'wss://54.169.56.19:8089/ws',
+        server: config.value.SIP_SERVER,
+        wsServer: `wss://${config.value.SIP_SERVER}:${config.value.SIP_PORT}/ws`,
         displayName: displayName.value,
       })
       setupSipEvents()
