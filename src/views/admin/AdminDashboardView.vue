@@ -101,28 +101,23 @@ const handleViewAll = () => {
         </n-card>
       </div>
       <div class="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-        <n-card class="xl:col-span-2">
+        <n-card class="xl:col-span-3">
           <CardHeader class="flex flex-row items-center">
             <div class="grid gap-2">
-              <CardTitle>Transactions</CardTitle>
+              <CardTitle>Bản ghi cuộc gọi
+              </CardTitle>
               <CardDescription>
-                Recent transactions from your store.
+
               </CardDescription>
             </div>
-            <n-button as-child size="sm" class="ml-auto gap-1">
+            <!-- <n-button as-child size="sm" class="ml-auto gap-1">
               <a href="#">
                 View All
                 <ArrowUpRight class="h-4 w-4" />
               </a>
-            </n-button>
+            </n-button> -->
           </CardHeader>
           <CardContent>
-            <div class="flex justify-between items-center mb-4">
-              <h3 class="text-lg font-semibold">Recent Conversations</h3>
-              <n-button variant="outline" @click="handleViewAll">
-                View All
-              </n-button>
-            </div>
             <n-table>
               <TableHeader>
                 <TableRow>
@@ -188,7 +183,7 @@ const handleViewAll = () => {
             </n-table>
           </CardContent>
         </n-card>
-        <n-card>
+        <!-- <n-card>
           <CardHeader>
             <CardTitle>Recent Sales</CardTitle>
           </CardHeader>
@@ -279,7 +274,7 @@ const handleViewAll = () => {
               </div>
             </div>
           </CardContent>
-        </n-card>
+        </n-card> -->
       </div>
     </main>
   </div>
