@@ -54,7 +54,6 @@ export class SipService {
     this.ua.delegate = {
       onConnect: () => {
         this.events.onDebug?.("[DEBUG] WebSocket connected.")
-        console.log("WebSocket connected 11122")
         toast(markRaw({
           title: 'WebSocket Connected',
           description: 'Successfully connected to WebSocket server',
@@ -74,7 +73,6 @@ export class SipService {
       onInvite: async (incomingSession: Invitation) => {
         const callerId = incomingSession.remoteIdentity.uri.user || "";
         this.events.onIncomingCall?.(incomingSession, callerId);
-        console.log("Incoming session: ", incomingSession);
 
         // Save the session
         this.session = incomingSession;
@@ -201,10 +199,8 @@ export class SipService {
   }
 
   public hangup(session?: Session) {
-    console.log("Session: ", session);
     const target = session || this.session;
     if (target) {
-      console.log("Hanging up call...");
       // Stop all audio tracks before hanging up
       const sdh = target.sessionDescriptionHandler as { peerConnection?: RTCPeerConnection };
       if (sdh?.peerConnection) {

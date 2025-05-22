@@ -1,10 +1,9 @@
 import axiosInstance from './axiosInstance'
-import type { Conversation } from '@/types/conversation'
+import type { Conversation, ConversationResponse } from '@/types/conversation'
 
 export const conversationService = {
-  async getConversations(): Promise<Conversation[]> {
-    const response = await axiosInstance.get<Conversation[]>('/conversations/')
-    console.log(response.data)
+  async getConversations(): Promise<ConversationResponse> {
+    const response = await axiosInstance.get<ConversationResponse>('/conversations/')
     return response.data
   },
 

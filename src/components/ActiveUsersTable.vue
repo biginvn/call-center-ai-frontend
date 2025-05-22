@@ -12,8 +12,6 @@ import {
 import { getAllActiveUsers } from '@/services/callService'
 import { useSipStore } from '@/stores/sip'
 import { useAuthStore } from '@/stores/auth'
-import { NButton } from '@/components/ui/button'
-import { RefreshCw } from 'lucide-vue-next'
 import { NSkeleton } from '@/components/ui/skeleton'
 
 interface ActiveUser {
@@ -64,12 +62,6 @@ onMounted(async () => {
 
 <template>
   <div class="w-full overflow-x-auto">
-    <div class="flex justify-end mb-4">
-      <NButton variant="outline" size="sm" :disabled="isLoading" @click="refreshUsers">
-        <RefreshCw class="h-4 w-4 mr-2" :class="{ 'animate-spin': isLoading }" />
-        Làm mới
-      </NButton>
-    </div>
     <div>
       <NTable>
         <!-- <TableCaption>Danh sách người dùng đang hoạt động</TableCaption> -->
@@ -81,12 +73,12 @@ onMounted(async () => {
         </TableHeader>
         <TableBody>
           <template v-if="isLoading">
-            <TableRow v-for="i in 5" :key="i">
+            <TableRow v-for="i in 4" :key="i">
               <TableCell>
-                <NSkeleton class="h-4 w-[200px]" />
+                <NSkeleton class="h-2 w-[200px]" />
               </TableCell>
               <TableCell>
-                <NSkeleton class="h-4 w-[100px]" />
+                <NSkeleton class="h-2 w-[100px]" />
               </TableCell>
             </TableRow>
           </template>

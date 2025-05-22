@@ -100,7 +100,6 @@ const onStartCall = async (input: string) => {
 
 
   callerName.value = await getActiveUserByExtension(input)
-  console.log("1234: ", callerName.value)
 }
 
 // const showCallInterface = () => {
@@ -110,13 +109,13 @@ const onStartCall = async (input: string) => {
 
 // Event handlers
 const handleAnswer = () => {
-  console.log('Call answered')
+
   // Add your call answer logic here
   // For example, start WebRTC connection
 }
 
 const handleReject = () => {
-  console.log('Call rejected')
+
   // Add your call rejection logic here
   // For example, send rejection signal to the other party
 }
@@ -183,7 +182,7 @@ const handleLogout = async () => {
 
               </TabsContent>
               <TabsContent value="contacts">
-                <div class="flex items-center justify-center h-40">
+                <div class="flex items-center justify-center">
                   <ActiveUsersTable :on-call="onStartCall" />
                 </div>
               </TabsContent>
