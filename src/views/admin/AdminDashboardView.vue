@@ -22,6 +22,7 @@ const conversationStore = useConversationStore()
 
 onMounted(async () => {
   await conversationStore.fetchRecentConversations()
+  console.log(conversationStore.conversations)
 })
 
 const handleViewAll = () => {

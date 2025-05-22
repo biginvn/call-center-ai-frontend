@@ -37,6 +37,8 @@ export const useSipStore = defineStore('sip', () => {
       return 'web2'
     } else if (extension.startsWith('101'))
       return 'test2' // default fallback
+    else if (extension.startsWith('100'))
+      return 'test1'
     else
       return 'web1'
   }

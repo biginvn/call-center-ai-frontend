@@ -3,7 +3,8 @@ import type { Conversation } from '@/types/conversation'
 
 export const conversationService = {
   async getConversations(): Promise<Conversation[]> {
-    const response = await axiosInstance.get<Conversation[]>('/conversations')
+    const response = await axiosInstance.get<Conversation[]>('/conversations/')
+    console.log(response.data)
     return response.data
   },
 
