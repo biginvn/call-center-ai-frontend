@@ -183,7 +183,7 @@ const handleLogout = async () => {
 
               </TabsContent>
               <TabsContent value="contacts">
-                <div class="flex items-center justify-center h-40">
+                <div class="flex items-center justify-center">
                   <ActiveUsersTable :on-call="onStartCall" />
                 </div>
               </TabsContent>
