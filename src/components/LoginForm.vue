@@ -200,20 +200,18 @@ const onSubmit = handleSubmit(async (values) => {
         <FormMessage />
       </FormItem>
     </FormField>
-    <div class="flex gap-4">
-      <FormField v-slot="{ componentField }" name="ext" :validate-on-blur="!isFieldDirty" class="w-1/2">
-        <FormItem v-auto-animate>
-          <FormLabel>Ext</FormLabel>
-          <FormControl>
-            <n-input type="text" v-bind="componentField" />
-          </FormControl>
-          <FormMessage />
-        </FormItem>
-      </FormField>
-      <n-button type="button" class="w-1/2 mt-5.5" :disabled="isLoading" @click="handleLogin">
-        <template v-if="isLoading">Đang đăng nhập...</template>
-        <template v-else>Đăng nhập</template>
-      </n-button>
-    </div>
+    <FormField v-slot="{ componentField }" name="ext" :validate-on-blur="!isFieldDirty">
+      <FormItem v-auto-animate>
+        <FormLabel>Ext</FormLabel>
+        <FormControl>
+          <n-input type="text" v-bind="componentField" />
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    </FormField>
+    <n-button type="submit" :disabled="isLoading" class="w-full">
+      <template v-if="isLoading">Đang đăng nhập...</template>
+      <template v-else>Đăng nhập</template>
+    </n-button>
   </form>
 </template>

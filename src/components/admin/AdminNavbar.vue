@@ -112,9 +112,6 @@ const isActive = (path: string) => {
           <DropdownMenuLabel>
             <div class="flex flex-col">
               <span>Quản trị viên</span>
-              <span v-if="authStore.user" class="text-sm text-gray-500">
-                {{ authStore.user.username }} ({{ authStore.user.extensionNumber }})
-              </span>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />

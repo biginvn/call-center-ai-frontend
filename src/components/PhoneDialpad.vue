@@ -5,7 +5,7 @@
         const target = e.target as HTMLInputElement
         if (target) phoneNumber = target.value
       }
-    " class="text-2xl text-center h-14 w-full border rounded-md" maxlength="4" />
+    " @keyup.enter="handleCall" class="text-2xl text-center h-14 w-full border rounded-md" maxlength="4" />
     <div class="grid grid-cols-3 gap-4">
       <button v-for="key in [1, 2, 3, 4, 5, 6, 7, 8, 9, '*', 0, '#']" :key="key"
         class="h-16 text-xl border rounded-md hover:bg-gray-100" @click="handleKeyPress(key.toString())">
