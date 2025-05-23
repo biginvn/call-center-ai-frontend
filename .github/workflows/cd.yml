@@ -7,9 +7,29 @@ on:
       - staging
 
 jobs:
-  build-and-deploy:
+  determine-tag:
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+      env: ${{ steps.vars.outputs.env }}
+    steps:
+      - name: Determine tag name
+        id: vars
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "tag=latest" >> $GITHUB_OUTPUT
+            echo "env=production" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
+            echo "tag=staging" >> $GITHUB_OUTPUT
+            echo "env=staging" >> $GITHUB_OUTPUT
+          else
+            echo "tag=dev" >> $GITHUB_OUTPUT
+            echo "env=staging" >> $GITHUB_OUTPUT
+          fi
 
+  build-and-push:
+    needs: determine-tag
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -22,33 +42,26 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Determine tag name
-        id: vars
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "tag=latest" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref }}" == "refs/heads/staging" ]]; then
-            echo "tag=staging" >> $GITHUB_OUTPUT
-          else
-            echo "tag=dev" >> $GITHUB_OUTPUT
-          fi
-
       - name: Build Docker image
         run: |
           docker build \
-            --build-arg NODE_ENV=${{ github.ref == 'refs/heads/main' && 'production' || 'staging' }} \
-            -t ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }} .
+            --build-arg NODE_ENV=${{ needs.determine-tag.outputs.env }} \
+            -t ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ needs.determine-tag.outputs.tag }} .
 
       - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       - name: Push image to Docker Hub
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ needs.determine-tag.outputs.tag }}
 
       - name: Done
         run: |
-          echo "Image pushed as tag: ${{ steps.vars.outputs.tag }}"
+          echo "Image pushed as tag: ${{ needs.determine-tag.outputs.tag }}"
 
+  deploy:
+    needs: [determine-tag, build-and-push]
+    runs-on: ubuntu-latest
+    steps:
       - name: Deploy to EC2 via SSH
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -57,20 +70,20 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /var/www/fe
-            docker pull ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
+            docker pull ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ needs.determine-tag.outputs.tag }}
             docker stop call-center-ai-frontend || true && docker rm call-center-ai-frontend || true
-            if [[ "${{ steps.vars.outputs.tag }}" == "latest" ]]; then
+            if [[ "${{ needs.determine-tag.outputs.tag }}" == "latest" ]]; then
               docker run -d \
                 --name call-center-ai-frontend \
                 -p 3000:3000 \
                 --network my-network \
                 -v /var/www/fe/config.json:/usr/share/nginx/html/config.json \
-                ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
+                ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ needs.determine-tag.outputs.tag }}
             else
               docker run -d \
                 --name call-center-ai-frontend \
                 -p 3000:3000 \
                 --network my-network \
                 -v /var/www/fe/config.json:/usr/share/nginx/html/config.json \
-                ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ steps.vars.outputs.tag }}
+                ${{ secrets.DOCKER_USERNAME }}/call-center-ai-frontend:${{ needs.determine-tag.outputs.tag }}
             fi

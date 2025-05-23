@@ -101,7 +101,7 @@ const onSubmit = handleSubmit(async (values) => {
         lastLogin: new Date().toISOString(),
         role: 'agent',
         fullName: '',
-        extensionNumber: parseInt(values.ext)
+        extensionNumber: values.ext
       };
 
       // Store extension number in local storage for SIP
