@@ -15,3 +15,16 @@ export function formatDate(dateString: string): string {
 
   return `${hours}:${minutes}, ${day}-${month}-${year}`
 }
+
+export const determineWebClient = (extension: string) => {
+  if (extension.startsWith('111')) {
+    return 'web1'
+  } else if (extension.startsWith('112')) {
+    return 'web2'
+  } else if (extension.startsWith('101'))
+    return 'test2' // default fallback
+  else if (extension.startsWith('100'))
+    return 'test1'
+  else
+    return 'web1'
+}

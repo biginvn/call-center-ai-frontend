@@ -1,4 +1,5 @@
 import { useAuthStore } from "@/stores/auth";
+import { connectUser, disconnectUser } from "./authService";
 import {
   UserAgent,
   Registerer,
@@ -10,6 +11,7 @@ import {
 } from "sip.js";
 import { toast } from "vue-sonner";
 import { markRaw } from 'vue';
+import { determineWebClient } from "@/lib/utils";
 
 type SipServiceOptions = {
   server: string;
@@ -34,7 +36,21 @@ export class SipService {
   private events: SipServiceEvents = {};
 
 
-  constructor(private options: SipServiceOptions) { }
+  constructor(private options: SipServiceOptions) {
+    window.addEventListener('beforeunload', async () => {
+      if (this.ua) {
+        await this.logout();
+      }
+    });
+    document.addEventListener('visibilitychange', async () => {
+      const authStore = useAuthStore();
+      if (document.visibilityState === 'hidden' && this.ua) {
+        await this.logout();
+      } else if (document.visibilityState === 'visible' && authStore.user && authStore.user.extensionNumber && !this.ua) {
+        await this.login(determineWebClient(authStore.user.extensionNumber), "1234");
+      }
+    });
+  }
 
   public setEvents(events: SipServiceEvents) {
     this.events = events;
@@ -52,21 +68,46 @@ export class SipService {
     });
 
     this.ua.delegate = {
-      onConnect: () => {
+      onConnect: async () => {
         this.events.onDebug?.("[DEBUG] WebSocket connected.")
-        toast(markRaw({
-          title: 'WebSocket Connected',
-          description: 'Successfully connected to WebSocket server',
+        toast.success('Đã kết nối với WebSocket', {
+          description: '',
           duration: 3000,
-          variant: 'success',
-        }));
+        });
+
+        const authStore = useAuthStore();
+        if (authStore.user && authStore.user.extensionNumber) {
+          try {
+            await connectUser({
+              username: authStore.user.username,
+              extension: authStore.user.extensionNumber
+            });
+          } catch (error) {
+            console.error('Failed to connect user:', error);
+          }
+        }
       },
-      onDisconnect: (error) => {
+      onDisconnect: async (error) => {
         this.events.onDebug?.(
           `[DEBUG] WebSocket disconnected. ${error?.message || ""}`
         );
+        toast.error('Đã ngắt kết nối với WebSocket', {
+          description: 'Successfully connected to WebSocket server',
+          duration: 3000,
+        });
 
         const authStore = useAuthStore();
+        if (authStore.user && authStore.user.extensionNumber) {
+          try {
+            await disconnectUser({
+              username: authStore.user.username,
+              extension: authStore.user.extensionNumber
+            });
+          } catch (error) {
+            console.error('Failed to disconnect user:', error);
+          }
+        }
+
         authStore.logout();
         this.events.onUnregistered?.();
       },

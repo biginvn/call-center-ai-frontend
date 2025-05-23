@@ -68,3 +68,30 @@ export const getUserInfo = async (access_token: string): Promise<UserInfo> => {
     fullName: response.data.fullName || response.data.fullname // support both cases
   };
 };
+
+export const connectUser = async ({
+  username,
+  extension
+}: {
+  username: string;
+  extension: string;
+}): Promise<void> => {
+  await axiosInstance.post('/user/connect', {
+    username,
+    extension
+  });
+};
+
+export const disconnectUser = async ({
+  username,
+  extension
+}: {
+  username: string;
+  extension: string;
+}): Promise<void> => {
+  await axiosInstance.post('/user/disconnect', {
+    username,
+    extension
+  });
+};
+

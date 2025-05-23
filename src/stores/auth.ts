@@ -67,7 +67,7 @@ export const useAuthStore = defineStore("auth", {
       if (this.user) {
         this.user.fullName = user.fullName;
         this.user.username = user.username;
-        this.user.extensionNumber = Number(user.extension_number);
+        this.user.extensionNumber = user.extension_number;
         this.user.role = user.role as "agent" | "admin";
       }
       localStorage.setItem("extension_number", user.extension_number);
