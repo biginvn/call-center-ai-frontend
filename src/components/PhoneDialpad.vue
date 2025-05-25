@@ -33,6 +33,8 @@
 import { ref } from 'vue'
 import { Delete, Phone, X } from 'lucide-vue-next'
 import { useSipStore } from '@/stores/sip'
+import { useAuthStore } from '@/stores/auth'
+import { toast } from 'vue-sonner'
 
 defineOptions({
   name: 'PhoneDialpad'
@@ -43,6 +45,7 @@ const props = defineProps<{
 }>()
 
 const sipStore = useSipStore()
+const authStore = useAuthStore()
 const phoneNumber = ref('')
 
 const handleKeyPress = (key: string) => {
@@ -67,6 +70,14 @@ const handleBackspace = () => {
 
 const handleCall = () => {
   if (phoneNumber.value.length > 0) {
+    // Check if trying to call own extension
+    if (authStore.user?.extensionNumber?.toString() === phoneNumber.value) {
+      toast.error('Không thể gọi số Ext của chính mình', {
+        description: 'Vui lòng nhập số Ext khác',
+        duration: 5000,
+      });
+      return;
+    }
     // Make the call using SIP
     sipStore.makeCall(phoneNumber.value)
     props.onCall(phoneNumber.value)

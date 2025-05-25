@@ -27,6 +27,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs'
+import { NBadge } from '@/components/ui/badge'
 import CallInterface from '@/components/CallInterface.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -44,6 +45,7 @@ const isOpen = ref(false)
 const callState = ref<'incoming' | 'outgoing' | 'connecting' | 'active' | 'ended'>('incoming')
 const callerName = ref('')
 const callerAvatar = ref('/path/to/avatar.jpg')
+const isConnected = ref(false)
 
 // Watch for incoming calls
 watch(() => sipStore.callStatus, (newStatus) => {
@@ -63,6 +65,11 @@ watch(() => sipStore.callStatus, (newStatus) => {
       callState.value = 'ended'
       break
   }
+})
+
+// Watch for connection status
+watch(() => sipStore.isConnected, (newStatus) => {
+  isConnected.value = newStatus
 })
 
 onMounted(async () => {
@@ -145,6 +152,10 @@ const handleLogout = async () => {
       </nav>
       <div class="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
         <form class="ml-auto flex-1 sm:flex-initial"></form>
+        <n-badge v-if="true" :variant="isConnected ? 'default' : 'destructive'" class="hidden md:inline-flex">
+          <span class="text-xs font-semibold">Trạng thái: </span>
+          <span class="text-xs font-semibold">{{ isConnected ? 'Online' : 'Offline' }}</span>
+        </n-badge>
         <n-dropdown-menu>
           <DropdownMenuTrigger as-child>
             <n-button variant="secondary" size="icon" class="rounded-full">

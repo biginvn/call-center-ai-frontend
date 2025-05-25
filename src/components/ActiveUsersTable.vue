@@ -13,6 +13,7 @@ import { getAllActiveUsers } from '@/services/callService'
 import { useSipStore } from '@/stores/sip'
 import { useAuthStore } from '@/stores/auth'
 import { NSkeleton } from '@/components/ui/skeleton'
+import { toast } from 'vue-sonner'
 
 interface ActiveUser {
   _id: string
@@ -42,6 +43,13 @@ const filteredUsers = computed(() => {
 })
 
 const handleCall = (extension: string) => {
+  if (authStore.user?.extensionNumber?.toString() === extension) {
+    toast.error('Không thể gọi số Ext của chính mình', {
+      description: 'Vui lòng nhập số Ext khác',
+      duration: 5000,
+    });
+    return;
+  }
   sipStore.makeCall(extension)
   props.onCall?.(extension)
 }
