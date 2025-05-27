@@ -200,7 +200,7 @@ const handleLogout = async () => {
             </NTabs>
           </CardContent>
         </n-card>
-        <n-card class="lg:col-span-2">
+        <!-- <n-card class="lg:col-span-2">
           <CardHeader class="flex flex-row items-center">
             <div class="grid gap-2">
               <CardTitle>Lịch sử cuộc gọi</CardTitle>
@@ -209,7 +209,7 @@ const handleLogout = async () => {
           <CardContent class="max-h-[calc(100vh-12rem)] overflow-y-auto">
             <CallHistory :calls="calls" :on-start-call="onStartCall" />
           </CardContent>
-        </n-card>
+        </n-card> -->
       </div>
       <div>
         <CallInterface v-model="isOpen" :default-state="callState" :caller-name="callerName"

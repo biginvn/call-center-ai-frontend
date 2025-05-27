@@ -97,8 +97,8 @@ const initializeAxios = async () => {
 
           try {
             // Attempt to refresh token
-            await authStore.refreshToken();
-            const newToken = authStore.access_token;
+            const response = await authStore.refreshToken();
+            const newToken = response.access_token;
 
             // Process queued requests
             processQueue(null, newToken);
