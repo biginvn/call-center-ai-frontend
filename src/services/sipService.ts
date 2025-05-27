@@ -10,10 +10,9 @@ import {
   Session,
 } from "sip.js";
 import { toast } from "vue-sonner";
-import { markRaw } from 'vue';
-import { determineWebClient } from "@/lib/utils";
 import { ref } from 'vue';
 import { useSipStore } from "@/stores/sip";
+import { determineWebClient } from "@/lib/utils";
 
 type SipServiceOptions = {
   server: string;

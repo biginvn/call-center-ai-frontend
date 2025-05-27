@@ -144,6 +144,12 @@ export const useSipStore = defineStore('sip', () => {
       })
       setupSipEvents()
     }
+
+    if (!sipService.value) {
+      debug.value += '\n[Error] Failed to initialize SIP service.'
+      return
+    }
+
     await sipService.value.login(extension, password)
   }
 

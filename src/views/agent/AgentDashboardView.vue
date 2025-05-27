@@ -8,10 +8,8 @@ export const containerClass = 'w-full h-full'
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { NButton } from '@/components/ui/button'
-import { NCard, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { NCard, CardContent } from '@/components/ui/card'
 import { CircleUser } from 'lucide-vue-next'
-import CallHistory from '@/components/CallHistory.vue'
-import { initialCalls } from '@/components/utils/data'
 import PhoneDialpad from '@/components/PhoneDialpad.vue'
 import {
   NDropdownMenu,
@@ -35,7 +33,6 @@ import { useSipStore } from '@/stores/sip'
 import { getActiveUserByExtension } from '@/services/callService'
 import ActiveUsersTable from '@/components/ActiveUsersTable.vue'
 
-const calls = ref(initialCalls)
 const router = useRouter()
 const authStore = useAuthStore()
 const sipStore = useSipStore()
