@@ -172,7 +172,9 @@ const onSubmit = handleSubmit(async (values) => {
       }
     } else {
       console.error('General error:', error);
-      setFieldError('username', 'Đăng nhập thất bại. Vui lòng thử lại sau.');
+      setFieldError('username', 'Vui lòng kiểm tra thông tin đăng nhập')
+      setFieldError('password', '')
+      setFieldError('ext', '')
     }
   } finally {
     isLoading.value = false
