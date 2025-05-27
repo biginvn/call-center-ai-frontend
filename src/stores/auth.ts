@@ -111,7 +111,6 @@ export const useAuthStore = defineStore("auth", {
         this.isUserDataLoaded = true;
       } catch (error) {
         console.error('Failed to load user data:', error);
-
         // If we get a 401, try to refresh the token
         if (error instanceof Error && 'response' in error && (error as AxiosError).response?.status === 401) {
           try {
