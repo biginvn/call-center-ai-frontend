@@ -329,113 +329,222 @@ const handleRowClick = async (conversation: Conversation) => {
 
     <!-- Detail Modal -->
     <n-dialog v-model:open="isDialogOpen"
-      class="!p-0 !m-0 !max-w-none md:!max-w-[90vw] !w-screen md:!w-[90vw] !h-screen md:!h-[90vh]">
-      <DialogContent class="!p-0 !m-0 !max-w-none !w-screen md:!w-[90vw] !h-screen md:!h-[90vh] flex flex-col">
-        <DialogHeader class="p-4 md:p-6 border-b flex-shrink-0">
-          <DialogTitle>Chi tiết cuộc gọi</DialogTitle>
-        </DialogHeader>
-        <div v-if="selectedConversation && selectedConversation.record_url" class="px-4 md:px-6 flex-shrink-0">
-          <audio :src="selectedConversation.record_url" controls class="w-full"></audio>
-        </div>
-        <div v-if="selectedConversation"
-          class="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6 p-4 lg:p-6 flex-1 min-h-0">
-          <!-- Column 1: Call Details -->
-          <div class="md:col-span-1 overflow-y-auto">
-            <div class="h-full">
-              <h3 class="font-semibold mb-1 sticky top-0 bg-background pt-1">Thông tin cuộc gọi</h3>
-              <div class="text-sm space-y-1.5">
-                <div class="flex items-center justify-between">
-                  <span class="text-muted-foreground">Thời gian:</span>
-                  <span>{{ formatDate(selectedConversation.created_at) }}</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-muted-foreground">Từ:</span>
-                  <div class="text-right">
-                    <div>{{ selectedConversation.from_user.fullname }}</div>
-                    <div class="text-xs text-muted-foreground">{{ selectedConversation.from_user.email }}</div>
+      class="!p-0 !m-0 !max-w-none md:!max-w-none !w-screen md:!w-screen !h-screen md:!h-screen">
+      <DialogContent class="!p-0 !m-0 !max-w-none !w-screen md:!w-screen !h-screen md:!h-screen flex flex-col">
+        <div class="min-h-screen bg-background p-4">
+          <!-- Main Grid Layout -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <!-- Call Summary -->
+            <n-card>
+              <CardHeader>
+                <CardTitle class="text-lg">Tóm tắt cuộc gọi</CardTitle>
+              </CardHeader>
+              <CardContent class="space-y-4">
+                <div>
+                  <p class="text-muted-foreground text-sm mb-2">Từ</p>
+                  <div class="flex items-center gap-2">
+                    <div
+                      class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
+                      {{ selectedConversation?.from_user.fullname.charAt(0) }}
+                    </div>
+                    <span>{{ selectedConversation?.from_user.fullname }}</span>
                   </div>
                 </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-muted-foreground">Đến:</span>
-                  <div class="text-right">
-                    <div>{{ selectedConversation.to_user.fullname }}</div>
-                    <div class="text-xs text-muted-foreground">{{ selectedConversation.to_user.email }}</div>
-                  </div>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-muted-foreground">Trạng thái:</span>
-                  <n-badge class="text-xs" :variant="selectedConversation.status === 'closed' ? 'default' :
-                    selectedConversation.status === 'decline' ? 'destructive' :
-                      selectedConversation.status === 'accept' ? 'default' : 'outline'">
-                    {{ getStatusText(selectedConversation.status) }}
-                  </n-badge>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          <!-- Column 2: Messages -->
-          <div class="md:col-span-2 overflow-y-auto">
-            <div class="h-full">
-              <h3 class="font-semibold mb-2 sticky top-0 bg-background pt-1">Tin nhắn</h3>
-              <div class="space-y-4">
-                <div v-if="conversationStore.loading"
-                  class="flex items-center justify-center h-[200px] text-muted-foreground">
-                  Đang tải cuộc hội thoại...
-                </div>
-                <div v-else-if="!selectedConversation.messages || selectedConversation.messages.length === 0"
-                  class="flex items-center justify-center h-[200px] text-muted-foreground">
-                  Không có chi tiết cuộc hội thoại
-                </div>
-                <div v-else v-for="message in selectedConversation.messages" :key="message.id" :class="[
-                  'flex space-x-2',
-                  message.sender_id.id === selectedConversation.from_user.id ? 'justify-end' : 'justify-start'
-                ]">
-                  <div v-if="message.sender_id.id !== selectedConversation.from_user.id"
-                    class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium flex-shrink-0">
-                    {{ message.sender_id.fullname.charAt(0) }}
+                <div>
+                  <p class="text-muted-foreground text-sm mb-2">Đến</p>
+                  <div class="flex items-center gap-2">
+                    <div
+                      class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
+                      {{ selectedConversation?.to_user.fullname.charAt(0) }}
+                    </div>
+                    <span>{{ selectedConversation?.to_user.fullname }}</span>
                   </div>
-                  <div :class="[
-                    'flex flex-col',
-                    message.sender_id.id === selectedConversation.from_user.id ? 'items-end' : 'items-start'
-                  ]">
-                    <span class="text-sm font-medium">{{ message.sender_id.fullname }}</span>
-                    <div :class="[
-                      'p-3 rounded-lg max-w-[70%]',
-                      message.sender_id.id === selectedConversation.from_user.id ? 'bg-blue-500 text-white' : 'bg-muted'
+                </div>
+
+                <div class="flex items-center gap-2 text-muted-foreground text-sm">
+                  <i class="i-lucide-clock w-4 h-4"></i>
+                  <span>{{ formatDate(selectedConversation?.created_at || '') }}</span>
+                </div>
+
+                <div>
+                  <p class="text-muted-foreground text-sm mb-2">Thời lượng cuộc gọi</p>
+                  <div class="flex items-center gap-2">
+                    <i class="i-lucide-clock w-4 h-4 text-muted-foreground"></i>
+                    <span class="font-mono">00:24:18</span>
+                  </div>
+                </div>
+
+                <div>
+                  <p class="text-muted-foreground text-sm mb-2">Tâm trạng khách hàng</p>
+                  <div class="flex items-center gap-2">
+                    <i class="i-lucide-tag w-4 h-4 text-muted-foreground"></i>
+                    <n-badge class="text-xs"
+                      :variant="selectedConversation?.mood === 'positive' ? 'default' : selectedConversation?.mood === 'negative' ? 'destructive' : 'outline'">
+                      {{ getMoodText(selectedConversation?.mood || '') }}
+                    </n-badge>
+                  </div>
+                </div>
+
+                <div class="bg-muted p-3 rounded text-sm text-muted-foreground leading-relaxed">
+                  {{ selectedConversation?.summarize || 'Không có tóm tắt' }}
+                </div>
+              </CardContent>
+            </n-card>
+
+            <!-- Sentiment Analysis & Transcript -->
+            <n-card>
+              <CardHeader>
+                <CardTitle class="text-lg">Sentiment analysis</CardTitle>
+              </CardHeader>
+              <CardContent class="space-y-6">
+                <div class="grid grid-cols-3 gap-4">
+                  <div class="text-center">
+                    <div class="relative w-16 h-16 mx-auto mb-2">
+                      <svg class="w-16 h-16 transform -rotate-90">
+                        <circle cx="32" cy="32" r="28" stroke="rgb(34, 197, 94)" stroke-width="4" fill="none"
+                          stroke-dasharray="176" stroke-dashoffset="44" />
+                      </svg>
+                      <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-green-500 font-bold text-lg">8</span>
+                      </div>
+                    </div>
+                    <p class="text-muted-foreground text-xs">Overall feel</p>
+                    <p class="text-sm font-medium">Good</p>
+                  </div>
+
+                  <div class="text-center">
+                    <div class="relative w-16 h-16 mx-auto mb-2">
+                      <svg class="w-16 h-16 transform -rotate-90">
+                        <circle cx="32" cy="32" r="28" stroke="rgb(34, 197, 94)" stroke-width="4" fill="none"
+                          stroke-dasharray="176" stroke-dashoffset="20" />
+                      </svg>
+                      <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-green-500 font-bold text-lg">9</span>
+                      </div>
+                    </div>
+                    <p class="text-muted-foreground text-xs">Agent feel</p>
+                    <p class="text-sm font-medium">Good</p>
+                  </div>
+
+                  <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-2 flex items-center justify-center">
+                      <span class="text-muted-foreground text-2xl">-</span>
+                    </div>
+                    <p class="text-muted-foreground text-xs">Customer feel</p>
+                    <p class="text-sm font-medium">Unknown</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 class="text-lg font-medium mb-4">Transcript</h3>
+                  <div class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                    <div v-if="conversationStore.loading"
+                      class="flex items-center justify-center h-[200px] text-muted-foreground">
+                      Đang tải cuộc hội thoại...
+                    </div>
+                    <div v-else-if="!selectedConversation?.messages || selectedConversation.messages.length === 0"
+                      class="flex items-center justify-center h-[200px] text-muted-foreground">
+                      Không có chi tiết cuộc hội thoại
+                    </div>
+                    <div v-else v-for="message in selectedConversation.messages" :key="message.id" :class="[
+                      'flex space-x-2',
+                      message.sender_id.id === selectedConversation.from_user.id ? 'justify-end' : 'justify-start'
                     ]">
-                      <p class="text-sm">{{ message.content }}</p>
+                      <div v-if="message.sender_id.id !== selectedConversation.from_user.id"
+                        class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium flex-shrink-0">
+                        {{ message.sender_id.fullname.charAt(0) }}
+                      </div>
+                      <div :class="[
+                        'flex flex-col',
+                        message.sender_id.id === selectedConversation.from_user.id ? 'items-end' : 'items-start'
+                      ]">
+                        <span class="text-sm font-medium">{{ message.sender_id.fullname }}</span>
+                        <div :class="[
+                          'p-3 rounded-lg max-w-[70%]',
+                          message.sender_id.id === selectedConversation.from_user.id ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                        ]">
+                          <p class="text-sm">{{ message.content }}</p>
+                        </div>
+                        <div class="flex items-center space-x-2 mt-1">
+                          <n-badge class="text-xs"
+                            :variant="message.mood === 'positive' ? 'default' : message.mood === 'negative' ? 'destructive' : 'outline'">
+                            {{ getMoodText(message.mood) }}
+                          </n-badge>
+                        </div>
+                      </div>
+                      <div v-if="message.sender_id.id === selectedConversation.from_user.id"
+                        class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium flex-shrink-0">
+                        {{ message.sender_id.fullname.charAt(0) }}
+                      </div>
                     </div>
-                    <div class="flex items-center space-x-2 mt-1">
-                      <n-badge class="text-xs"
-                        :variant="message.mood === 'positive' ? 'default' : message.mood === 'negative' ? 'destructive' : 'outline'">
-                        {{ getMoodText(message.mood) }}
-                      </n-badge>
-                    </div>
-                  </div>
-                  <div v-if="message.sender_id.id === selectedConversation.from_user.id"
-                    class="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-xs font-medium flex-shrink-0">
-                    {{ message.sender_id.fullname.charAt(0) }}
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
+              </CardContent>
+            </n-card>
 
-          <!-- Column 3: Summary -->
-          <div class="md:col-span-2 overflow-y-auto">
-            <div class="h-full">
-              <h3 class="font-semibold mb-2 sticky top-0 bg-background pt-1">Tóm tắt</h3>
-              <div class="p-4 rounded-lg bg-muted">
-                {{ selectedConversation.summarize || 'Không có tóm tắt' }}
-              </div>
-              <div>
-                <h3 class="font-semibold pt-2 mb-2">Tâm trạng</h3>
-                <n-badge class="text-xs"
-                  :variant="selectedConversation.mood === 'positive' ? 'default' : selectedConversation.mood === 'negative' ? 'destructive' : 'outline'">
-                  {{ getMoodText(selectedConversation.mood) }}
-                </n-badge>
-              </div>
+            <!-- Topics & Next Best Action -->
+            <div class="space-y-6">
+              <n-card>
+                <CardHeader>
+                  <CardTitle class="text-lg">Topics</CardTitle>
+                </CardHeader>
+                <CardContent class="space-y-4">
+                  <div class="flex items-center justify-between">
+                    <span class="text-muted-foreground">Topic 1</span>
+                    <span class="font-medium">40%</span>
+                  </div>
+                  <div class="h-2 bg-muted rounded-full">
+                    <div class="h-full bg-primary rounded-full" style="width: 40%"></div>
+                  </div>
+
+                  <div class="flex items-center justify-between">
+                    <span class="text-muted-foreground">Topic 2</span>
+                    <span class="font-medium">15%</span>
+                  </div>
+                  <div class="h-2 bg-muted rounded-full">
+                    <div class="h-full bg-primary rounded-full" style="width: 15%"></div>
+                  </div>
+
+                  <div class="flex items-center justify-between">
+                    <span class="text-muted-foreground">Topic 3</span>
+                    <span class="font-medium">40%</span>
+                  </div>
+                  <div class="h-2 bg-muted rounded-full">
+                    <div class="h-full bg-primary rounded-full" style="width: 40%"></div>
+                  </div>
+
+                  <div class="flex items-center justify-between">
+                    <span class="text-muted-foreground">Topic 4</span>
+                    <span class="font-medium">5%</span>
+                  </div>
+                  <div class="h-2 bg-muted rounded-full">
+                    <div class="h-full bg-primary rounded-full" style="width: 5%"></div>
+                  </div>
+                </CardContent>
+              </n-card>
+
+              <n-card>
+                <CardHeader>
+                  <CardTitle class="text-lg">Next Best Action</CardTitle>
+                </CardHeader>
+                <CardContent class="space-y-4">
+                  <div class="text-muted-foreground text-sm leading-relaxed">
+                    <p class="mb-3">
+                      <strong>Contacter le client pour confirmer qu'il parle français.</strong> "Dites français. Pour le
+                      français. Dites français."
+                    </p>
+                    <p class="mb-3">
+                      <strong>Transférer l'appel à un agent francophone.</strong> "Pour le français. Dites français."
+                    </p>
+                    <p>
+                      <strong>S'excuser auprès du client pour le temps d'attente et le remercier de sa
+                        patience.</strong>{" "}
+                      "Bonjour, bienvenue. Au support Nixis."
+                    </p>
+                  </div>
+                </CardContent>
+              </n-card>
             </div>
           </div>
         </div>
