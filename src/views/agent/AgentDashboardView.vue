@@ -8,10 +8,8 @@ export const containerClass = 'w-full h-full'
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { NButton } from '@/components/ui/button'
-import { NCard, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { NCard, CardContent } from '@/components/ui/card'
 import { CircleUser } from 'lucide-vue-next'
-import CallHistory from '@/components/CallHistory.vue'
-import { initialCalls } from '@/components/utils/data'
 import PhoneDialpad from '@/components/PhoneDialpad.vue'
 import {
   NDropdownMenu,
@@ -27,6 +25,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs'
+import { NBadge } from '@/components/ui/badge'
 import CallInterface from '@/components/CallInterface.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
@@ -34,7 +33,6 @@ import { useSipStore } from '@/stores/sip'
 import { getActiveUserByExtension } from '@/services/callService'
 import ActiveUsersTable from '@/components/ActiveUsersTable.vue'
 
-const calls = ref(initialCalls)
 const router = useRouter()
 const authStore = useAuthStore()
 const sipStore = useSipStore()
@@ -44,6 +42,7 @@ const isOpen = ref(false)
 const callState = ref<'incoming' | 'outgoing' | 'connecting' | 'active' | 'ended'>('incoming')
 const callerName = ref('')
 const callerAvatar = ref('/path/to/avatar.jpg')
+const isConnected = ref(false)
 
 // Watch for incoming calls
 watch(() => sipStore.callStatus, (newStatus) => {
@@ -63,6 +62,11 @@ watch(() => sipStore.callStatus, (newStatus) => {
       callState.value = 'ended'
       break
   }
+})
+
+// Watch for connection status
+watch(() => sipStore.isConnected, (newStatus) => {
+  isConnected.value = newStatus
 })
 
 onMounted(async () => {
@@ -145,6 +149,10 @@ const handleLogout = async () => {
       </nav>
       <div class="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
         <form class="ml-auto flex-1 sm:flex-initial"></form>
+        <n-badge v-if="true" :variant="isConnected ? 'default' : 'destructive'" class="hidden md:inline-flex">
+          <span class="text-xs font-semibold">Trạng thái: </span>
+          <span class="text-xs font-semibold">{{ isConnected ? 'Online' : 'Offline' }}</span>
+        </n-badge>
         <n-dropdown-menu>
           <DropdownMenuTrigger as-child>
             <n-button variant="secondary" size="icon" class="rounded-full">
@@ -189,7 +197,7 @@ const handleLogout = async () => {
             </NTabs>
           </CardContent>
         </n-card>
-        <n-card class="lg:col-span-2">
+        <!-- <n-card class="lg:col-span-2">
           <CardHeader class="flex flex-row items-center">
             <div class="grid gap-2">
               <CardTitle>Lịch sử cuộc gọi</CardTitle>
@@ -198,7 +206,7 @@ const handleLogout = async () => {
           <CardContent class="max-h-[calc(100vh-12rem)] overflow-y-auto">
             <CallHistory :calls="calls" :on-start-call="onStartCall" />
           </CardContent>
-        </n-card>
+        </n-card> -->
       </div>
       <div>
         <CallInterface v-model="isOpen" :default-state="callState" :caller-name="callerName"

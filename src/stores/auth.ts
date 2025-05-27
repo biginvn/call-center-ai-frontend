@@ -10,10 +10,14 @@ type UpdateUser = {
 }
 
 export const useAuthStore = defineStore("auth", {
-  state: (): AuthState & { refreshToken: () => Promise<{ access_token: string; refresh_token: string; token_type: string }> } => ({
+  state: (): AuthState & {
+    refreshToken: () => Promise<{ access_token: string; refresh_token: string; token_type: string }>;
+    isUserDataLoaded: boolean;
+  } => ({
     access_token: null,
     refresh_token: null,
     user: null,
+    isUserDataLoaded: false,
     refreshToken: async function () {
       if (!this.refresh_token) {
         throw new Error('No refresh token available');
@@ -45,6 +49,7 @@ export const useAuthStore = defineStore("auth", {
       this.access_token = payload.access_token;
       this.refresh_token = payload.refresh_token;
       this.user = payload.user;
+      this.isUserDataLoaded = true;
       localStorage.setItem("access_token", payload.access_token);
       localStorage.setItem("refresh_token", payload.refresh_token);
       localStorage.setItem("user", JSON.stringify(payload.user));
@@ -57,6 +62,7 @@ export const useAuthStore = defineStore("auth", {
       this.access_token = null;
       this.refresh_token = null;
       this.user = null;
+      this.isUserDataLoaded = false;
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("user");
@@ -77,6 +83,11 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async loadFromStorage(this: AuthState) {
+      // If user data is already loaded, just return
+      if (this.isUserDataLoaded && this.user) {
+        return;
+      }
+
       const access_token = localStorage.getItem("access_token");
       const refresh_token = localStorage.getItem("refresh_token");
       const userStr = localStorage.getItem("user");
@@ -95,6 +106,7 @@ export const useAuthStore = defineStore("auth", {
           ...user,
           ...userData
         };
+        this.isUserDataLoaded = true;
       } catch (error) {
         console.error('Failed to load user data:', error);
 
@@ -108,6 +120,7 @@ export const useAuthStore = defineStore("auth", {
             ...user,
             ...userData
           };
+          this.isUserDataLoaded = true;
         } catch (refreshError) {
           console.error('Token refresh failed:', refreshError);
           const store = useAuthStore();

@@ -5,6 +5,7 @@ import { useAuthStore } from './auth'
 import type { SessionDescriptionHandler, Session } from 'sip.js'
 import { SessionState, Inviter, Invitation } from 'sip.js'
 import { loadConfig } from '@/config'
+import { toast } from 'vue-sonner'
 
 type SipSessionType = Session | Invitation | Inviter
 
@@ -17,6 +18,7 @@ export const useSipStore = defineStore('sip', () => {
   const remoteAudioRef = ref<HTMLAudioElement | null>(null)
   const sipService = ref<SipService | null>(null)
   const config = ref<{ API_URL: string; SIP_SERVER: string; SIP_PORT: string } | null>(null)
+  const isConnected = ref(false)
 
   const authStore = useAuthStore()
   const displayName = computed(() => {
@@ -142,6 +144,12 @@ export const useSipStore = defineStore('sip', () => {
       })
       setupSipEvents()
     }
+
+    if (!sipService.value) {
+      debug.value += '\n[Error] Failed to initialize SIP service.'
+      return
+    }
+
     await sipService.value.login(extension, password)
   }
 
@@ -202,8 +210,16 @@ export const useSipStore = defineStore('sip', () => {
         case SessionState.Establishing:
           if (session.value instanceof Inviter) {
             session.value.cancel()
+            toast.info('Đã hủy cuộc gọi', {
+              description: '',
+              duration: 5000,
+            });
           } else {
             (session.value as Invitation).reject()
+            toast.info('Đã từ chối cuộc gọi', {
+              description: '',
+              duration: 5000,
+            });
           }
           break
         case SessionState.Established:
@@ -267,6 +283,7 @@ export const useSipStore = defineStore('sip', () => {
     debug,
     remoteAudioRef,
     displayName,
+    isConnected,
     initializeSip,
     logout,
     makeCall,

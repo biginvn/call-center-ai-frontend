@@ -10,7 +10,8 @@ import {
   Session,
 } from "sip.js";
 import { toast } from "vue-sonner";
-import { markRaw } from 'vue';
+import { ref } from 'vue';
+import { useSipStore } from "@/stores/sip";
 import { determineWebClient } from "@/lib/utils";
 
 type SipServiceOptions = {
@@ -34,9 +35,11 @@ export class SipService {
   private registerer: Registerer | null = null;
   private session: Session | null = null;
   private events: SipServiceEvents = {};
-
+  private store: ReturnType<typeof useSipStore>;
+  public isConnected = ref(false);
 
   constructor(private options: SipServiceOptions) {
+    this.store = useSipStore();
     window.addEventListener('beforeunload', async () => {
       if (this.ua) {
         await this.logout();
@@ -69,6 +72,8 @@ export class SipService {
 
     this.ua.delegate = {
       onConnect: async () => {
+        this.store.isConnected = true;
+        this.isConnected.value = true;
         this.events.onDebug?.("[DEBUG] WebSocket connected.")
         toast.success('Đã kết nối với WebSocket', {
           description: '',
@@ -88,11 +93,13 @@ export class SipService {
         }
       },
       onDisconnect: async (error) => {
+        this.store.isConnected = false;
+        this.isConnected.value = false;
         this.events.onDebug?.(
           `[DEBUG] WebSocket disconnected. ${error?.message || ""}`
         );
         toast.error('Đã ngắt kết nối với WebSocket', {
-          description: 'Successfully connected to WebSocket server',
+          description: '',
           duration: 3000,
         });
 
@@ -107,8 +114,6 @@ export class SipService {
             console.error('Failed to disconnect user:', error);
           }
         }
-
-        authStore.logout();
         this.events.onUnregistered?.();
       },
       onInvite: async (incomingSession: Invitation) => {
@@ -170,23 +175,22 @@ export class SipService {
     if (!this.ua) {
       this.events.onDebug?.("[Error] UserAgent not initialized.");
       // Show toast for error
-      toast(markRaw({
-        title: 'Uh oh! Something went wrong.',
-        description: 'UserAgent is not initialized.',
-        variant: 'destructive',
-      }));
+      toast.error('Lỗi', {
+        description: 'Vui lòng tải lại trang',
+        duration: 5000,
+      }
+      )
       return;
     }
     const target = UserAgent.makeURI(`sip:${destination}@${this.options.server}`);
     if (!target) {
       this.events.onDebug?.("[Error] Invalid destination URI.");
       // Show toast for error
-      toast(markRaw({
-        title: 'Uh oh! Something went wrong.',
-        description: 'There was a problem with your request.',
-        variant: 'destructive',
-        default: () => 'Try again',
-      }));
+      toast.error('Số Ext không hợp lệ', {
+        description: 'Vui lòng nhập số Ext khác',
+        duration: 5000,
+      }
+      )
       return;
     }
 
@@ -212,6 +216,11 @@ export class SipService {
         }
       } else if (callState === SessionState.Terminated) {
         this.events.onDebug?.("[INFO] Call has been terminated");
+        toast.info('Cuộc gọi kết thúc', {
+          description: '',
+          duration: 5000,
+        }
+        )
         this.session = null;
         this.events.onCallEnded?.();
       }
