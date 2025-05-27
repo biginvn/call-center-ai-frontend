@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import type User from "@/types/User";
 import type AuthState from "@/types/AuthState";
 import { logoutUser, refreshToken, getUserInfo } from '@/services/authService';
+import type { AxiosError } from 'axios';
 type UpdateUser = {
   username: string,
   extension_number: string,
@@ -97,6 +98,7 @@ export const useAuthStore = defineStore("auth", {
       }
 
       try {
+        // First try to get user info with current access token
         const userData = await getUserInfo(access_token);
         const user = JSON.parse(userStr);
 
@@ -109,20 +111,34 @@ export const useAuthStore = defineStore("auth", {
         this.isUserDataLoaded = true;
       } catch (error) {
         console.error('Failed to load user data:', error);
+        // If we get a 401, try to refresh the token
+        if (error instanceof Error && 'response' in error && (error as AxiosError).response?.status === 401) {
+          try {
+            // Refresh the token
+            const response = await refreshToken(refresh_token);
 
-        // Try to refresh token before logging out
-        try {
-          await this.refreshToken();
-          // If refresh successful, try loading user data again
-          const userData = await getUserInfo(this.access_token!);
-          const user = JSON.parse(userStr!);
-          this.user = {
-            ...user,
-            ...userData
-          };
-          this.isUserDataLoaded = true;
-        } catch (refreshError) {
-          console.error('Token refresh failed:', refreshError);
+            // Update tokens in store and localStorage
+            this.access_token = response.access_token;
+            this.refresh_token = response.refresh_token;
+            localStorage.setItem("access_token", response.access_token);
+            localStorage.setItem("refresh_token", response.refresh_token);
+
+            // Try loading user data again with new access token
+            const userData = await getUserInfo(response.access_token);
+            const user = JSON.parse(userStr);
+
+            this.user = {
+              ...user,
+              ...userData
+            };
+            this.isUserDataLoaded = true;
+          } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError);
+            const store = useAuthStore();
+            store.logout();
+          }
+        } else {
+          // If it's not a 401 error, just logout
           const store = useAuthStore();
           store.logout();
         }

@@ -5,7 +5,8 @@ export interface RuntimeConfig {
 }
 
 export async function loadConfig(): Promise<RuntimeConfig> {
-  const response = await fetch('/config.json');
+  const timestamp = new Date().getTime();
+  const response = await fetch(`/config.json?t=${timestamp}`);
   if (!response.ok) {
     throw new Error('Failed to load config.json');
   }
