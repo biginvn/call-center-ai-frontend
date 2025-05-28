@@ -69,6 +69,36 @@ export const useSipStore = defineStore('sip', () => {
   });
 
   // Initialize SIP service
+  const initializeSip = async (extension: string, password: string) => {
+    // Load config if not already loaded
+    if (!config.value) {
+      try {
+        config.value = await loadConfig()
+      } catch (error) {
+        console.error('Failed to load config:', error)
+        return
+      }
+    }
+
+    // Create SIP service instance if it doesn't exist
+    if (!sipService.value) {
+      const currentDisplayName = authStore.user?.fullName || localStorage.getItem("fullName") || 'Unknown'
+      sipService.value = new SipService({
+        server: config.value.SIP_SERVER,
+        wsServer: `wss://${config.value.SIP_SERVER}:${config.value.SIP_PORT}/ws`,
+        displayName: currentDisplayName,
+      })
+      setupSipEvents()
+    }
+
+    if (!sipService.value) {
+      debug.value += '\n[Error] Failed to initialize SIP service.'
+      return
+    }
+
+    await sipService.value.login(extension, password)
+  }
+
   function setupSipEvents() {
     if (!sipService.value) return
 
@@ -124,35 +154,6 @@ export const useSipStore = defineStore('sip', () => {
   }
 
   // Methods
-  const initializeSip = async (extension: string, password: string) => {
-    // Load config if not already loaded
-    if (!config.value) {
-      try {
-        config.value = await loadConfig()
-      } catch (error) {
-        console.error('Failed to load config:', error)
-        return
-      }
-    }
-
-    // Create SIP service instance if it doesn't exist
-    if (!sipService.value) {
-      sipService.value = new SipService({
-        server: config.value.SIP_SERVER,
-        wsServer: `wss://${config.value.SIP_SERVER}:${config.value.SIP_PORT}/ws`,
-        displayName: displayName.value,
-      })
-      setupSipEvents()
-    }
-
-    if (!sipService.value) {
-      debug.value += '\n[Error] Failed to initialize SIP service.'
-      return
-    }
-
-    await sipService.value.login(extension, password)
-  }
-
   const logout = async () => {
     if (sipService.value) {
       await sipService.value.logout()

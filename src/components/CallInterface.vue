@@ -178,9 +178,8 @@ const stopTimer = () => {
 
 // Watch for session changes to update caller name
 watch(() => sipStore.session, (newSession) => {
-  if (newSession && !props.callerName) {
-    currentCallerName.value =
-      newSession.remoteIdentity.uri.user || "undefined"
+  if (newSession) {
+    currentCallerName.value = newSession.remoteIdentity.uri.user || "undefined"
   }
 })
 
