@@ -15,7 +15,7 @@ export interface Message {
   id: string
   sender_id: User
   content: string
-  mood: ConversationMood
+  sentiment: ConversationMood
   order: number
 }
 
@@ -29,7 +29,7 @@ export interface Conversation {
   from_user: User
   to_user: User
   messages: Message[]
-  mood: ConversationMood
+  sentiment: ConversationMood
   sentiment: string
   created_at: string
 }

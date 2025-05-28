@@ -23,8 +23,8 @@ onMounted(async () => {
   await conversationStore.fetchRecentConversations()
 })
 
-const getMoodText = (mood: string) => {
-  switch (mood) {
+const getMoodText = (sentiment: string) => {
+  switch (sentiment) {
     case 'positive':
       return 'Tích cực'
     case 'negative':
@@ -34,7 +34,7 @@ const getMoodText = (mood: string) => {
     case 'neutral':
       return 'Trung tính'
     default:
-      return mood
+      return sentiment
   }
 }
 
@@ -167,8 +167,8 @@ const handleRowClick = async (conversation: Conversation) => {
                     </div>
                   </div>
                   <n-badge class="text-xs"
-                    :variant="conversation.mood === 'positive' ? 'default' : conversation.mood === 'negative' ? 'destructive' : 'outline'">
-                    {{ getMoodText(conversation.mood) }}
+                    :variant="conversation.sentiment === 'positive' ? 'default' : conversation.sentiment === 'negative' ? 'destructive' : 'outline'">
+                    {{ getMoodText(conversation.sentiment) }}
                   </n-badge>
                 </div>
               </div>
@@ -218,8 +218,8 @@ const handleRowClick = async (conversation: Conversation) => {
                   </TableCell>
                   <TableCell class="col-span-3 md:col-span-1 text-right">
                     <n-badge class="text-xs"
-                      :variant="conversation.mood === 'positive' ? 'default' : conversation.mood === 'negative' ? 'destructive' : 'outline'">
-                      {{ getMoodText(conversation.mood) }}
+                      :variant="conversation.sentiment === 'positive' ? 'default' : conversation.sentiment === 'negative' ? 'destructive' : 'outline'">
+                      {{ getMoodText(conversation.sentiment) }}
                     </n-badge>
                   </TableCell>
                 </TableRow>
@@ -307,23 +307,23 @@ const handleRowClick = async (conversation: Conversation) => {
                     <div :class="[
                       'p-3 rounded-lg max-w-[70%]',
                       message.sender_id.id === selectedConversation.from_user.id
-                        ? message.mood === 'positive'
+                        ? message.sentiment === 'positive'
                           ? 'bg-green-500 text-white'
-                          : message.mood === 'negative'
+                          : message.sentiment === 'negative'
                             ? 'bg-red-500 text-white'
                             : 'bg-muted'
-                        : message.mood === 'positive'
+                        : message.sentiment === 'positive'
                           ? 'bg-green-500 text-white'
-                          : message.mood === 'negative'
+                          : message.sentiment === 'negative'
                             ? 'bg-red-100 text-red-900'
                             : 'bg-muted'
                     ]">
                       <p class="text-sm">{{ message.content }}</p>
                     </div>
                     <div class="flex items-center space-x-2 mt-1">
-                      <n-badge class="text-xs" :class="{ 'bg-green-500': message.mood === 'positive' }"
-                        :variant="message.mood === 'positive' ? 'default' : message.mood === 'negative' ? 'destructive' : 'outline'">
-                        {{ getMoodText(message.mood) }}
+                      <n-badge class="text-xs" :class="{ 'bg-green-500': message.sentiment === 'positive' }"
+                        :variant="message.sentiment === 'positive' ? 'default' : message.sentiment === 'negative' ? 'destructive' : 'outline'">
+                        {{ getMoodText(message.sentiment) }}
                       </n-badge>
                     </div>
                   </div>
@@ -346,8 +346,8 @@ const handleRowClick = async (conversation: Conversation) => {
               <div>
                 <h3 class="font-semibold pt-2 mb-2">Tâm trạng</h3>
                 <n-badge class="text-xs"
-                  :variant="selectedConversation.mood === 'positive' ? 'default' : selectedConversation.mood === 'negative' ? 'destructive' : 'outline'">
-                  {{ getMoodText(selectedConversation.mood) }}
+                  :variant="selectedConversation.sentiment === 'positive' ? 'default' : selectedConversation.sentiment === 'negative' ? 'destructive' : 'outline'">
+                  {{ getMoodText(selectedConversation.sentiment) }}
                 </n-badge>
               </div>
             </div>
