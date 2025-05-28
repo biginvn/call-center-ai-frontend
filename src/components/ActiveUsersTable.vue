@@ -43,10 +43,18 @@ const filteredUsers = computed(() => {
 })
 
 const handleCall = (extension: string) => {
+  if (!extension) {
+    toast.error('Không thể thực hiện cuộc gọi', {
+      description: 'Số Extension không hợp lệ',
+      duration: 3000,
+    });
+    return;
+  }
+
   if (authStore.user?.extensionNumber?.toString() === extension) {
     toast.error('Không thể gọi số Ext của chính mình', {
       description: 'Vui lòng nhập số Ext khác',
-      duration: 5000,
+      duration: 3000,
     });
     return;
   }

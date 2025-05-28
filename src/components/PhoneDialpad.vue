@@ -74,7 +74,7 @@ const handleCall = () => {
     if (authStore.user?.extensionNumber?.toString() === phoneNumber.value) {
       toast.error('Không thể gọi số Ext của chính mình', {
         description: 'Vui lòng nhập số Ext khác',
-        duration: 5000,
+        duration: 3000,
       });
       return;
     }

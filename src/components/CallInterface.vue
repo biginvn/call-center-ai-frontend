@@ -1,7 +1,8 @@
 <template>
   <n-dialog :open="modelValue" @update:open="onOpenChange" :closeOnClickOutside="false">
     <DialogOverlay class="bg-black/200" />
-    <DialogContent class="sm:max-w-md p-0 border-none bg-transparent shadow-none" @pointer-down-outside.prevent>
+    <DialogContent class="sm:max-w-md p-0 border-none bg-transparent shadow-none [&>button:last-child]:hidden"
+      @pointer-down-outside.prevent>
       <DialogTitle class="sr-only">{{ callerName }} - {{ getCallStateText }}</DialogTitle>
       <DialogDescription class="sr-only">
         Interface điều khiển cuộc gọi cho phép bạn trả lời, từ chối, hoặc quản lý cuộc gọi đang diễn ra với {{

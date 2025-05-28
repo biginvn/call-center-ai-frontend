@@ -212,13 +212,13 @@ export const useSipStore = defineStore('sip', () => {
             session.value.cancel()
             toast.info('Đã hủy cuộc gọi', {
               description: '',
-              duration: 5000,
+              duration: 3000,
             });
           } else {
             (session.value as Invitation).reject()
             toast.info('Đã từ chối cuộc gọi', {
               description: '',
-              duration: 5000,
+              duration: 3000,
             });
           }
           break

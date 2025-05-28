@@ -45,14 +45,6 @@ export class SipService {
         await this.logout();
       }
     });
-    document.addEventListener('visibilitychange', async () => {
-      const authStore = useAuthStore();
-      if (document.visibilityState === 'hidden' && this.ua) {
-        await this.logout();
-      } else if (document.visibilityState === 'visible' && authStore.user && authStore.user.extensionNumber && !this.ua) {
-        await this.login(determineWebClient(authStore.user.extensionNumber), "1234");
-      }
-    });
   }
 
   public setEvents(events: SipServiceEvents) {
@@ -73,7 +65,6 @@ export class SipService {
     this.ua.delegate = {
       onConnect: async () => {
         this.store.isConnected = true;
-        this.isConnected.value = true;
         this.events.onDebug?.("[DEBUG] WebSocket connected.")
         toast.success('Đã kết nối với WebSocket', {
           description: '',
@@ -94,7 +85,6 @@ export class SipService {
       },
       onDisconnect: async (error) => {
         this.store.isConnected = false;
-        this.isConnected.value = false;
         this.events.onDebug?.(
           `[DEBUG] WebSocket disconnected. ${error?.message || ""}`
         );
@@ -177,7 +167,7 @@ export class SipService {
       // Show toast for error
       toast.error('Lỗi', {
         description: 'Vui lòng tải lại trang',
-        duration: 5000,
+        duration: 3000,
       }
       )
       return;
@@ -188,7 +178,7 @@ export class SipService {
       // Show toast for error
       toast.error('Số Ext không hợp lệ', {
         description: 'Vui lòng nhập số Ext khác',
-        duration: 5000,
+        duration: 3000,
       }
       )
       return;
@@ -218,7 +208,7 @@ export class SipService {
         this.events.onDebug?.("[INFO] Call has been terminated");
         toast.info('Cuộc gọi kết thúc', {
           description: '',
-          duration: 5000,
+          duration: 3000,
         }
         )
         this.session = null;

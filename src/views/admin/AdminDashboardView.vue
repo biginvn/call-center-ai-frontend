@@ -54,12 +54,7 @@ const getStatusText = (status: string) => {
 }
 
 const handleRowClick = async (conversation: Conversation) => {
-  selectedConversation.value = conversation
-  isDialogOpen.value = true
-  await conversationStore.fetchConversationById(conversation.id)
-  if (conversationStore.currentConversation) {
-    selectedConversation.value = conversationStore.currentConversation
-  }
+  window.open(`/admin/conversations/${conversation.id}`, '_blank')
 }
 </script>
 
@@ -232,98 +227,6 @@ const handleRowClick = async (conversation: Conversation) => {
             </n-table>
           </CardContent>
         </n-card>
-        <!-- <n-card>
-          <CardHeader>
-            <CardTitle>Recent Sales</CardTitle>
-          </CardHeader>
-          <CardContent class="grid gap-8">
-            <div class="flex items-center gap-4">
-              <n-avatar class="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="/avatars/01.png" alt="Avatar" />
-                <AvatarFallback>OM</AvatarFallback>
-              </n-avatar>
-              <div class="grid gap-1">
-                <p class="text-sm font-medium leading-none">
-                  Olivia Martin
-                </p>
-                <p class="text-sm text-muted-foreground">
-                  olivia.martin@email.com
-                </p>
-              </div>
-              <div class="ml-auto font-medium">
-                +$1,999.00
-              </div>
-            </div>
-            <div class="flex items-center gap-4">
-              <n-avatar class="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="/avatars/02.png" alt="Avatar" />
-                <AvatarFallback>JL</AvatarFallback>
-              </n-avatar>
-              <div class="grid gap-1">
-                <p class="text-sm font-medium leading-none">
-                  Jackson Lee
-                </p>
-                <p class="text-sm text-muted-foreground">
-                  jackson.lee@email.com
-                </p>
-              </div>
-              <div class="ml-auto font-medium">
-                +$39.00
-              </div>
-            </div>
-            <div class="flex items-center gap-4">
-              <n-avatar class="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="/avatars/03.png" alt="Avatar" />
-                <AvatarFallback>IN</AvatarFallback>
-              </n-avatar>
-              <div class="grid gap-1">
-                <p class="text-sm font-medium leading-none">
-                  Isabella Nguyen
-                </p>
-                <p class="text-sm text-muted-foreground">
-                  isabella.nguyen@email.com
-                </p>
-              </div>
-              <div class="ml-auto font-medium">
-                +$299.00
-              </div>
-            </div>
-            <div class="flex items-center gap-4">
-              <n-avatar class="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="/avatars/04.png" alt="Avatar" />
-                <AvatarFallback>WK</AvatarFallback>
-              </n-avatar>
-              <div class="grid gap-1">
-                <p class="text-sm font-medium leading-none">
-                  William Kim
-                </p>
-                <p class="text-sm text-muted-foreground">
-                  will@email.com
-                </p>
-              </div>
-              <div class="ml-auto font-medium">
-                +$99.00
-              </div>
-            </div>
-            <div class="flex items-center gap-4">
-              <n-avatar class="hidden h-9 w-9 sm:flex">
-                <AvatarImage src="/avatars/05.png" alt="Avatar" />
-                <AvatarFallback>SD</AvatarFallback>
-              </n-avatar>
-              <div class="grid gap-1">
-                <p class="text-sm font-medium leading-none">
-                  Sofia Davis
-                </p>
-                <p class="text-sm text-muted-foreground">
-                  sofia.davis@email.com
-                </p>
-              </div>
-              <div class="ml-auto font-medium">
-                +$39.00
-              </div>
-            </div>
-          </CardContent>
-        </n-card> -->
       </div>
     </main>
 
@@ -383,7 +286,8 @@ const handleRowClick = async (conversation: Conversation) => {
                   class="flex items-center justify-center h-[200px] text-muted-foreground">
                   Đang tải cuộc hội thoại...
                 </div>
-                <div v-else-if="!selectedConversation.messages || selectedConversation.messages.length === 0"
+                <div
+                  v-else-if="!selectedConversation.messages || selectedConversation.messages.length === 0 || (selectedConversation.messages[0] && selectedConversation.messages[0].content === 'Không thể nghe được nội dung hoặc nội dung không có ý nghĩa')"
                   class="flex items-center justify-center h-[200px] text-muted-foreground">
                   Không có chi tiết cuộc hội thoại
                 </div>
@@ -402,12 +306,22 @@ const handleRowClick = async (conversation: Conversation) => {
                     <span class="text-sm font-medium">{{ message.sender_id.fullname }}</span>
                     <div :class="[
                       'p-3 rounded-lg max-w-[70%]',
-                      message.sender_id.id === selectedConversation.from_user.id ? 'bg-blue-500 text-white' : 'bg-muted'
+                      message.sender_id.id === selectedConversation.from_user.id
+                        ? message.mood === 'positive'
+                          ? 'bg-green-500 text-white'
+                          : message.mood === 'negative'
+                            ? 'bg-red-500 text-white'
+                            : 'bg-muted'
+                        : message.mood === 'positive'
+                          ? 'bg-green-100 text-green-900'
+                          : message.mood === 'negative'
+                            ? 'bg-red-100 text-red-900'
+                            : 'bg-muted'
                     ]">
                       <p class="text-sm">{{ message.content }}</p>
                     </div>
                     <div class="flex items-center space-x-2 mt-1">
-                      <n-badge class="text-xs"
+                      <n-badge class="text-xs" :class="{ 'bg-green-500': message.mood === 'positive' }"
                         :variant="message.mood === 'positive' ? 'default' : message.mood === 'negative' ? 'destructive' : 'outline'">
                         {{ getMoodText(message.mood) }}
                       </n-badge>
