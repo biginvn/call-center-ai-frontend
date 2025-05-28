@@ -32,6 +32,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useSipStore } from '@/stores/sip'
 import { getActiveUserByExtension } from '@/services/callService'
 import ActiveUsersTable from '@/components/ActiveUsersTable.vue'
+import { determineWebClient } from "@/lib/utils";
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -78,18 +79,6 @@ onMounted(async () => {
   //   router.push('/login')
   //   return
   // }
-  const determineWebClient = (extension: string) => {
-    if (extension.startsWith('111')) {
-      return 'web1'
-    } else if (extension.startsWith('112')) {
-      return 'web2'
-    } else if (extension.startsWith('101'))
-      return 'test2' // default fallback
-    else if (extension.startsWith('100'))
-      return 'test1'
-    else
-      return 'web1'
-  }
 
   // Initialize SIP if we have user data
   if (authStore.user?.extensionNumber) {
@@ -176,7 +165,7 @@ const handleLogout = async () => {
     </header>
     <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <div class="grid gap-4 md:gap-8 lg:grid-cols-3">
-        <n-card>
+        <n-card class="lg:col-start-2">
           <CardContent class="grid gap-8">
             <NTabs default-value="dialpad" class="w-full">
               <TabsList class="grid w-full grid-cols-2">

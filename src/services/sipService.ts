@@ -12,7 +12,7 @@ import {
 import { toast } from "vue-sonner";
 import { ref } from 'vue';
 import { useSipStore } from "@/stores/sip";
-import { determineWebClient } from "@/lib/utils";
+// import { determineWebClient } from "@/lib/utils";
 
 type SipServiceOptions = {
   server: string;
