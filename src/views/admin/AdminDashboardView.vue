@@ -8,17 +8,13 @@ export const containerClass = 'w-full h-full'
 import { NBadge } from '@/components/ui/badge'
 import { NCard, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { NTable, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import { useConversationStore } from '@/stores/conversationStore'
 import { formatDate } from '@/lib/utils'
 import AdminNavbar from '@/components/admin/AdminNavbar.vue'
-import { NDialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import type { Conversation } from '@/types/conversation'
 
 const conversationStore = useConversationStore()
-const selectedConversation = ref<Conversation | null>(null)
-const isDialogOpen = ref(false)
-
 onMounted(async () => {
   await conversationStore.fetchRecentConversations()
 })
@@ -38,23 +34,16 @@ const getSentimentText = (sentiment: string) => {
   }
 }
 
-const getStatusText = (status: string) => {
-  switch (status) {
-    case 'start':
-      return 'Bắt đầu'
-    case 'accept':
-      return 'Trả lời'
-    case 'decline':
-      return 'Từ chối'
-    case 'closed':
-      return 'Đã đóng'
-    default:
-      return status
-  }
-}
-
 const handleRowClick = async (conversation: Conversation) => {
-  window.open(`/admin/conversations/${conversation.id}`, '_blank')
+  const width = 1200
+  const height = 800
+  const left = (window.screen.width - width) / 2
+  const top = (window.screen.height - height) / 2
+  window.open(
+    `/admin/conversations/${conversation.id}`,
+    'conversation-detail',
+    `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`
+  )
 }
 </script>
 
@@ -151,10 +140,9 @@ const handleRowClick = async (conversation: Conversation) => {
               <div v-if="conversationStore.loading" class="text-center py-4">
                 Đang tải...
               </div>
-              <div v-else-if="conversationStore.error" class="text-center text-red-500 py-4">
-                Lỗi kết nối server {{ conversationStore.error }}
-              </div>
-              <div v-else-if="conversationStore.conversations.length === 0" class="text-center py-4">
+
+              <div v-else-if="conversationStore.error || conversationStore.conversations.length === 0"
+                class="text-center py-4">
                 Không có bản ghi cuộc gọi
               </div>
               <div v-else v-for="conversation in conversationStore.conversations" :key="conversation.id"
@@ -191,12 +179,7 @@ const handleRowClick = async (conversation: Conversation) => {
                     Đang tải...
                   </TableCell>
                 </TableRow>
-                <TableRow v-else-if="conversationStore.error">
-                  <TableCell colspan="12" class="text-center text-red-500">
-                    Lỗi kết nối server {{ conversationStore.error }}
-                  </TableCell>
-                </TableRow>
-                <TableRow v-else-if="conversationStore.conversations.length === 0">
+                <TableRow v-else-if="conversationStore.error || conversationStore.conversations.length === 0">
                   <TableCell colspan="12" class="text-center">
                     Không có bản ghi cuộc gọi
                   </TableCell>
@@ -230,130 +213,5 @@ const handleRowClick = async (conversation: Conversation) => {
       </div>
     </main>
 
-    <!-- Detail Modal -->
-    <n-dialog v-model:open="isDialogOpen"
-      class="!p-0 !m-0 !max-w-none md:!max-w-[90vw] !w-screen md:!w-[90vw] !h-screen md:!h-[90vh]">
-      <DialogContent class="!p-0 !m-0 !max-w-none !w-screen md:!w-[90vw] !h-screen md:!h-[90vh] flex flex-col">
-        <DialogHeader class="p-4 md:p-6 border-b flex-shrink-0">
-          <DialogTitle>Chi tiết cuộc gọi</DialogTitle>
-        </DialogHeader>
-        <div v-if="selectedConversation && selectedConversation.record_url" class="px-4 md:px-6 flex-shrink-0">
-          <audio :src="selectedConversation.record_url" controls class="w-full"></audio>
-        </div>
-        <div v-if="selectedConversation"
-          class="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6 p-4 lg:p-6 flex-1 min-h-0">
-          <!-- Column 1: Call Details -->
-          <div class="md:col-span-1 overflow-y-auto">
-            <div class="h-full">
-              <h3 class="font-semibold mb-1 sticky top-0 bg-background pt-1">Thông tin cuộc gọi</h3>
-              <div class="text-sm space-y-1.5">
-                <div class="flex items-center justify-between">
-                  <span class="text-muted-foreground">Thời gian:</span>
-                  <span>{{ formatDate(selectedConversation.created_at) }}</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-muted-foreground">Từ:</span>
-                  <div class="text-right">
-                    <div>{{ selectedConversation.from_user.fullname }}</div>
-                    <div class="text-xs text-muted-foreground">{{ selectedConversation.from_user.email }}</div>
-                  </div>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-muted-foreground">Đến:</span>
-                  <div class="text-right">
-                    <div>{{ selectedConversation.to_user.fullname }}</div>
-                    <div class="text-xs text-muted-foreground">{{ selectedConversation.to_user.email }}</div>
-                  </div>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-muted-foreground">Trạng thái:</span>
-                  <n-badge class="text-xs" :variant="selectedConversation.status === 'closed' ? 'default' :
-                    selectedConversation.status === 'decline' ? 'destructive' :
-                      selectedConversation.status === 'accept' ? 'default' : 'outline'">
-                    {{ getStatusText(selectedConversation.status) }}
-                  </n-badge>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Column 2: Messages -->
-          <div class="md:col-span-2 overflow-y-auto">
-            <div class="h-full">
-              <h3 class="font-semibold mb-2 sticky top-0 bg-background pt-1">Tin nhắn</h3>
-              <div class="space-y-4">
-                <div v-if="conversationStore.loading"
-                  class="flex items-center justify-center h-[200px] text-muted-foreground">
-                  Đang tải cuộc hội thoại...
-                </div>
-                <div
-                  v-else-if="!selectedConversation.messages || selectedConversation.messages.length === 0 || (selectedConversation.messages[0] && selectedConversation.messages[0].content === 'Không thể nghe được nội dung hoặc nội dung không có ý nghĩa')"
-                  class="flex items-center justify-center h-[200px] text-muted-foreground">
-                  Không có chi tiết cuộc hội thoại
-                </div>
-                <div v-else v-for="message in selectedConversation.messages" :key="message.id" :class="[
-                  'flex space-x-2',
-                  message.sender_id.id === selectedConversation.from_user.id ? 'justify-end' : 'justify-start'
-                ]">
-                  <div v-if="message.sender_id.id !== selectedConversation.from_user.id"
-                    class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium flex-shrink-0">
-                    {{ message.sender_id.fullname.charAt(0) }}
-                  </div>
-                  <div :class="[
-                    'flex flex-col',
-                    message.sender_id.id === selectedConversation.from_user.id ? 'items-end' : 'items-start'
-                  ]">
-                    <span class="text-sm font-medium">{{ message.sender_id.fullname }}</span>
-                    <div :class="[
-                      'p-3 rounded-lg max-w-[70%]',
-                      message.sender_id.id === selectedConversation.from_user.id
-                        ? message.sentiment === 'positive'
-                          ? 'bg-green-500 text-white'
-                          : message.sentiment === 'negative'
-                            ? 'bg-red-500 text-white'
-                            : 'bg-muted'
-                        : message.sentiment === 'positive'
-                          ? 'bg-green-500 text-white'
-                          : message.sentiment === 'negative'
-                            ? 'bg-red-100 text-red-900'
-                            : 'bg-muted'
-                    ]">
-                      <p class="text-sm">{{ message.content }}</p>
-                    </div>
-                    <div class="flex items-center space-x-2 mt-1">
-                      <n-badge class="text-xs" :class="{ 'bg-green-500': message.sentiment === 'positive' }"
-                        :variant="message.sentiment === 'positive' ? 'default' : message.sentiment === 'negative' ? 'destructive' : 'outline'">
-                        {{ getSentimentText(message.sentiment) }}
-                      </n-badge>
-                    </div>
-                  </div>
-                  <div v-if="message.sender_id.id === selectedConversation.from_user.id"
-                    class="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-xs font-medium flex-shrink-0">
-                    {{ message.sender_id.fullname.charAt(0) }}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Column 3: Summary -->
-          <div class="md:col-span-2 overflow-y-auto">
-            <div class="h-full">
-              <h3 class="font-semibold mb-2 sticky top-0 bg-background pt-1">Tóm tắt</h3>
-              <div class="p-4 rounded-lg bg-muted">
-                {{ selectedConversation.summarize || 'Không có tóm tắt' }}
-              </div>
-              <div>
-                <h3 class="font-semibold pt-2 mb-2">Tâm trạng</h3>
-                <n-badge class="text-xs"
-                  :variant="selectedConversation.sentiment === 'positive' ? 'default' : selectedConversation.sentiment === 'negative' ? 'destructive' : 'outline'">
-                  {{ getSentimentText(selectedConversation.sentiment) }}
-                </n-badge>
-              </div>
-            </div>
-          </div>
-        </div>
-      </DialogContent>
-    </n-dialog>
   </div>
 </template>

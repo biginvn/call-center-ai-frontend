@@ -167,8 +167,8 @@ const getStatusText = (status: string) => {
             <div>
               <h3 class="font-semibold mb-2">Tâm trạng</h3>
               <n-badge class="text-xs"
-                :variant="conversation.mood === 'positive' ? 'default' : conversation.mood === 'negative' ? 'destructive' : 'outline'">
-                {{ getMoodText(conversation.mood) }}
+                :variant="conversation.sentiment === 'positive' ? 'default' : conversation.sentiment === 'negative' ? 'destructive' : 'outline'">
+                {{ getMoodText(conversation.sentiment) }}
               </n-badge>
             </div>
           </div>

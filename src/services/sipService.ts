@@ -206,11 +206,6 @@ export class SipService {
         }
       } else if (callState === SessionState.Terminated) {
         this.events.onDebug?.("[INFO] Call has been terminated");
-        toast.info('Cuộc gọi kết thúc', {
-          description: '',
-          duration: 3000,
-        }
-        )
         this.session = null;
         this.events.onCallEnded?.();
       }
@@ -285,6 +280,11 @@ export class SipService {
         (target as Inviter).bye();
       }
     }
+    toast.info('Cuộc gọi kết thúc', {
+      description: '',
+      duration: 3000,
+    }
+    )
     this.session = null;
     this.events.onCallEnded?.();
   }
