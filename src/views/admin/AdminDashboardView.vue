@@ -313,7 +313,7 @@ const handleRowClick = async (conversation: Conversation) => {
                             ? 'bg-red-500 text-white'
                             : 'bg-muted'
                         : message.mood === 'positive'
-                          ? 'bg-green-100 text-green-900'
+                          ? 'bg-green-500 text-white'
                           : message.mood === 'negative'
                             ? 'bg-red-100 text-red-900'
                             : 'bg-muted'
