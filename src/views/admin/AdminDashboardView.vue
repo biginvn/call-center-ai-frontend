@@ -23,7 +23,7 @@ onMounted(async () => {
   await conversationStore.fetchRecentConversations()
 })
 
-const getMoodText = (sentiment: string) => {
+const getSentimentText = (sentiment: string) => {
   switch (sentiment) {
     case 'positive':
       return 'Tích cực'
@@ -152,7 +152,7 @@ const handleRowClick = async (conversation: Conversation) => {
                 Đang tải...
               </div>
               <div v-else-if="conversationStore.error" class="text-center text-red-500 py-4">
-                {{ conversationStore.error }}
+                Lỗi kết nối server {{ conversationStore.error }}
               </div>
               <div v-else-if="conversationStore.conversations.length === 0" class="text-center py-4">
                 Không có bản ghi cuộc gọi
@@ -168,7 +168,7 @@ const handleRowClick = async (conversation: Conversation) => {
                   </div>
                   <n-badge class="text-xs"
                     :variant="conversation.sentiment === 'positive' ? 'default' : conversation.sentiment === 'negative' ? 'destructive' : 'outline'">
-                    {{ getMoodText(conversation.sentiment) }}
+                    {{ getSentimentText(conversation.sentiment) }}
                   </n-badge>
                 </div>
               </div>
@@ -193,7 +193,7 @@ const handleRowClick = async (conversation: Conversation) => {
                 </TableRow>
                 <TableRow v-else-if="conversationStore.error">
                   <TableCell colspan="12" class="text-center text-red-500">
-                    {{ conversationStore.error }}
+                    Lỗi kết nối server {{ conversationStore.error }}
                   </TableCell>
                 </TableRow>
                 <TableRow v-else-if="conversationStore.conversations.length === 0">
@@ -219,7 +219,7 @@ const handleRowClick = async (conversation: Conversation) => {
                   <TableCell class="col-span-3 md:col-span-1 text-right">
                     <n-badge class="text-xs"
                       :variant="conversation.sentiment === 'positive' ? 'default' : conversation.sentiment === 'negative' ? 'destructive' : 'outline'">
-                      {{ getMoodText(conversation.sentiment) }}
+                      {{ getSentimentText(conversation.sentiment) }}
                     </n-badge>
                   </TableCell>
                 </TableRow>
@@ -323,7 +323,7 @@ const handleRowClick = async (conversation: Conversation) => {
                     <div class="flex items-center space-x-2 mt-1">
                       <n-badge class="text-xs" :class="{ 'bg-green-500': message.sentiment === 'positive' }"
                         :variant="message.sentiment === 'positive' ? 'default' : message.sentiment === 'negative' ? 'destructive' : 'outline'">
-                        {{ getMoodText(message.sentiment) }}
+                        {{ getSentimentText(message.sentiment) }}
                       </n-badge>
                     </div>
                   </div>
@@ -347,7 +347,7 @@ const handleRowClick = async (conversation: Conversation) => {
                 <h3 class="font-semibold pt-2 mb-2">Tâm trạng</h3>
                 <n-badge class="text-xs"
                   :variant="selectedConversation.sentiment === 'positive' ? 'default' : selectedConversation.sentiment === 'negative' ? 'destructive' : 'outline'">
-                  {{ getMoodText(selectedConversation.sentiment) }}
+                  {{ getSentimentText(selectedConversation.sentiment) }}
                 </n-badge>
               </div>
             </div>

@@ -19,8 +19,8 @@ onMounted(async () => {
   }
 })
 
-const getMoodText = (sentiment: string) => {
-  switch (sentiment) {
+const getMoodText = (mood: string) => {
+  switch (mood) {
     case 'positive':
       return 'Tích cực'
     case 'negative':
@@ -30,7 +30,7 @@ const getMoodText = (sentiment: string) => {
     case 'neutral':
       return 'Trung tính'
     default:
-      return sentiment
+      return mood
   }
 }
 
@@ -128,23 +128,23 @@ const getStatusText = (status: string) => {
                   <div :class="[
                     'p-3 rounded-lg max-w-[70%]',
                     message.sender_id.id === conversation.from_user.id
-                      ? message.sentiment === 'positive'
+                      ? message.mood === 'positive'
                         ? 'bg-green-500 text-white'
-                        : message.sentiment === 'negative'
+                        : message.mood === 'negative'
                           ? 'bg-red-500 text-white'
                           : 'bg-muted'
-                      : message.sentiment === 'positive'
+                      : message.mood === 'positive'
                         ? 'bg-green-100 text-green-900'
-                        : message.sentiment === 'negative'
+                        : message.mood === 'negative'
                           ? 'bg-red-100 text-red-900'
                           : 'bg-muted'
                   ]">
                     <p class="text-sm">{{ message.content }}</p>
                   </div>
                   <div class="flex items-center space-x-2 mt-1">
-                    <n-badge class="text-xs" :class="{ 'bg-green-500': message.sentiment === 'positive' }"
-                      :variant="message.sentiment === 'positive' ? 'default' : message.sentiment === 'negative' ? 'destructive' : 'outline'">
-                      {{ getMoodText(message.sentiment) }}
+                    <n-badge class="text-xs" :class="{ 'bg-green-500': message.mood === 'positive' }"
+                      :variant="message.mood === 'positive' ? 'default' : message.mood === 'negative' ? 'destructive' : 'outline'">
+                      {{ getMoodText(message.mood) }}
                     </n-badge>
                   </div>
                 </div>
@@ -167,8 +167,8 @@ const getStatusText = (status: string) => {
             <div>
               <h3 class="font-semibold mb-2">Tâm trạng</h3>
               <n-badge class="text-xs"
-                :variant="conversation.sentiment === 'positive' ? 'default' : conversation.sentiment === 'negative' ? 'destructive' : 'outline'">
-                {{ getMoodText(conversation.sentiment) }}
+                :variant="conversation.mood === 'positive' ? 'default' : conversation.mood === 'negative' ? 'destructive' : 'outline'">
+                {{ getMoodText(conversation.mood) }}
               </n-badge>
             </div>
           </div>
