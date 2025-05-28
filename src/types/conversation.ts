@@ -30,7 +30,6 @@ export interface Conversation {
   to_user: User
   messages: Message[]
   sentiment: ConversationMood
-  sentiment: string
   created_at: string
 }
 
