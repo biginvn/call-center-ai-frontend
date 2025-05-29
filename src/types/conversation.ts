@@ -1,6 +1,7 @@
 export type ConversationStatus = 'start' | 'accept' | 'decline' | 'closed'
 export type ConversationType = 'A->A' | 'A->AI' | 'A->C'
 export type ConversationMood = 'positive' | 'neutral' | 'negative' | 'unknown'
+export type ConversationSentiment = 'positive' | 'neutral' | 'negative' | 'unknown'
 
 export interface User {
   id: string
@@ -29,8 +30,7 @@ export interface Conversation {
   from_user: User
   to_user: User
   messages: Message[]
-  mood: ConversationMood
-  sentiment: string
+  sentiment: ConversationSentiment
   created_at: string
 }
 

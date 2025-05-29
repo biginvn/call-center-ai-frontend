@@ -10,7 +10,6 @@ const bootstrap = async () => {
   try {
     // Load configuration first
     const config = await loadConfig()
-    console.log('Loaded configuration:', config)
 
     const app = createApp(App)
     const pinia = createPinia()

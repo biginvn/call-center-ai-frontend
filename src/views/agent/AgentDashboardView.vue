@@ -10,8 +10,7 @@ import { ref, onMounted, watch } from 'vue'
 import { NButton } from '@/components/ui/button'
 import { NCard, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CircleUser } from 'lucide-vue-next'
-import CallHistory from '@/components/CallHistory.vue'
-import { initialCalls } from '@/components/utils/data'
+import { Wifi, WifiOff } from 'lucide-vue-next'
 import PhoneDialpad from '@/components/PhoneDialpad.vue'
 import {
   NDropdownMenu,
@@ -21,20 +20,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  NTabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs'
+import { NBadge } from '@/components/ui/badge'
 import CallInterface from '@/components/CallInterface.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSipStore } from '@/stores/sip'
 import { getActiveUserByExtension } from '@/services/callService'
 import ActiveUsersTable from '@/components/ActiveUsersTable.vue'
+import { determineWebClient } from "@/lib/utils";
 
-const calls = ref(initialCalls)
 const router = useRouter()
 const authStore = useAuthStore()
 const sipStore = useSipStore()
@@ -44,6 +38,7 @@ const isOpen = ref(false)
 const callState = ref<'incoming' | 'outgoing' | 'connecting' | 'active' | 'ended'>('incoming')
 const callerName = ref('')
 const callerAvatar = ref('/path/to/avatar.jpg')
+const isConnected = ref(false)
 
 // Watch for incoming calls
 watch(() => sipStore.callStatus, (newStatus) => {
@@ -65,6 +60,11 @@ watch(() => sipStore.callStatus, (newStatus) => {
   }
 })
 
+// Watch for connection status
+watch(() => sipStore.isConnected, (newStatus) => {
+  isConnected.value = newStatus
+})
+
 onMounted(async () => {
   // Load user data from storage first
   await authStore.loadFromStorage()
@@ -74,18 +74,6 @@ onMounted(async () => {
   //   router.push('/login')
   //   return
   // }
-  const determineWebClient = (extension: string) => {
-    if (extension.startsWith('111')) {
-      return 'web1'
-    } else if (extension.startsWith('112')) {
-      return 'web2'
-    } else if (extension.startsWith('101'))
-      return 'test2' // default fallback
-    else if (extension.startsWith('100'))
-      return 'test1'
-    else
-      return 'web1'
-  }
 
   // Initialize SIP if we have user data
   if (authStore.user?.extensionNumber) {
@@ -137,14 +125,32 @@ const handleLogout = async () => {
     <header class="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
       <nav class="flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
         <a href="#" class="flex items-center gap-2 text-lg font-semibold md:text-base">
-          <img src="@/assets/nixxis_logo.webp" alt="Nixxis Logo" class="w-30" />
-          <span class="text-muted-foreground w-60">
-            <span class="inline">| Agent Portal</span>
+          <img src="@/assets/nixxis_logo.webp" alt="Nixxis Logo" class="w-20 md:w-30" />
+          <span class="text-muted-foreground w-50 md:w-60">
+            <span class="text-xs md:text-base">| Agent Portal</span>
           </span>
         </a>
       </nav>
       <div class="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
         <form class="ml-auto flex-1 sm:flex-initial"></form>
+        <n-badge v-if="true" :variant="isConnected ? 'default' : 'destructive'" :class="{ 'bg-green-500': isConnected }"
+          class="hidden md:inline-flex">
+          <span class="text-xs font-semibold flex items-center gap-1">
+
+            {{ isConnected ? 'Đã kết nối' : 'Không kết nối' }}
+            {{ authStore.user?.extensionNumber }}
+            <!-- <Wifi v-if="isConnected" class="h-3 w-3" />
+            <WifiOff v-else class="h-3 w-3" /> -->
+          </span>
+        </n-badge>
+        <n-badge v-if="true" :variant="isConnected ? 'default' : 'destructive'" :class="{ 'bg-green-500': isConnected }"
+          class="md:hidden">
+          <span class="text-xs font-semibold flex items-center gap-1">
+            {{ authStore.user?.extensionNumber }}
+          </span>
+          <Wifi v-if="isConnected" class="h-4 w-4" />
+          <WifiOff v-else class="h-4 w-4" />
+        </n-badge>
         <n-dropdown-menu>
           <DropdownMenuTrigger as-child>
             <n-button variant="secondary" size="icon" class="rounded-full">
@@ -167,36 +173,26 @@ const handleLogout = async () => {
       </div>
     </header>
     <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-      <div class="grid gap-4 md:gap-8 lg:grid-cols-3">
+      <div class="grid gap-4 md:gap-8 lg:grid-cols-2">
         <n-card>
-          <CardContent class="grid gap-8">
-            <NTabs default-value="dialpad" class="w-full">
-              <TabsList class="grid w-full grid-cols-2">
-                <TabsTrigger value="dialpad">Quay số</TabsTrigger>
-                <TabsTrigger value="contacts">Danh bạ</TabsTrigger>
-              </TabsList>
-              <TabsContent value="dialpad">
-                <div>
-                  <PhoneDialpad :onCall="onStartCall" />
-                </div>
-
-              </TabsContent>
-              <TabsContent value="contacts">
-                <div class="flex items-center justify-center">
-                  <ActiveUsersTable :on-call="onStartCall" />
-                </div>
-              </TabsContent>
-            </NTabs>
+          <CardHeader>
+            <CardTitle>Quay số</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div>
+              <PhoneDialpad :onCall="onStartCall" />
+            </div>
           </CardContent>
         </n-card>
-        <n-card class="lg:col-span-2">
-          <CardHeader class="flex flex-row items-center">
-            <div class="grid gap-2">
-              <CardTitle>Lịch sử cuộc gọi</CardTitle>
-            </div>
+
+        <n-card>
+          <CardHeader>
+            <CardTitle>Danh bạ</CardTitle>
           </CardHeader>
-          <CardContent class="max-h-[calc(100vh-12rem)] overflow-y-auto">
-            <CallHistory :calls="calls" :on-start-call="onStartCall" />
+          <CardContent>
+            <div class="flex items-center justify-center">
+              <ActiveUsersTable :on-call="onStartCall" />
+            </div>
           </CardContent>
         </n-card>
       </div>

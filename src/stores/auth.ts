@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import type User from "@/types/User";
 import type AuthState from "@/types/AuthState";
 import { logoutUser, refreshToken, getUserInfo } from '@/services/authService';
+import type { AxiosError } from 'axios';
 type UpdateUser = {
   username: string,
   extension_number: string,
@@ -10,10 +11,14 @@ type UpdateUser = {
 }
 
 export const useAuthStore = defineStore("auth", {
-  state: (): AuthState & { refreshToken: () => Promise<{ access_token: string; refresh_token: string; token_type: string }> } => ({
+  state: (): AuthState & {
+    refreshToken: () => Promise<{ access_token: string; refresh_token: string; token_type: string }>;
+    isUserDataLoaded: boolean;
+  } => ({
     access_token: null,
     refresh_token: null,
     user: null,
+    isUserDataLoaded: false,
     refreshToken: async function () {
       if (!this.refresh_token) {
         throw new Error('No refresh token available');
@@ -45,6 +50,7 @@ export const useAuthStore = defineStore("auth", {
       this.access_token = payload.access_token;
       this.refresh_token = payload.refresh_token;
       this.user = payload.user;
+      this.isUserDataLoaded = true;
       localStorage.setItem("access_token", payload.access_token);
       localStorage.setItem("refresh_token", payload.refresh_token);
       localStorage.setItem("user", JSON.stringify(payload.user));
@@ -57,6 +63,7 @@ export const useAuthStore = defineStore("auth", {
       this.access_token = null;
       this.refresh_token = null;
       this.user = null;
+      this.isUserDataLoaded = false;
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("user");
@@ -77,6 +84,11 @@ export const useAuthStore = defineStore("auth", {
     },
 
     async loadFromStorage(this: AuthState) {
+      // If user data is already loaded, just return
+      if (this.isUserDataLoaded && this.user) {
+        return;
+      }
+
       const access_token = localStorage.getItem("access_token");
       const refresh_token = localStorage.getItem("refresh_token");
       const userStr = localStorage.getItem("user");
@@ -86,6 +98,7 @@ export const useAuthStore = defineStore("auth", {
       }
 
       try {
+        // First try to get user info with current access token
         const userData = await getUserInfo(access_token);
         const user = JSON.parse(userStr);
 
@@ -95,21 +108,37 @@ export const useAuthStore = defineStore("auth", {
           ...user,
           ...userData
         };
+        this.isUserDataLoaded = true;
       } catch (error) {
         console.error('Failed to load user data:', error);
+        // If we get a 401, try to refresh the token
+        if (error instanceof Error && 'response' in error && (error as AxiosError).response?.status === 401) {
+          try {
+            // Refresh the token
+            const response = await refreshToken(refresh_token);
 
-        // Try to refresh token before logging out
-        try {
-          await this.refreshToken();
-          // If refresh successful, try loading user data again
-          const userData = await getUserInfo(this.access_token!);
-          const user = JSON.parse(userStr!);
-          this.user = {
-            ...user,
-            ...userData
-          };
-        } catch (refreshError) {
-          console.error('Token refresh failed:', refreshError);
+            // Update tokens in store and localStorage
+            this.access_token = response.access_token;
+            this.refresh_token = response.refresh_token;
+            localStorage.setItem("access_token", response.access_token);
+            localStorage.setItem("refresh_token", response.refresh_token);
+
+            // Try loading user data again with new access token
+            const userData = await getUserInfo(response.access_token);
+            const user = JSON.parse(userStr);
+
+            this.user = {
+              ...user,
+              ...userData
+            };
+            this.isUserDataLoaded = true;
+          } catch (refreshError) {
+            console.error('Token refresh failed:', refreshError);
+            const store = useAuthStore();
+            store.logout();
+          }
+        } else {
+          // If it's not a 401 error, just logout
           const store = useAuthStore();
           store.logout();
         }

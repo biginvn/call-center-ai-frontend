@@ -13,6 +13,9 @@ import { getAllActiveUsers } from '@/services/callService'
 import { useSipStore } from '@/stores/sip'
 import { useAuthStore } from '@/stores/auth'
 import { NSkeleton } from '@/components/ui/skeleton'
+import { toast } from 'vue-sonner'
+import { NButton } from '@/components/ui/button'
+import { RefreshCw } from 'lucide-vue-next'
 
 interface ActiveUser {
   _id: string
@@ -42,6 +45,21 @@ const filteredUsers = computed(() => {
 })
 
 const handleCall = (extension: string) => {
+  if (!extension) {
+    toast.error('Không thể thực hiện cuộc gọi', {
+      description: 'Số Extension không hợp lệ',
+      duration: 3000,
+    });
+    return;
+  }
+
+  if (authStore.user?.extensionNumber?.toString() === extension) {
+    toast.error('Không thể gọi số Ext của chính mình', {
+      description: 'Vui lòng nhập số Ext khác',
+      duration: 3000,
+    });
+    return;
+  }
   sipStore.makeCall(extension)
   props.onCall?.(extension)
 }
@@ -69,16 +87,29 @@ onMounted(async () => {
           <TableRow>
             <TableHead class="w-[200px]">Họ và tên</TableHead>
             <TableHead>Số Extension</TableHead>
+            <TableHead class="w-[50px] text-right">
+              <n-button variant="ghost" size="icon" @click="refreshUsers" :disabled="isLoading">
+                <RefreshCw class="h-4 w-4" :class="{ 'animate-spin': isLoading }" />
+              </n-button>
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           <template v-if="isLoading">
             <TableRow v-for="i in 4" :key="i">
               <TableCell>
-                <NSkeleton class="h-2 w-[200px]" />
+                <NSkeleton class="h-2" />
               </TableCell>
               <TableCell>
-                <NSkeleton class="h-2 w-[100px]" />
+                <NSkeleton class="h-2" />
+              </TableCell>
+              <TableCell></TableCell>
+            </TableRow>
+          </template>
+          <template v-else-if="filteredUsers.length === 0">
+            <TableRow>
+              <TableCell colspan="3" class="text-center text-muted-foreground py-4">
+                Không có tổng đài khả dụng
               </TableCell>
             </TableRow>
           </template>
@@ -89,6 +120,7 @@ onMounted(async () => {
                 {{ user.fullname }}
               </TableCell>
               <TableCell>{{ user.extension_number }}</TableCell>
+              <TableCell></TableCell>
             </TableRow>
           </template>
         </TableBody>

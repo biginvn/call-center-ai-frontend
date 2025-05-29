@@ -15,7 +15,7 @@ import { NToaster } from '@/components/ui/sonner'
 
 <template>
   <RouterView />
-  <NToaster richColors position="top-right" />
+  <NToaster closeButton richColors position="bottom-right" />
   <!-- <RouterView v-if="isReady" /> -->
 </template>
 
