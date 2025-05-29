@@ -7,11 +7,14 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatDate(dateString: string): string {
   const date = new Date(dateString)
-  const hours = date.getHours().toString().padStart(2, '0')
-  const minutes = date.getMinutes().toString().padStart(2, '0')
-  const day = date.getDate()
-  const month = date.getMonth() + 1
-  const year = date.getFullYear()
+  // Convert to GMT+7
+  const gmt7Date = new Date(date.getTime() + (7 * 60 * 60 * 1000))
+
+  const hours = gmt7Date.getHours().toString().padStart(2, '0')
+  const minutes = gmt7Date.getMinutes().toString().padStart(2, '0')
+  const day = gmt7Date.getDate()
+  const month = gmt7Date.getMonth() + 1
+  const year = gmt7Date.getFullYear()
 
   return `${hours}:${minutes}, ${day}-${month}-${year}`
 }

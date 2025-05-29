@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useConversationStore } from '@/stores/conversationStore'
 import { formatDate } from '@/lib/utils'
@@ -10,6 +10,9 @@ import AdminNavbar from '@/components/admin/AdminNavbar.vue'
 const route = useRoute()
 const conversationStore = useConversationStore()
 const conversation = ref<Conversation | null>(null)
+const audioRef = ref<HTMLAudioElement | null>(null)
+const currentTime = ref(0)
+const currentMessageIndex = ref(-1)
 
 onMounted(async () => {
   const conversationId = route.params.id as string
@@ -18,6 +21,35 @@ onMounted(async () => {
     conversation.value = conversationStore.currentConversation
   }
 })
+
+// Watch for audio time updates
+watch(currentTime, (newTime) => {
+  if (!conversation.value?.messages) return
+
+  // Find the current message based on time
+  const messageIndex = conversation.value.messages.findIndex(
+    (message, index) => {
+      const nextMessage = conversation.value?.messages[index + 1]
+      return message.time <= newTime && (!nextMessage || nextMessage.time > newTime)
+    }
+  )
+
+  if (messageIndex !== -1 && messageIndex !== currentMessageIndex.value) {
+    currentMessageIndex.value = messageIndex
+  }
+})
+
+const handleTimeUpdate = () => {
+  if (audioRef.value) {
+    currentTime.value = audioRef.value.currentTime
+  }
+}
+
+const handleMessageClick = (message: any) => {
+  if (audioRef.value && message.time) {
+    audioRef.value.currentTime = message.time
+  }
+}
 
 const getMoodText = (mood: string) => {
   switch (mood) {
@@ -48,6 +80,12 @@ const getStatusText = (status: string) => {
       return status
   }
 }
+
+const formatTime = (seconds: number) => {
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = Math.floor(seconds % 60)
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+}
 </script>
 
 <template>
@@ -59,7 +97,8 @@ const getStatusText = (status: string) => {
       </div>
 
       <div v-if="conversation && conversation.record_url" class="mb-6">
-        <audio :src="conversation.record_url" controls class="w-full"></audio>
+        <audio :src="conversation.record_url" controls class="w-full" ref="audioRef"
+          @timeupdate="handleTimeUpdate"></audio>
       </div>
 
       <div v-if="conversation" class="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
@@ -112,10 +151,11 @@ const getStatusText = (status: string) => {
                 class="flex items-center justify-center h-[200px] text-muted-foreground">
                 Không có chi tiết cuộc hội thoại
               </div>
-              <div v-else v-for="message in conversation.messages" :key="message.id" :class="[
-                'flex space-x-2',
-                message.sender_id.id === conversation.from_user.id ? 'justify-end' : 'justify-start'
-              ]">
+              <div v-else v-for="(message, index) in conversation.messages" :key="message.id" :class="[
+                'flex space-x-2 cursor-pointer hover:bg-muted/30 transition-colors',
+                message.sender_id.id === conversation.from_user.id ? 'justify-end' : 'justify-start',
+                index === currentMessageIndex ? 'bg-muted/50 rounded-lg p-2' : ''
+              ]" @click="handleMessageClick(message)">
                 <div v-if="message.sender_id.id !== conversation.from_user.id"
                   class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium flex-shrink-0">
                   {{ message.sender_id.fullname.charAt(0) }}
@@ -141,11 +181,14 @@ const getStatusText = (status: string) => {
                   ]">
                     <p class="text-sm">{{ message.content }}</p>
                   </div>
-                  <div class="flex items-center space-x-2 mt-1">
+                  <div class="flex items-center mt-1" :class="[
+                    message.sender_id.id === conversation.from_user.id ? 'flex-row-reverse gap-2' : 'flex-row space-x-2'
+                  ]">
                     <n-badge class="text-xs" :class="{ 'bg-green-500': message.mood === 'positive' }"
                       :variant="message.mood === 'positive' ? 'default' : message.mood === 'negative' ? 'destructive' : 'outline'">
                       {{ getMoodText(message.mood) }}
                     </n-badge>
+                    <span class="text-xs text-muted-foreground">{{ formatTime(message.time) }}</span>
                   </div>
                 </div>
                 <div v-if="message.sender_id.id === conversation.from_user.id"
