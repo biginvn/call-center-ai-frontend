@@ -4,9 +4,11 @@ export const mockConversation: Conversation = {
   id: '1',
   created_at: '2024-03-20T10:30:00Z',
   status: 'closed',
+  type: 'A->C',
   sentiment: 'positive',
   summarize: 'Khách hàng gọi đến để hỏi về chính sách bảo hành sản phẩm. Nhân viên đã giải thích chi tiết và khách hàng tỏ ra hài lòng với thông tin nhận được.',
   record_url: '/src/assets/audio/conversation.wav',
+  record_text: 'Cuộc hội thoại về chính sách bảo hành sản phẩm',
   from_user: {
     id: '1',
     username: 'customer123',

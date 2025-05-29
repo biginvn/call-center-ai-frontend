@@ -35,3 +35,4 @@ ssl/
 *.key
 *.crt
 *.pem
+.env

@@ -9,7 +9,7 @@ export const containerClass = 'w-full h-full'
 import { ref, onMounted, watch } from 'vue'
 import { NButton } from '@/components/ui/button'
 import { NCard, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CircleUser } from 'lucide-vue-next'
+import { CircleUser, Bot } from 'lucide-vue-next'
 import { Wifi, WifiOff } from 'lucide-vue-next'
 import PhoneDialpad from '@/components/PhoneDialpad.vue'
 import {
@@ -22,12 +22,15 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { NBadge } from '@/components/ui/badge'
 import CallInterface from '@/components/CallInterface.vue'
+import BotCallInterface from '@/components/BotCallInterface.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSipStore } from '@/stores/sip'
 import { getActiveUserByExtension } from '@/services/callService'
 import ActiveUsersTable from '@/components/ActiveUsersTable.vue'
 import { determineWebClient } from "@/lib/utils";
+import { conversationService } from '@/services/conversationService'
+import { TextareaComponent } from '@/components/ui/textarea'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -35,10 +38,18 @@ const sipStore = useSipStore()
 
 // State for the call interface
 const isOpen = ref(false)
+const isBotCallOpen = ref(false)
 const callState = ref<'incoming' | 'outgoing' | 'connecting' | 'active' | 'ended'>('incoming')
 const callerName = ref('')
 const callerAvatar = ref('/path/to/avatar.jpg')
 const isConnected = ref(false)
+const isAICall = ref(false)
+const peerConnection = ref<RTCPeerConnection | null>(null)
+const micStream = ref<MediaStream | null>(null)
+const recorder = ref<MediaRecorder | null>(null)
+const chunks = ref<Blob[]>([])
+const botCallInterfaceRef = ref<InstanceType<typeof BotCallInterface> | null>(null)
+const aiPrompt = ref('')
 
 // Watch for incoming calls
 watch(() => sipStore.callStatus, (newStatus) => {
@@ -109,6 +120,9 @@ const handleReject = () => {
 }
 
 const handleEnd = () => {
+  if (isAICall.value) {
+    endAICall()
+  }
 }
 
 const handleLogout = async () => {
@@ -117,6 +131,113 @@ const handleLogout = async () => {
   // Logout from auth
   authStore.logout()
   router.push('/login')
+}
+
+const startAICall = async () => {
+  try {
+    isAICall.value = true
+    isBotCallOpen.value = true
+
+    // Get microphone access
+    micStream.value = await navigator.mediaDevices.getUserMedia({ audio: true })
+
+    // Create peer connection
+    peerConnection.value = new RTCPeerConnection()
+
+    // Add microphone track
+    micStream.value.getTracks().forEach(track => {
+      peerConnection.value?.addTrack(track)
+    })
+
+    // Handle incoming audio
+    peerConnection.value.ontrack = (event) => {
+      const botStream = event.streams[0]
+      if (botCallInterfaceRef.value?.remoteAudioRef) {
+        botCallInterfaceRef.value.remoteAudioRef.srcObject = botStream
+      }
+
+      // Set up recording
+      const audioCtx = new AudioContext()
+      const micSource = audioCtx.createMediaStreamSource(micStream.value!)
+      const botSource = audioCtx.createMediaStreamSource(botStream)
+      const destination = audioCtx.createMediaStreamDestination()
+
+      micSource.connect(destination)
+      botSource.connect(destination)
+
+      recorder.value = new MediaRecorder(destination.stream)
+      recorder.value.ondataavailable = (e) => chunks.value.push(e.data)
+      recorder.value.onstop = () => {
+        const blob = new Blob(chunks.value, { type: 'audio/wav' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = 'conversation.wav'
+        a.click()
+        URL.revokeObjectURL(url)
+        chunks.value = []
+      }
+      recorder.value.start()
+
+      // Update call state to active since we've received the AI stream
+      if (botCallInterfaceRef.value) {
+        botCallInterfaceRef.value.callState = 'active'
+        botCallInterfaceRef.value.startTimer()
+      }
+    }
+
+    // Create and send offer
+    const offer = await peerConnection.value.createOffer()
+    await peerConnection.value.setLocalDescription(offer)
+
+    // Send offer to OpenAI Realtime API
+    const sessionResponse = await conversationService.getSession(aiPrompt.value)
+    console.log(sessionResponse)
+    const enToken = sessionResponse.client_secret.value
+    console.log(enToken)
+
+    const sdpResponse = await fetch(`https://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview-2024-12-17`, {
+      method: 'POST',
+      body: offer.sdp,
+      headers: {
+        'Authorization': `Bearer ${enToken}`,
+        'Content-Type': 'application/sdp',
+      },
+    })
+
+    const answer = {
+      type: 'answer' as RTCSdpType,
+      sdp: await sdpResponse.text(),
+    }
+    await peerConnection.value.setRemoteDescription(answer)
+
+  } catch (error) {
+    console.error('Error starting AI call:', error)
+    if (botCallInterfaceRef.value) {
+      botCallInterfaceRef.value.callState = 'ended'
+    }
+    isAICall.value = false
+  }
+}
+
+const endAICall = () => {
+  if (recorder.value) {
+    recorder.value.stop()
+  }
+  if (micStream.value) {
+    micStream.value.getTracks().forEach(track => track.stop())
+  }
+  if (peerConnection.value) {
+    peerConnection.value.close()
+  }
+  isAICall.value = false
+  if (botCallInterfaceRef.value) {
+    botCallInterfaceRef.value.stopTimer()
+  }
+}
+
+const handleBotCallEnd = () => {
+  endAICall()
 }
 </script>
 
@@ -179,8 +300,30 @@ const handleLogout = async () => {
             <CardTitle>Quay số</CardTitle>
           </CardHeader>
           <CardContent>
-            <div>
+            <div class="flex flex-col gap-4">
+              <n-button variant="outline" class="flex items-center justify-center gap-2" @click="startAICall"
+                :disabled="isAICall">
+                <Bot class="h-5 w-5" />
+                <span>Gọi AI Assistant</span>
+              </n-button>
               <PhoneDialpad :onCall="onStartCall" />
+            </div>
+          </CardContent>
+        </n-card>
+
+        <n-card>
+          <CardHeader>
+            <CardTitle>AI Assistant</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div class="flex flex-col gap-4">
+              <TextareaComponent v-model="aiPrompt" placeholder="Nhập prompt cho AI Assistant..."
+                class="min-h-[150px]" />
+              <n-button variant="outline" class="flex items-center justify-center gap-2" @click="startAICall"
+                :disabled="isAICall">
+                <Bot class="h-5 w-5" />
+                <span>Gọi AI Assistant</span>
+              </n-button>
             </div>
           </CardContent>
         </n-card>
@@ -200,6 +343,7 @@ const handleLogout = async () => {
         <CallInterface v-model="isOpen" :default-state="callState" :caller-name="callerName"
           :caller-avatar="callerAvatar" :auto-end-call="false" :auto-end-timeout="30000" @answer="handleAnswer"
           @reject="handleReject" @end="handleEnd" />
+        <BotCallInterface ref="botCallInterfaceRef" v-model="isBotCallOpen" @end="handleBotCallEnd" />
       </div>
     </main>
   </div>

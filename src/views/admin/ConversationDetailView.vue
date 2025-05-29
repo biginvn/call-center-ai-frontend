@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 import { useConversationStore } from '@/stores/conversationStore'
 import { formatDate } from '@/lib/utils'
 import { NBadge } from '@/components/ui/badge'
-import type { Conversation } from '@/types/conversation'
+import type { Conversation, Message } from '@/types/conversation'
 import AdminNavbar from '@/components/admin/AdminNavbar.vue'
 
 const route = useRoute()
@@ -45,7 +45,7 @@ const handleTimeUpdate = () => {
   }
 }
 
-const handleMessageClick = (message: any) => {
+const handleMessageClick = (message: Message) => {
   if (audioRef.value && message.time) {
     audioRef.value.currentTime = message.time
   }

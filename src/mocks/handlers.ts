@@ -1,10 +1,16 @@
 import { mockConversation } from './conversation'
 
+interface MockRequest {
+  params: {
+    id: string
+  }
+}
+
 export const handlers = [
   {
     path: '/api/conversations/:id',
     method: 'GET',
-    response: (req: any) => {
+    response: (req: MockRequest) => {
       const { id } = req.params
       if (id === '1') {
         return {
