@@ -108,7 +108,16 @@
   </n-dialog>
   <audio ref="remoteAudioRef" autoplay></audio>
   <audio ref="ringtoneRef" preload="auto" loop>
-    <source src="@/assets/audio/ringtone_vippro.mp3" type="audio/mpeg">
+    <source src="@/assets/audio/ringtone.mp3" type="audio/mpeg">
+  </audio>
+  <audio ref="dialingRef" preload="auto" loop>
+    <source src="@/assets/audio/dialing.mp3" type="audio/mpeg">
+  </audio>
+  <audio ref="connectedRef" preload="auto">
+    <source src="@/assets/audio/connected.mp3" type="audio/mpeg">
+  </audio>
+  <audio ref="terminatedRef" preload="auto">
+    <source src="@/assets/audio/disconnected.mp3" type="audio/mpeg">
   </audio>
 </template>
 
@@ -155,6 +164,9 @@ const isMuted = ref(false)
 const isSpeakerOff = ref(false)
 let timer: ReturnType<typeof window.setInterval> | null = null
 const ringtoneRef = ref<HTMLAudioElement | null>(null)
+const dialingRef = ref<HTMLAudioElement | null>(null)
+const connectedRef = ref<HTMLAudioElement | null>(null)
+const terminatedRef = ref<HTMLAudioElement | null>(null)
 const currentCallerName = ref('')
 const remoteAudioRef = ref<HTMLAudioElement | null>(null)
 
@@ -179,13 +191,22 @@ const stopTimer = () => {
 // Watch for session changes to update caller name
 watch(() => sipStore.session, (newSession) => {
   if (newSession) {
-    currentCallerName.value = newSession.remoteIdentity.uri.user || "undefined"
+    // Update caller name from session's remote identity
+    const remoteUser = newSession.remoteIdentity.uri.user
+    if (remoteUser) {
+      currentCallerName.value = remoteUser
+    }
   }
-})
+}, { immediate: true })
 
 // Get caller name
 const callerName = computed(() => {
-  return currentCallerName.value || props.callerName
+  // If we have a current caller name from the session, use that
+  if (currentCallerName.value) {
+    return currentCallerName.value
+  }
+  // Otherwise fall back to the prop value
+  return props.callerName
 })
 
 // Get call state text
@@ -208,10 +229,19 @@ const getCallStateText = computed(() => {
   }
 })
 
-// Initialize audio element
+// Initialize audio elements
 onMounted(() => {
   if (ringtoneRef.value) {
     ringtoneRef.value.load()
+  }
+  if (dialingRef.value) {
+    dialingRef.value.load()
+  }
+  if (connectedRef.value) {
+    connectedRef.value.load()
+  }
+  if (terminatedRef.value) {
+    terminatedRef.value.load()
   }
 })
 
@@ -282,19 +312,35 @@ watch(() => sipStore.callStatus, (newStatus) => {
       break
     case 'Establishing':
       callState.value = 'connecting'
-      // Stop ringtone
+      // Stop ringtone and play dialing sound
       if (ringtoneRef.value) {
         ringtoneRef.value.pause()
         ringtoneRef.value.currentTime = 0
+      }
+      if (dialingRef.value) {
+        dialingRef.value.currentTime = 0
+        dialingRef.value.play().catch((error) => {
+          console.error('Failed to play dialing sound:', error)
+        })
       }
       break
     case 'Established':
       callState.value = 'active'
       startTimer()
-      // Stop ringtone
+      // Stop all sounds and play connected sound
       if (ringtoneRef.value) {
         ringtoneRef.value.pause()
         ringtoneRef.value.currentTime = 0
+      }
+      if (dialingRef.value) {
+        dialingRef.value.pause()
+        dialingRef.value.currentTime = 0
+      }
+      if (connectedRef.value) {
+        connectedRef.value.currentTime = 0
+        connectedRef.value.play().catch((error) => {
+          console.error('Failed to play connected sound:', error)
+        })
       }
       // Ensure audio is playing
       if (sipStore.remoteAudioRef) {
@@ -306,10 +352,24 @@ watch(() => sipStore.callStatus, (newStatus) => {
     case 'Ended':
       callState.value = 'ended'
       stopTimer()
-      // Stop ringtone
+      // Stop all sounds and play terminated sound
       if (ringtoneRef.value) {
         ringtoneRef.value.pause()
         ringtoneRef.value.currentTime = 0
+      }
+      if (dialingRef.value) {
+        dialingRef.value.pause()
+        dialingRef.value.currentTime = 0
+      }
+      if (connectedRef.value) {
+        connectedRef.value.pause()
+        connectedRef.value.currentTime = 0
+      }
+      if (terminatedRef.value) {
+        terminatedRef.value.currentTime = 0
+        terminatedRef.value.play().catch((error) => {
+          console.error('Failed to play terminated sound:', error)
+        })
       }
       // Reset audio
       if (sipStore.remoteAudioRef) {

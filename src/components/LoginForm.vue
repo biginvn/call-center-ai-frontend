@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/form'
 import { NInput } from '@/components/ui/input'
 import { vAutoAnimate } from '@formkit/auto-animate/vue'
-import { loginAgent, loginAdmin } from '@/services/authService'
+import { loginAgent, loginAdmin, getUserInfo } from '@/services/authService'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { ref, nextTick } from 'vue'
@@ -116,6 +116,27 @@ const onSubmit = handleSubmit(async (values) => {
     });
 
     await nextTick();
+
+    // Get user info immediately after login
+    try {
+      const userData = await getUserInfo(response.access_token);
+      const updatedUser = {
+        ...user,
+        ...userData,
+        extensionNumber: user.role === 'agent' ? userData.extension_number : undefined
+      } as Agent | Admin;
+
+      // Update the store with the complete user data
+      authStore.login({
+        access_token: response.access_token,
+        refresh_token: response.refresh_token,
+        user: updatedUser
+      });
+
+      user = updatedUser;
+    } catch (error) {
+      console.error('Failed to get user info:', error);
+    }
 
     await router.push(user.role === 'admin' ? '/admin' : '/');
   } catch (error: unknown) {

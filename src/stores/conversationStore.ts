@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { Conversation } from '@/types/conversation'
 import { conversationService } from '@/services/conversationService'
+import { mockConversation } from '@/mocks/conversation'
 
 interface PaginationData {
   page_number: number
@@ -15,62 +16,64 @@ interface ConversationResponse {
   conversations: Conversation[]
 }
 
-export const useConversationStore = defineStore('conversation', () => {
-  const conversations = ref<Conversation[]>([])
-  const currentConversation = ref<Conversation | null>(null)
-  const loading = ref(false)
-  const error = ref<string | null>(null)
-  const pagination = ref<PaginationData>({
-    page_number: 1,
-    page_size: 10,
-    total_items: 0,
-    total_pages: 1
-  })
+export const useConversationStore = defineStore('conversation', {
+  state: () => ({
+    conversations: ref<Conversation[]>([]),
+    currentConversation: null as Conversation | null,
+    loading: ref(false),
+    error: ref<string | null>(null),
+    pagination: ref<PaginationData>({
+      page_number: 1,
+      page_size: 10,
+      total_items: 0,
+      total_pages: 1
+    })
+  }),
 
-  async function fetchRecentConversations(limit: number = 5) {
-    loading.value = true
-    error.value = null
-    try {
-      const response = await conversationService.getConversations() as ConversationResponse
-      // Ensure data is an array and sort by created_at in descending order
-      const sortedData = Array.isArray(response.conversations) ? response.conversations : []
-      conversations.value = sortedData
-        .sort((a: Conversation, b: Conversation) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        )
-        .slice(0, limit)
+  actions: {
+    async fetchRecentConversations(limit: number = 5) {
+      this.loading = true
+      this.error = null
+      try {
+        const response = await conversationService.getConversations() as ConversationResponse
+        // Ensure data is an array and sort by created_at in descending order
+        const sortedData = Array.isArray(response.conversations) ? response.conversations : []
+        this.conversations = sortedData
+          .sort((a: Conversation, b: Conversation) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          )
+          .slice(0, limit)
 
-      // Update pagination data
-      if (response.pagination) {
-        pagination.value = response.pagination
+        // Update pagination data
+        if (response.pagination) {
+          this.pagination = response.pagination
+        }
+      } catch (err) {
+        this.error = err instanceof Error ? err.message : 'Failed to fetch conversations'
+      } finally {
+        this.loading = false
       }
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to fetch conversations'
-    } finally {
-      loading.value = false
-    }
-  }
+    },
 
-  async function fetchConversationById(id: string) {
-    loading.value = true
-    error.value = null
-    try {
-      const conversation = await conversationService.getConversationById(id)
-      currentConversation.value = conversation
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : 'Failed to fetch conversation details'
-    } finally {
-      loading.value = false
-    }
-  }
+    async fetchConversationById(id: string) {
+      this.loading = true
+      this.error = null
 
-  return {
-    conversations,
-    currentConversation,
-    loading,
-    error,
-    pagination,
-    fetchRecentConversations,
-    fetchConversationById
+      try {
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000))
+
+        if (id === '1') {
+          this.currentConversation = mockConversation
+        } else {
+          throw new Error('Conversation not found')
+        }
+      } catch (error) {
+        this.error = error instanceof Error ? error.message : 'Failed to fetch conversation'
+        this.currentConversation = null
+      } finally {
+        this.loading = false
+      }
+    }
   }
 })

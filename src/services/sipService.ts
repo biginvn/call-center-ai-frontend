@@ -54,13 +54,19 @@ export class SipService {
   public async login(extension: string, password: string) {
     if (this.ua) return;
 
+    // Get the current display name before creating UserAgent
+    const currentDisplayName = this.options.displayName || extension;
+
     this.ua = new UserAgent({
       uri: UserAgent.makeURI(`sip:${extension}@${this.options.server}`),
-      displayName: this.options.displayName || extension,
+      displayName: currentDisplayName,
       authorizationUsername: extension,
       authorizationPassword: password,
       transportOptions: { server: this.options.wsServer },
     });
+
+    // Update the options to keep displayName in sync
+    this.options.displayName = currentDisplayName;
 
     this.ua.delegate = {
       onConnect: async () => {
@@ -299,5 +305,18 @@ export class SipService {
         sender.track.enabled = !isMuted;
       }
     });
+  }
+
+  public updateDisplayName(newDisplayName: string) {
+    if (this.ua) {
+      // Update both the UserAgent configuration and options
+      this.ua.configuration.displayName = newDisplayName;
+      this.options.displayName = newDisplayName;
+
+      // Re-register to apply the new display name
+      if (this.registerer) {
+        this.registerer.register();
+      }
+    }
   }
 }

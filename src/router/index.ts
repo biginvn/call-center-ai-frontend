@@ -10,8 +10,10 @@ const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { requiresGuest: true } },
   { path: '/', name: 'dashboard', component: AgentDashboardView, meta: { requiresAuth: true, role: 'agent' } },
   { path: '/admin', name: 'admin-dashboard', component: AdminDashboardView, meta: { requiresAuth: true, role: 'admin' } },
-  { path: '/admin/conversations/:id', name: 'conversation-detail', component: ConversationDetailView, meta: { requiresAuth: true, role: 'admin' } },
+  //  { path: '/admin/conversations/:id', name: 'conversation-detail', component: ConversationDetailView, meta: { requiresAuth: true, role: 'admin' } },
+  { path: '/admin/conversations/:id', name: 'conversation-detail', component: ConversationDetailView },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
+  { path: '/admin/test', name: 'admin-dashboard-test', component: AdminDashboardView }
 ];
 
 const router = createRouter({

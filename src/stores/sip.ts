@@ -23,8 +23,9 @@ export const useSipStore = defineStore('sip', () => {
   const authStore = useAuthStore()
   const displayName = computed(() => {
     // First try to get from auth store
-    if (authStore.user?.fullName) {
-      return authStore.user.fullName;
+    const authUser = authStore.user;
+    if (authUser?.fullName) {
+      return authUser.fullName;
     }
     // Fallback to localStorage
     const storedFullName = localStorage.getItem("fullName");
@@ -48,6 +49,11 @@ export const useSipStore = defineStore('sip', () => {
   // Watch for changes in user data and reinitialize SIP service if needed
   watch(() => authStore.user, async (newUser) => {
     if (newUser && newUser.role === 'agent' && newUser.extensionNumber) {
+      // Wait for auth store to be fully loaded
+      if (!authStore.isUserDataLoaded) {
+        await authStore.loadFromStorage();
+      }
+
       const extension = determineWebClient(newUser.extensionNumber.toString())
       const password = "1234" // This should be stored securely
       if (extension && password) {
@@ -58,13 +64,8 @@ export const useSipStore = defineStore('sip', () => {
 
   // Update watch to handle localStorage as well
   watch(() => displayName.value, (newName) => {
-    if (sipService.value && newName !== 'Unknown' && config.value) {
-      sipService.value = new SipService({
-        server: config.value.SIP_SERVER,
-        wsServer: `wss://${config.value.SIP_SERVER}:${config.value.SIP_PORT}/ws`,
-        displayName: newName,
-      });
-      setupSipEvents();
+    if (sipService.value && newName !== 'Unknown') {
+      sipService.value.updateDisplayName(newName);
     }
   });
 
@@ -94,6 +95,11 @@ export const useSipStore = defineStore('sip', () => {
     if (!sipService.value) {
       debug.value += '\n[Error] Failed to initialize SIP service.'
       return
+    }
+
+    // Ensure we have the latest display name before login
+    if (authStore.user?.fullName) {
+      sipService.value.updateDisplayName(authStore.user.fullName);
     }
 
     await sipService.value.login(extension, password)
