@@ -46,10 +46,10 @@ const isActive = (path: string) => {
           :class="{ 'text-primary': isActive('/admin') }" @click.prevent="navigateTo('/admin')">
           Trang chủ
         </a>
-        <!-- <a href="#" class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
-          :class="{ 'text-primary': isActive('/admin/ai-models') }" @click.prevent="navigateTo('/admin/ai-models')">
-          Mô hình AI
-        </a> -->
+        <a href="#" class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
+          :class="{ 'text-primary': isActive('/admin/ai-training') }" @click.prevent="navigateTo('/admin/ai-training')">
+          Huấn luyện AI
+        </a>
       </div>
     </nav>
 
@@ -81,14 +81,14 @@ const isActive = (path: string) => {
         </div>
         <div class="flex flex-col gap-4">
           <a href="#" class="text-sm font-medium transition-colors hover:text-primary"
-            :class="{ 'text-primary': isActive('/admin/conversations') }"
-            @click.prevent="navigateTo('/admin/conversations')">
-            Danh sách cuộc gọi
+            :class="{ 'text-primary': isActive('/admin') }" @click.prevent="navigateTo('/admin')">
+            Trang chủ
           </a>
-          <!-- <a href="#" class="text-sm font-medium transition-colors hover:text-primary"
-            :class="{ 'text-primary': isActive('/admin/ai-models') }" @click.prevent="navigateTo('/admin/ai-models')">
-            Mô hình AI
-          </a> -->
+          <a href="#" class="text-sm font-medium transition-colors hover:text-primary"
+            :class="{ 'text-primary': isActive('/admin/ai-training') }"
+            @click.prevent="navigateTo('/admin/ai-training')">
+            Huấn luyện AI
+          </a>
           <div class="border-t my-2"></div>
           <div class="flex items-center gap-2 px-2 py-1">
             <CircleUser class="h-5 w-5" />

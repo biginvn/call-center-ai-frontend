@@ -5,11 +5,14 @@ import AdminDashboardView from '@/views/admin/AdminDashboardView.vue'
 import LoginView from '@/views/LoginView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
 import ConversationDetailView from '@/views/admin/ConversationDetailView.vue'
+import AITrainingView from '@/views/admin/AITrainingView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { requiresGuest: true } },
   { path: '/', name: 'dashboard', component: AgentDashboardView, meta: { requiresAuth: true, role: 'agent' } },
   { path: '/admin', name: 'admin-dashboard', component: AdminDashboardView, meta: { requiresAuth: true, role: 'admin' } },
+  // { path: '/admin/ai-training', name: 'ai-training', component: AITrainingView, meta: { requiresAuth: true, role: 'admin' } },
+  { path: '/admin/ai-training', name: 'ai-training', component: AITrainingView },
   //  { path: '/admin/conversations/:id', name: 'conversation-detail', component: ConversationDetailView, meta: { requiresAuth: true, role: 'admin' } },
   { path: '/admin/conversations/:id', name: 'conversation-detail', component: ConversationDetailView },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
