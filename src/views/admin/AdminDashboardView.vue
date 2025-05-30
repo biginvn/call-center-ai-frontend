@@ -35,7 +35,7 @@ const getSentimentText = (sentiment: string) => {
 }
 
 const handleRowClick = async (conversation: Conversation) => {
-  const width = 1200
+  const width = 1500
   const height = 800
   const left = (window.screen.width - width) / 2
   const top = (window.screen.height - height) / 2

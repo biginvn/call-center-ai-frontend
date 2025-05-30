@@ -301,11 +301,7 @@ const handleBotCallEnd = () => {
           </CardHeader>
           <CardContent>
             <div class="flex flex-col gap-4">
-              <n-button variant="outline" class="flex items-center justify-center gap-2" @click="startAICall"
-                :disabled="isAICall">
-                <Bot class="h-5 w-5" />
-                <span>Gọi AI Assistant</span>
-              </n-button>
+
               <PhoneDialpad :onCall="onStartCall" />
             </div>
           </CardContent>
@@ -313,16 +309,16 @@ const handleBotCallEnd = () => {
 
         <n-card>
           <CardHeader>
-            <CardTitle>AI Assistant</CardTitle>
+            <CardTitle>AI Bot</CardTitle>
           </CardHeader>
           <CardContent>
             <div class="flex flex-col gap-4">
-              <TextareaComponent v-model="aiPrompt" placeholder="Nhập prompt cho AI Assistant..."
+              <TextareaComponent v-model="aiPrompt" placeholder="Nhập instructions cho AI Bot..."
                 class="min-h-[150px]" />
               <n-button variant="outline" class="flex items-center justify-center gap-2" @click="startAICall"
                 :disabled="isAICall">
                 <Bot class="h-5 w-5" />
-                <span>Gọi AI Assistant</span>
+                <span>Gọi AI Bot</span>
               </n-button>
             </div>
           </CardContent>
