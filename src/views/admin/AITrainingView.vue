@@ -134,6 +134,7 @@ const testTTS = async (e: Event) => {
       response_format: 'mp3',
       speed: 1.0,
       instructions: instructions
+
     })
 
     const audioBlob = await response.blob()
@@ -157,6 +158,7 @@ const testTTS = async (e: Event) => {
     audio.onended = () => {
       isPlaying.value = false
       currentAudio.value = null
+
     }
 
     await audio.play()
@@ -278,6 +280,7 @@ onUnmounted(() => {
     currentAudio.value = null
   }
 })
+
 </script>
 
 <template>
@@ -304,6 +307,7 @@ onUnmounted(() => {
               <CardTitle>Chỉ dẫn trả lời</CardTitle>
               <CardDescription>
                 Nhập nội dung để chỉ dẫn mô hình AI
+
               </CardDescription>
             </div>
           </CardHeader>
@@ -325,6 +329,7 @@ onUnmounted(() => {
                   <FormMessage />
                 </FormItem>
               </FormField>
+
             </div>
           </CardContent>
         </n-card>

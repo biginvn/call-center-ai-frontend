@@ -275,6 +275,7 @@ const startAICall = async () => {
               type: 'function',
               name: 'callAgent',
               description: 'Công cụ dùng để thực hiện cuộc gọi đến một tổng đài viên (agent) cụ thể bằng cách sử dụng số máy nội bộ (extension) do người dùng cung cấp. Hãy sử dụng công cụ getActiveAgent để truy vấn danh sách agent đang hoạt động trước, sau đó hỏi người dùng muốn chọn số nào. Không được gọi khi chưa được người dùng xác nhận',
+
               parameters: {
                 type: 'object',
                 properties: {
