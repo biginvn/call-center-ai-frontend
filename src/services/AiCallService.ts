@@ -51,11 +51,7 @@ class AiCallService {
   }
 
   async submitVoice(url: string): Promise<string> {
-    const response = await axiosInstance.post<string>('/realtime/finish', {
-      data: {
-        audio_url: url
-      }
-    });
+    const response = await axiosInstance.post<string>(`/realtime/finish?audio_url=${url}`);
     return response.data;
   }
 }

@@ -169,7 +169,8 @@ const startAICall = async () => {
       recorder.value = new MediaRecorder(destination.stream)
       recorder.value.ondataavailable = (e) => chunks.value.push(e.data)
       recorder.value.onstop = async () => {
-        const blob = new Blob(chunks.value, { type: 'audio/wav' })
+        // Use correct MIME type and extension for webm (native MediaRecorder output)
+        const blob = new Blob(chunks.value, { type: 'audio/webm' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
@@ -182,7 +183,9 @@ const startAICall = async () => {
         // Update the toast.promise implementation:
         const uploadPromise = (async () => {
           try {
-            const file = new File([blob], 'conversation.wav', { type: 'audio/wav' })
+            // Use correct MIME type and extension for webm
+            const blob = new Blob(chunks.value, { type: 'audio/webm' })
+            const file = new File([blob], 'conversation.webm', { type: 'audio/webm' })
             const formData = new FormData()
             formData.append('file', file)
 
@@ -216,7 +219,7 @@ const startAICall = async () => {
 
         // Use the toast.promise with correct typing
         toast.promise(uploadPromise, promiseData)
-        a.download = 'conversation.wav'
+        a.download = 'conversation.webm'
         a.click()
         URL.revokeObjectURL(url)
         chunks.value = []
@@ -271,13 +274,13 @@ const startAICall = async () => {
             {
               type: 'function',
               name: 'callAgent',
-              description: 'Gọi đến một tổng đài viên (agent) bằng số máy nội bộ được chỉ định. Sử dụng khi cần kết nối trực tiếp với một agent cụ thể. Nếu không chắc chắn về số máy cần gọi, hãy hỏi lại người dùng để xác nhận thông tin trước khi thực hiện cuộc gọi.',
+              description: 'Công cụ dùng để thực hiện cuộc gọi đến một tổng đài viên (agent) cụ thể bằng cách sử dụng số máy nội bộ (extension) do người dùng cung cấp. Hãy sử dụng công cụ getActiveAgent để truy vấn danh sách agent đang hoạt động trước, sau đó hỏi người dùng muốn chọn số nào. Không được gọi khi chưa được người dùng xác nhận',
               parameters: {
                 type: 'object',
                 properties: {
                   extension: {
                     type: 'string',
-                    description: 'Số máy nội bộ (extension) của tổng đài viên cần gọi.'
+                    description: 'Số máy nội bộ (extension) của tổng đài viên cần kết nối.'
                   }
                 },
                 required: ['extension']
@@ -286,7 +289,7 @@ const startAICall = async () => {
             {
               type: 'function',
               name: 'getActiveAgent',
-              description: 'Truy xuất và liệt kê toàn bộ danh sách tổng đài viên (agent) đang hoạt động trong hệ thống tại thời điểm hiện tại. Kết quả nên bao gồm số máy nội bộ (extension) đang trực tuyến.',
+              description: 'Lấy danh sách các số máy nội bộ (extension) của tổng đài viên đang hoạt động tại thời điểm hiện tại. Dùng khi cần xác định những số máy đang sẵn sàng nhận cuộc gọi.',
               parameters: {
                 type: 'object',
                 properties: {},

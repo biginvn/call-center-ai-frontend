@@ -2,6 +2,12 @@
 FROM node:20-alpine AS build-stage
 WORKDIR /app
 
+# Add build args
+ARG NODE_ENV
+ARG VITE_OPENAI_API_KEY
+ENV NODE_ENV=${NODE_ENV}
+ENV VITE_OPENAI_API_KEY=${VITE_OPENAI_API_KEY}
+
 # Install dependencies
 COPY package*.json ./
 RUN npm ci
