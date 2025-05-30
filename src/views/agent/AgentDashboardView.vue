@@ -186,6 +186,84 @@ const startAICall = async () => {
       }
     }
 
+    const fns = {
+      callAgent: async ({ extension }: { extension: string }) => {
+        try {
+          await sipStore.makeCall(extension)
+          handleBotCallEnd()
+          isBotCallOpen.value = false // Close the AI bot interface
+          onStartCall(extension)
+          return { success: true }
+        } catch (error) {
+          console.error('Error making call:', error)
+          return { success: false, error }
+        }
+      }
+
+    }
+
+    // Create data channel for OpenAI bot
+    const dataChannel = peerConnection.value.createDataChannel('oai-events')
+
+    function configureData() {
+      console.log('Configuring data channel')
+      const event = {
+        type: 'session.update',
+        session: {
+          modalities: ['text', 'audio'],
+          tools: [
+            {
+              type: 'function',
+              name: 'callAgent',
+              description: 'Makes a call to agent with a specified extension number (100, 101, 111, 112). Notify user that you are about to call then execute.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  extension: {
+                    type: 'string',
+                    description: 'The extension number to call'
+                  }
+                },
+                required: ['extension']
+              }
+            }
+          ]
+        }
+      }
+      dataChannel.send(JSON.stringify(event))
+    }
+
+    dataChannel.addEventListener('open', (ev) => {
+      console.log('Opening data channel', ev)
+      configureData()
+    })
+
+    dataChannel.addEventListener('message', async (ev) => {
+      const msg = JSON.parse(ev.data) as { type: string; name: keyof typeof fns; arguments: string; call_id: string }
+      // Handle function calls
+      if (msg.type === 'response.function_call_arguments.done') {
+        const fn = fns[msg.name]
+        if (fn !== undefined) {
+          console.log(`Calling local function ${msg.name} with ${msg.arguments}`)
+          const args = JSON.parse(msg.arguments)
+          const result = await fn(args)
+          console.log('result', result)
+          // Let OpenAI know that the function has been called and share its output
+          const event = {
+            type: 'conversation.item.create',
+            item: {
+              type: 'function_call_output',
+              call_id: msg.call_id,
+              output: JSON.stringify(result)
+            }
+          }
+          dataChannel.send(JSON.stringify(event))
+          // Have assistant respond after getting the results
+          dataChannel.send(JSON.stringify({ type: "response.create" }))
+        }
+      }
+    })
+
     // Create and send offer
     const offer = await peerConnection.value.createOffer()
     await peerConnection.value.setLocalDescription(offer)
