@@ -48,7 +48,8 @@ const isActive = (path: string) => {
         </a>
         <a href="#" class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
           :class="{ 'text-primary': isActive('/admin/ai-training') }" @click.prevent="navigateTo('/admin/ai-training')">
-          Huấn luyện AI
+          Chỉ dẫn AI
+
         </a>
       </div>
     </nav>
@@ -87,7 +88,8 @@ const isActive = (path: string) => {
           <a href="#" class="text-sm font-medium transition-colors hover:text-primary"
             :class="{ 'text-primary': isActive('/admin/ai-training') }"
             @click.prevent="navigateTo('/admin/ai-training')">
-            Huấn luyện AI
+            Chỉ dẫn AI
+
           </a>
           <div class="border-t my-2"></div>
           <div class="flex items-center gap-2 px-2 py-1">

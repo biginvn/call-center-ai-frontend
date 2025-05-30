@@ -26,11 +26,13 @@ import BotCallInterface from '@/components/BotCallInterface.vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useSipStore } from '@/stores/sip'
-import { getActiveUserByExtension } from '@/services/callService'
+import { getActiveUserByExtension, getAllActiveUsers } from '@/services/callService'
 import ActiveUsersTable from '@/components/ActiveUsersTable.vue'
 import { determineWebClient } from "@/lib/utils";
-import { conversationService } from '@/services/conversationService'
-import { TextareaComponent } from '@/components/ui/textarea'
+import AiCallService from '@/services/AiCallService'
+import axiosInstance from '@/services/axiosInstance'
+import axios from 'axios'
+import { toast } from 'vue-sonner'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -49,7 +51,6 @@ const micStream = ref<MediaStream | null>(null)
 const recorder = ref<MediaRecorder | null>(null)
 const chunks = ref<Blob[]>([])
 const botCallInterfaceRef = ref<InstanceType<typeof BotCallInterface> | null>(null)
-const aiPrompt = ref('')
 
 // Watch for incoming calls
 watch(() => sipStore.callStatus, (newStatus) => {
@@ -167,12 +168,58 @@ const startAICall = async () => {
 
       recorder.value = new MediaRecorder(destination.stream)
       recorder.value.ondataavailable = (e) => chunks.value.push(e.data)
-      recorder.value.onstop = () => {
-        const blob = new Blob(chunks.value, { type: 'audio/wav' })
+      recorder.value.onstop = async () => {
+        // Use correct MIME type and extension for webm (native MediaRecorder output)
+        const blob = new Blob(chunks.value, { type: 'audio/webm' })
         const url = URL.createObjectURL(blob)
         const a = document.createElement('a')
         a.href = url
-        a.download = 'conversation.wav'
+        // Use toast.promise for upload and submit
+        interface UploadResponse {
+          file_path: string;
+          name: string;
+        }
+
+        // Update the toast.promise implementation:
+        const uploadPromise = (async () => {
+          try {
+            // Use correct MIME type and extension for webm
+            const blob = new Blob(chunks.value, { type: 'audio/webm' })
+            const file = new File([blob], 'conversation.webm', { type: 'audio/webm' })
+            const formData = new FormData()
+            formData.append('file', file)
+
+            const uploadResponse = await axiosInstance.post<UploadResponse>('/documents/upload', formData, {
+              headers: {
+                'Content-Type': 'multipart/form-data',
+                'Accept': 'application/json'
+              }
+            })
+
+            if (uploadResponse.data.file_path) {
+              await AiCallService.submitVoice(uploadResponse.data.file_path)
+              return { name: 'Voice file', path: uploadResponse.data.file_path }
+            }
+            throw new Error('No file path in response')
+          } catch (error) {
+            if (axios.isAxiosError(error) && error.response?.status === 422) {
+              throw new Error('File validation failed')
+            }
+            throw error
+          }
+        })()
+
+        // Type the promise data correctly
+        const promiseData = {
+          loading: 'Đang tải lên...',
+          success: (data: { name: string; path: string }) =>
+            `${data.name} đã được tải lên và gửi thành công`,
+          error: (error: Error) => `Lỗi: ${error.message}`
+        }
+
+        // Use the toast.promise with correct typing
+        toast.promise(uploadPromise, promiseData)
+        a.download = 'conversation.webm'
         a.click()
         URL.revokeObjectURL(url)
         chunks.value = []
@@ -198,8 +245,20 @@ const startAICall = async () => {
           console.error('Error making call:', error)
           return { success: false, error }
         }
+      },
+      getActiveAgent: async ({ }) => {
+        try {
+          const activeUsers = await getAllActiveUsers()
+          const extensions = activeUsers
+            .filter(user => user.extension_number !== authStore.user?.extensionNumber)
+            .map(user => user.extension_number)
+          console.log('Active users:', extensions)
+          return { success: true, extensions }
+        } catch (error) {
+          console.error('Error getting active users:', error)
+          return { success: false, error }
+        }
       }
-
     }
 
     // Create data channel for OpenAI bot
@@ -215,16 +274,27 @@ const startAICall = async () => {
             {
               type: 'function',
               name: 'callAgent',
-              description: 'Makes a call to agent with a specified extension number (100, 101, 111, 112). Notify user that you are about to call then execute.',
+              description: 'Công cụ dùng để thực hiện cuộc gọi đến một tổng đài viên (agent) cụ thể bằng cách sử dụng số máy nội bộ (extension) do người dùng cung cấp. Hãy sử dụng công cụ getActiveAgent để truy vấn danh sách agent đang hoạt động trước, sau đó hỏi người dùng muốn chọn số nào. Không được gọi khi chưa được người dùng xác nhận',
+
               parameters: {
                 type: 'object',
                 properties: {
                   extension: {
                     type: 'string',
-                    description: 'The extension number to call'
+                    description: 'Số máy nội bộ (extension) của tổng đài viên cần kết nối.'
                   }
                 },
                 required: ['extension']
+              }
+            },
+            {
+              type: 'function',
+              name: 'getActiveAgent',
+              description: 'Lấy danh sách các số máy nội bộ (extension) của tổng đài viên đang hoạt động tại thời điểm hiện tại. Dùng khi cần xác định những số máy đang sẵn sàng nhận cuộc gọi.',
+              parameters: {
+                type: 'object',
+                properties: {},
+                required: []
               }
             }
           ]
@@ -269,10 +339,8 @@ const startAICall = async () => {
     await peerConnection.value.setLocalDescription(offer)
 
     // Send offer to OpenAI Realtime API
-    const sessionResponse = await conversationService.getSession(aiPrompt.value)
-    console.log(sessionResponse)
+    const sessionResponse = await AiCallService.getSession()
     const enToken = sessionResponse.client_secret.value
-    console.log(enToken)
 
     const sdpResponse = await fetch(`https://api.openai.com/v1/realtime?model=gpt-4o-mini-realtime-preview-2024-12-17`, {
       method: 'POST',
@@ -298,7 +366,7 @@ const startAICall = async () => {
   }
 }
 
-const endAICall = () => {
+const endAICall = async () => {
   if (recorder.value) {
     recorder.value.stop()
   }
@@ -379,25 +447,13 @@ const handleBotCallEnd = () => {
           </CardHeader>
           <CardContent>
             <div class="flex flex-col gap-4">
-
-              <PhoneDialpad :onCall="onStartCall" />
-            </div>
-          </CardContent>
-        </n-card>
-
-        <n-card>
-          <CardHeader>
-            <CardTitle>AI Bot</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div class="flex flex-col gap-4">
-              <TextareaComponent v-model="aiPrompt" placeholder="Nhập instructions cho AI Bot..."
-                class="min-h-[150px]" />
               <n-button variant="outline" class="flex items-center justify-center gap-2" @click="startAICall"
                 :disabled="isAICall">
                 <Bot class="h-5 w-5" />
                 <span>Gọi AI Bot</span>
               </n-button>
+
+              <PhoneDialpad :onCall="onStartCall" />
             </div>
           </CardContent>
         </n-card>
