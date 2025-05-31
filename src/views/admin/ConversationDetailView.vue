@@ -1,53 +1,89 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, onUnmounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useConversationStore } from '@/stores/conversationStore'
 import { formatDate } from '@/lib/utils'
 import { NBadge } from '@/components/ui/badge'
 import type { Conversation, Message } from '@/types/conversation'
 import AdminNavbar from '@/components/admin/AdminNavbar.vue'
-import { Bot } from 'lucide-vue-next'
+import { Bot, Play, Pause } from 'lucide-vue-next'
+import WaveSurfer from 'wavesurfer.js'
 
 const route = useRoute()
 const conversationStore = useConversationStore()
 const conversation = ref<Conversation | null>(null)
-const audioRef = ref<HTMLAudioElement | null>(null)
-const currentTime = ref(0)
+const wavesurfer = ref<WaveSurfer | null>(null)
 const currentMessageIndex = ref(-1)
+const isPlaying = ref(false)
+const waveformRef = ref<HTMLElement | null>(null)
 
 onMounted(async () => {
   const conversationId = route.params.id as string
   await conversationStore.fetchConversationById(conversationId)
   if (conversationStore.currentConversation) {
     conversation.value = conversationStore.currentConversation
+    await nextTick()
+    initWaveSurfer()
   }
 })
 
-// Watch for audio time updates
-watch(currentTime, (newTime) => {
-  if (!conversation.value?.messages) return
-
-  // Find the current message based on time
-  const messageIndex = conversation.value.messages.findIndex(
-    (message) => message.start_time <= newTime && message.end_time >= newTime
-  )
-
-  if (messageIndex !== -1 && messageIndex !== currentMessageIndex.value) {
-    currentMessageIndex.value = messageIndex
+const initWaveSurfer = () => {
+  if (!conversation.value?.record_url || !waveformRef.value) {
+    console.warn('WaveSurfer initialization failed: Missing record_url or waveformRef')
+    return
   }
-})
 
-const handleTimeUpdate = () => {
-  if (audioRef.value) {
-    currentTime.value = audioRef.value.currentTime
-  }
+  wavesurfer.value = WaveSurfer.create({
+    container: waveformRef.value,
+    waveColor: '#4f46e5',
+    progressColor: '#818cf8',
+    cursorColor: '#4f46e5',
+    barWidth: 2,
+    barRadius: 3,
+    cursorWidth: 1,
+    height: 80,
+    barGap: 3,
+    url: conversation.value.record_url,
+  })
+
+  wavesurfer.value.on('timeupdate', (time: number) => {
+    if (!conversation.value?.messages) return
+
+    // Find the current message based on time
+    const messageIndex = conversation.value.messages.findIndex(
+      (message) => message.start_time <= time && message.end_time >= time
+    )
+
+    if (messageIndex !== -1 && messageIndex !== currentMessageIndex.value) {
+      currentMessageIndex.value = messageIndex
+    }
+  })
+
+  wavesurfer.value.on('play', () => {
+    isPlaying.value = true
+  })
+
+  wavesurfer.value.on('pause', () => {
+    isPlaying.value = false
+  })
+}
+
+const togglePlay = () => {
+  if (!wavesurfer.value) return
+  wavesurfer.value.playPause()
 }
 
 const handleMessageClick = (message: Message) => {
-  if (audioRef.value && message.start_time !== undefined) {
-    audioRef.value.currentTime = message.start_time
+  if (wavesurfer.value && message.start_time !== undefined) {
+    wavesurfer.value.setTime(message.start_time)
   }
 }
+
+onUnmounted(() => {
+  if (wavesurfer.value) {
+    wavesurfer.value.destroy()
+  }
+})
 
 const getMoodText = (mood: string) => {
   switch (mood) {
@@ -97,9 +133,13 @@ const formatMessageTime = (startTime: number, endTime: number) => {
       <div class="grid gap-1 mb-4">
         <h1 class="text-xl font-bold">Chi tiết cuộc gọi</h1>
       </div>
-      <div v-if="conversation && conversation.record_url">
-        <audio :src="conversation.record_url" controls class="w-full" ref="audioRef"
-          @timeupdate="handleTimeUpdate"></audio>
+      <div v-if="conversation && conversation.record_url" class="space-y-4">
+        <div ref="waveformRef" class="w-full"></div>
+        <div class="flex justify-center">
+          <button @click="togglePlay" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+            <component :is="isPlaying ? Pause : Play" class="h-6 w-6" />
+          </button>
+        </div>
       </div>
     </header>
     <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
