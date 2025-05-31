@@ -8,16 +8,31 @@ export const containerClass = 'w-full h-full'
 import { NBadge } from '@/components/ui/badge'
 import { NCard, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { NTable, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useConversationStore } from '@/stores/conversationStore'
 import { formatDate } from '@/lib/utils'
 import AdminNavbar from '@/components/admin/AdminNavbar.vue'
 import type { Conversation } from '@/types/conversation'
+import { NButton } from '@/components/ui/button'
 
 const conversationStore = useConversationStore()
+const currentPage = ref(1)
+const pageSize = ref(10)
+
 onMounted(async () => {
-  await conversationStore.fetchRecentConversations()
+  await conversationStore.fetchRecentConversations(currentPage.value, pageSize.value)
 })
+
+const handlePageChange = async (page: number) => {
+  currentPage.value = page
+  await conversationStore.fetchRecentConversations(currentPage.value, pageSize.value)
+}
+
+const handlePageSizeChange = async (size: number) => {
+  pageSize.value = size
+  currentPage.value = 1
+  await conversationStore.fetchRecentConversations(currentPage.value, pageSize.value)
+}
 
 const getSentimentText = (sentiment: string) => {
   switch (sentiment) {
@@ -51,88 +66,23 @@ const handleRowClick = async (conversation: Conversation) => {
   <div class="flex min-h-screen w-full flex-col">
     <AdminNavbar />
     <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-      <!-- <div class="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        <n-card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">
-              Total Revenue
-            </CardTitle>
-            <DollarSign class="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl font-bold">
-              $45,231.89
-            </div>
-            <p class="text-xs text-muted-foreground">
-              +20.1% from last month
-            </p>
-          </CardContent>
-        </n-card>
-        <n-card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">
-              Subscriptions
-            </CardTitle>
-            <Users class="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl font-bold">
-              +2350
-            </div>
-            <p class="text-xs text-muted-foreground">
-              +180.1% from last month
-            </p>
-          </CardContent>
-        </n-card>
-        <n-card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">
-              Sales
-            </CardTitle>
-            <CreditCard class="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl font-bold">
-              +12,234
-            </div>
-            <p class="text-xs text-muted-foreground">
-              +19% from last month
-            </p>
-          </CardContent>
-        </n-card>
-        <n-card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm font-medium">
-              Active Now
-            </CardTitle>
-            <Activity class="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl font-bold">
-              +573
-            </div>
-            <p class="text-xs text-muted-foreground">
-              +201 since last hour
-            </p>
-          </CardContent>
-        </n-card>
-      </div> -->
       <div class="grid">
         <n-card class="">
-          <CardHeader class="flex flex-row items-center">
+          <CardHeader class="flex flex-row items-center justify-between">
             <div class="grid gap-2">
-              <CardTitle>Bản ghi cuộc gọi
-              </CardTitle>
+              <CardTitle>Bản ghi cuộc gọi</CardTitle>
               <CardDescription>
-
+                Trang {{ currentPage }} / {{ conversationStore.pagination.total_pages }}
               </CardDescription>
             </div>
-            <!-- <n-button as-child size="sm" class="ml-auto gap-1">
-              <a href="#">
-                View All
-                <ArrowUpRight class="h-4 w-4" />
-              </a>
-            </n-button> -->
+            <div class="flex items-center gap-2">
+              <select v-model="pageSize" @change="handlePageSizeChange(Number(pageSize))"
+                class="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors">
+                <option :value="10">10 / trang</option>
+                <option :value="20">20 / trang</option>
+                <option :value="50">50 / trang</option>
+              </select>
+            </div>
           </CardHeader>
           <CardContent>
             <!-- Mobile View -->
@@ -208,6 +158,23 @@ const handleRowClick = async (conversation: Conversation) => {
                 </TableRow>
               </TableBody>
             </n-table>
+
+            <!-- Pagination Controls -->
+            <div class="flex items-center justify-between mt-4">
+              <div class="text-sm text-muted-foreground">
+                Hiển thị {{ conversationStore.conversations.length }} / {{ conversationStore.pagination.total_items }}
+                bản ghi
+              </div>
+              <div class="flex items-center gap-2">
+                <n-button variant="outline" :disabled="currentPage === 1" @click="handlePageChange(currentPage - 1)">
+                  Trước
+                </n-button>
+                <n-button variant="outline" :disabled="currentPage === conversationStore.pagination.total_pages"
+                  @click="handlePageChange(currentPage + 1)">
+                  Sau
+                </n-button>
+              </div>
+            </div>
           </CardContent>
         </n-card>
       </div>

@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { Conversation } from '@/types/conversation'
 import { conversationService } from '@/services/conversationService'
-import { mockConversation } from '@/mocks/conversation'
 
 interface PaginationData {
   page_number: number
@@ -31,20 +30,12 @@ export const useConversationStore = defineStore('conversation', {
   }),
 
   actions: {
-    async fetchRecentConversations(limit: number = 5) {
+    async fetchRecentConversations(page: number = 1, size: number = 10) {
       this.loading = true
       this.error = null
       try {
-        const response = await conversationService.getConversations() as ConversationResponse
-        // Ensure data is an array and sort by created_at in descending order
-        const sortedData = Array.isArray(response.conversations) ? response.conversations : []
-        this.conversations = sortedData
-          .sort((a: Conversation, b: Conversation) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-          )
-          .slice(0, limit)
-
-        // Update pagination data
+        const response = await conversationService.getConversations(page, size) as ConversationResponse
+        this.conversations = response.conversations
         if (response.pagination) {
           this.pagination = response.pagination
         }
@@ -60,14 +51,8 @@ export const useConversationStore = defineStore('conversation', {
       this.error = null
 
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
-
-        if (id === '1') {
-          this.currentConversation = mockConversation
-        } else {
-          throw new Error('Conversation not found')
-        }
+        const response = await conversationService.getConversationById(id)
+        this.currentConversation = response
       } catch (error) {
         this.error = error instanceof Error ? error.message : 'Failed to fetch conversation'
         this.currentConversation = null

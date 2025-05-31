@@ -18,7 +18,8 @@ export interface Message {
   content: string
   mood: ConversationMood
   order: number
-  time: number
+  start_time: number
+  end_time: number
 }
 
 export interface Conversation {

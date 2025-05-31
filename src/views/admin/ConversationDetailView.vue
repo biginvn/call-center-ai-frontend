@@ -6,6 +6,7 @@ import { formatDate } from '@/lib/utils'
 import { NBadge } from '@/components/ui/badge'
 import type { Conversation, Message } from '@/types/conversation'
 import AdminNavbar from '@/components/admin/AdminNavbar.vue'
+import { Bot } from 'lucide-vue-next'
 
 const route = useRoute()
 const conversationStore = useConversationStore()
@@ -28,10 +29,7 @@ watch(currentTime, (newTime) => {
 
   // Find the current message based on time
   const messageIndex = conversation.value.messages.findIndex(
-    (message, index) => {
-      const nextMessage = conversation.value?.messages[index + 1]
-      return message.time <= newTime && (!nextMessage || nextMessage.time > newTime)
-    }
+    (message) => message.start_time <= newTime && message.end_time >= newTime
   )
 
   if (messageIndex !== -1 && messageIndex !== currentMessageIndex.value) {
@@ -46,8 +44,8 @@ const handleTimeUpdate = () => {
 }
 
 const handleMessageClick = (message: Message) => {
-  if (audioRef.value && message.time) {
-    audioRef.value.currentTime = message.time
+  if (audioRef.value && message.start_time !== undefined) {
+    audioRef.value.currentTime = message.start_time
   }
 }
 
@@ -86,22 +84,26 @@ const formatTime = (seconds: number) => {
   const remainingSeconds = Math.floor(seconds % 60)
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
 }
+
+const formatMessageTime = (startTime: number, endTime: number) => {
+  return `${formatTime(startTime)} - ${formatTime(endTime)}`
+}
 </script>
 
 <template>
   <div class="flex min-h-screen w-full flex-col">
     <AdminNavbar />
-    <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-      <div class="mb-6">
-        <h1 class="text-2xl font-bold">Chi tiết cuộc gọi</h1>
+    <header class="sticky top-[64px] left-0 right-0 bg-white dark:bg-gray-900 shadow-md p-4 md:px-8 z-10">
+      <div class="grid gap-1 mb-4">
+        <h1 class="text-xl font-bold">Chi tiết cuộc gọi</h1>
       </div>
-
-      <div v-if="conversation && conversation.record_url" class="mb-6">
+      <div v-if="conversation && conversation.record_url">
         <audio :src="conversation.record_url" controls class="w-full" ref="audioRef"
           @timeupdate="handleTimeUpdate"></audio>
       </div>
-
-      <div v-if="conversation" class="grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-6">
+    </header>
+    <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <div v-if="conversation" class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         <!-- Column 1: Call Details -->
         <div class="md:col-span-1">
           <div class="bg-card rounded-lg border p-4">
@@ -114,14 +116,20 @@ const formatTime = (seconds: number) => {
               <div class="flex items-center justify-between">
                 <span class="text-muted-foreground">Từ:</span>
                 <div class="text-right">
-                  <div>{{ conversation.from_user.fullname }}</div>
+                  <div class="flex items-center gap-1">
+                    {{ conversation.from_user.fullname }}
+                    <Bot v-if="conversation.from_user.email === 'ai@gmail.com'" class="h-4 w-4" />
+                  </div>
                   <div class="text-xs text-muted-foreground">{{ conversation.from_user.email }}</div>
                 </div>
               </div>
               <div class="flex items-center justify-between">
                 <span class="text-muted-foreground">Đến:</span>
                 <div class="text-right">
-                  <div>{{ conversation.to_user.fullname }}</div>
+                  <div class="flex items-center gap-1">
+                    {{ conversation.to_user.fullname }}
+                    <Bot v-if="conversation.to_user.email === 'ai@gmail.com'" class="h-4 w-4" />
+                  </div>
                   <div class="text-xs text-muted-foreground">{{ conversation.to_user.email }}</div>
                 </div>
               </div>
@@ -133,12 +141,25 @@ const formatTime = (seconds: number) => {
                   {{ getStatusText(conversation.status) }}
                 </n-badge>
               </div>
+              <div class="flex items-center justify-between">
+                <span class="text-muted-foreground">Tâm trạng:</span>
+                <n-badge class="text-xs" :class="{ 'bg-green-500': conversation.sentiment === 'positive' }"
+                  :variant="conversation.sentiment === 'positive' ? 'default' : conversation.sentiment === 'negative' ? 'destructive' : 'outline'">
+                  {{ getMoodText(conversation.sentiment) }}
+                </n-badge>
+              </div>
+              <div class="mt-4">
+                <h4 class="font-medium mb-2">Tóm tắt</h4>
+                <div class="p-3 rounded-lg bg-muted">
+                  {{ conversation.summarize || 'Không có tóm tắt' }}
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Column 2: Messages -->
-        <div class="md:col-span-2">
+        <div class="md:col-span-1">
           <div class="bg-card rounded-lg border p-4 h-full">
             <h3 class="font-semibold mb-4">Tin nhắn</h3>
             <div class="space-y-4">
@@ -158,7 +179,8 @@ const formatTime = (seconds: number) => {
               ]" @click="handleMessageClick(message)">
                 <div v-if="message.sender_id.id !== conversation.from_user.id"
                   class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium flex-shrink-0">
-                  {{ message.sender_id.fullname.charAt(0) }}
+                  <Bot v-if="message.sender_id.email === 'ai@gmail.com'" class="h-4 w-4" />
+                  <template v-else>{{ message.sender_id.fullname.charAt(0) }}</template>
                 </div>
                 <div :class="[
                   'flex flex-col',
@@ -174,9 +196,9 @@ const formatTime = (seconds: number) => {
                           ? 'bg-red-500 text-white'
                           : 'bg-muted'
                       : message.mood === 'positive'
-                        ? 'bg-green-100 text-green-900'
+                        ? 'bg-green-500 text-white'
                         : message.mood === 'negative'
-                          ? 'bg-red-100 text-red-900'
+                          ? 'bg-red-500 text-white'
                           : 'bg-muted'
                   ]">
                     <p class="text-sm">{{ message.content }}</p>
@@ -188,31 +210,16 @@ const formatTime = (seconds: number) => {
                       :variant="message.mood === 'positive' ? 'default' : message.mood === 'negative' ? 'destructive' : 'outline'">
                       {{ getMoodText(message.mood) }}
                     </n-badge>
-                    <span class="text-xs text-muted-foreground">{{ formatTime(message.time) }}</span>
+                    <span class="text-xs text-muted-foreground">{{ formatMessageTime(message.start_time,
+                      message.end_time) }}</span>
                   </div>
                 </div>
                 <div v-if="message.sender_id.id === conversation.from_user.id"
                   class="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-xs font-medium flex-shrink-0">
-                  {{ message.sender_id.fullname.charAt(0) }}
+                  <Bot v-if="message.sender_id.email === 'ai@gmail.com'" class="h-4 w-4" />
+                  <template v-else>{{ message.sender_id.fullname.charAt(0) }}</template>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Column 3: Summary -->
-        <div class="md:col-span-2">
-          <div class="bg-card rounded-lg border p-4 h-full">
-            <h3 class="font-semibold mb-4">Tóm tắt</h3>
-            <div class="p-4 rounded-lg bg-muted mb-4">
-              {{ conversation.summarize || 'Không có tóm tắt' }}
-            </div>
-            <div>
-              <h3 class="font-semibold mb-2">Tâm trạng</h3>
-              <n-badge class="text-xs"
-                :variant="conversation.sentiment === 'positive' ? 'default' : conversation.sentiment === 'negative' ? 'destructive' : 'outline'">
-                {{ getMoodText(conversation.sentiment) }}
-              </n-badge>
             </div>
           </div>
         </div>

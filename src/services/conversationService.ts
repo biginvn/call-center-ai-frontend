@@ -3,8 +3,8 @@ import type { Conversation, ConversationResponse } from '@/types/conversation'
 
 
 export const conversationService = {
-  async getConversations(): Promise<ConversationResponse> {
-    const response = await axiosInstance.get<ConversationResponse>('/conversations/')
+  async getConversations(page: number = 1, size: number = 10): Promise<ConversationResponse> {
+    const response = await axiosInstance.get<ConversationResponse>(`/conversations/?page=${page}&size=${size}`)
     return response.data
   },
 
