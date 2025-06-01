@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { onMounted, ref, onUnmounted, nextTick } from 'vue'
+import { onMounted, ref, onUnmounted, nextTick, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useConversationStore } from '@/stores/conversationStore'
 import { formatDate } from '@/lib/utils'
 import { NBadge } from '@/components/ui/badge'
 import type { Conversation, Message } from '@/types/conversation'
 import AdminNavbar from '@/components/admin/AdminNavbar.vue'
-import { Bot, Play, Pause } from 'lucide-vue-next'
+import { Bot, Play, Pause, Rewind, FastForward } from 'lucide-vue-next'
 import WaveSurfer from 'wavesurfer.js'
 
 const route = useRoute()
@@ -16,6 +16,8 @@ const wavesurfer = ref<WaveSurfer | null>(null)
 const currentMessageIndex = ref(-1)
 const isPlaying = ref(false)
 const waveformRef = ref<HTMLElement | null>(null)
+const audioDuration = ref(0)
+const currentTime = ref(0)
 
 onMounted(async () => {
   const conversationId = route.params.id as string
@@ -28,20 +30,25 @@ onMounted(async () => {
 })
 
 const initWaveSurfer = () => {
-  if (!conversation.value?.record_url || !waveformRef.value) {
-    console.warn('WaveSurfer initialization failed: Missing record_url or waveformRef')
+  if (!waveformRef.value) {
+    console.warn('WaveSurfer initialization failed: Missing waveformRef')
+    return
+  }
+
+  if (!conversation.value?.record_url) {
+    console.warn('WaveSurfer initialization failed: Missing record_url')
     return
   }
 
   wavesurfer.value = WaveSurfer.create({
     container: waveformRef.value,
-    waveColor: '#4f46e5',
-    progressColor: '#818cf8',
-    cursorColor: '#4f46e5',
+    waveColor: '#1dcdff',
+    progressColor: '#1d5cff',
+    cursorColor: '#1dcdff',
     barWidth: 2,
     barRadius: 3,
     cursorWidth: 1,
-    height: 80,
+    height: 50,
     barGap: 3,
     url: conversation.value.record_url,
   })
@@ -57,6 +64,7 @@ const initWaveSurfer = () => {
     if (messageIndex !== -1 && messageIndex !== currentMessageIndex.value) {
       currentMessageIndex.value = messageIndex
     }
+    currentTime.value = time
   })
 
   wavesurfer.value.on('play', () => {
@@ -66,11 +74,25 @@ const initWaveSurfer = () => {
   wavesurfer.value.on('pause', () => {
     isPlaying.value = false
   })
+
+  wavesurfer.value.on('ready', () => {
+    audioDuration.value = wavesurfer.value?.getDuration() || 0
+  })
 }
 
 const togglePlay = () => {
   if (!wavesurfer.value) return
   wavesurfer.value.playPause()
+}
+
+const skipBackward = () => {
+  if (!wavesurfer.value) return
+  wavesurfer.value.skip(-5)
+}
+
+const skipForward = () => {
+  if (!wavesurfer.value) return
+  wavesurfer.value.skip(5)
 }
 
 const handleMessageClick = (message: Message) => {
@@ -124,6 +146,21 @@ const formatTime = (seconds: number) => {
 const formatMessageTime = (startTime: number, endTime: number) => {
   return `${formatTime(startTime)} - ${formatTime(endTime)}`
 }
+
+const moodSegments = computed(() => {
+  if (!conversation.value?.messages || !audioDuration.value) return []
+  return conversation.value.messages
+    .filter(msg => msg.mood === 'positive' || msg.mood === 'negative')
+    .map(msg => {
+      const left = (msg.start_time / audioDuration.value) * 100
+      const width = ((msg.end_time - msg.start_time) / audioDuration.value) * 100
+      return {
+        left: `${left}%`,
+        width: `${width}%`,
+        color: msg.mood === 'positive' ? '#22c55e' : '#ef4444', // green or red
+      }
+    })
+})
 </script>
 
 <template>
@@ -133,12 +170,31 @@ const formatMessageTime = (startTime: number, endTime: number) => {
       <div class="grid gap-1 mb-4">
         <h1 class="text-xl font-bold">Chi tiết cuộc gọi</h1>
       </div>
-      <div v-if="conversation && conversation.record_url" class="space-y-4">
+      <div v-if="conversation" class="space-y-4">
         <div ref="waveformRef" class="w-full"></div>
-        <div class="flex justify-center">
+        <div class="relative w-full h-3 mt-2">
+          <template v-for="(segment, idx) in moodSegments" :key="idx">
+            <div class="absolute h-full rounded" :style="{
+              left: segment.left,
+              width: segment.width,
+              backgroundColor: segment.color,
+              opacity: 0.7
+            }"></div>
+          </template>
+        </div>
+        <div class="flex justify-center items-center gap-4">
+          <button @click="skipBackward" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+            <Rewind class="h-6 w-6" />
+          </button>
           <button @click="togglePlay" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
             <component :is="isPlaying ? Pause : Play" class="h-6 w-6" />
           </button>
+          <button @click="skipForward" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+            <FastForward class="h-6 w-6" />
+          </button>
+        </div>
+        <div class="flex justify-center text-sm text-muted-foreground">
+          <span>{{ formatTime(currentTime) }} / {{ formatTime(audioDuration) }}</span>
         </div>
       </div>
     </header>

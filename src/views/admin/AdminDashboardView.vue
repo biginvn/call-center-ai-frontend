@@ -19,6 +19,21 @@ const conversationStore = useConversationStore()
 const currentPage = ref(1)
 const pageSize = ref(10)
 
+const getMoodText = (mood: string) => {
+  switch (mood) {
+    case 'positive':
+      return 'Tích cực'
+    case 'negative':
+      return 'Tiêu cực'
+    case 'unknown':
+      return 'Không xác định'
+    case 'neutral':
+      return 'Trung tính'
+    default:
+      return mood
+  }
+}
+
 onMounted(async () => {
   await conversationStore.fetchRecentConversations(currentPage.value, pageSize.value)
 })
@@ -34,20 +49,6 @@ const handlePageSizeChange = async (size: number) => {
   await conversationStore.fetchRecentConversations(currentPage.value, pageSize.value)
 }
 
-const getSentimentText = (sentiment: string) => {
-  switch (sentiment) {
-    case 'positive':
-      return 'Tích cực'
-    case 'negative':
-      return 'Tiêu cực'
-    case 'unknown':
-      return 'Không xác định'
-    case 'neutral':
-      return 'Trung tính'
-    default:
-      return sentiment
-  }
-}
 
 const handleRowClick = async (conversation: Conversation) => {
   const width = 1500
@@ -104,9 +105,9 @@ const handleRowClick = async (conversation: Conversation) => {
                     <div class="font-medium">{{ conversation.from_user.fullname }} → {{ conversation.to_user.fullname }}
                     </div>
                   </div>
-                  <n-badge class="text-xs"
+                  <n-badge class="text-xs" :class="{ 'bg-green-500': conversation.sentiment === 'positive' }"
                     :variant="conversation.sentiment === 'positive' ? 'default' : conversation.sentiment === 'negative' ? 'destructive' : 'outline'">
-                    {{ getSentimentText(conversation.sentiment) }}
+                    {{ getMoodText(conversation.sentiment) }}
                   </n-badge>
                 </div>
               </div>
@@ -150,9 +151,9 @@ const handleRowClick = async (conversation: Conversation) => {
                       conversation.summarize.substring(0, 300) + '...' : conversation.summarize) : '-' }}
                   </TableCell>
                   <TableCell class="col-span-3 md:col-span-1 text-right">
-                    <n-badge class="text-xs"
+                    <n-badge class="text-xs" :class="{ 'bg-green-500': conversation.sentiment === 'positive' }"
                       :variant="conversation.sentiment === 'positive' ? 'default' : conversation.sentiment === 'negative' ? 'destructive' : 'outline'">
-                      {{ getSentimentText(conversation.sentiment) }}
+                      {{ getMoodText(conversation.sentiment) }}
                     </n-badge>
                   </TableCell>
                 </TableRow>
