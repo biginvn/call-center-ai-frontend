@@ -202,17 +202,17 @@ const onSubmit = form.handleSubmit(async (values) => {
 
 // Import all voice samples
 const voiceSamples = {
-  'alloy': new Audio('/src/assets/audio/sample_voice/openai-fm-alloy-professional.wav'),
-  'echo': new Audio('/src/assets/audio/sample_voice/openai-fm-echo-professional.wav'),
-  'fable': new Audio('/src/assets/audio/sample_voice/openai-fm-fable-professional.wav'),
-  'onyx': new Audio('/src/assets/audio/sample_voice/openai-fm-onyx-professional.wav'),
-  'nova': new Audio('/src/assets/audio/sample_voice/openai-fm-nova-professional.wav'),
-  'shimmer': new Audio('/src/assets/audio/sample_voice/openai-fm-shimmer-professional.wav'),
-  'sage': new Audio('/src/assets/audio/sample_voice/openai-fm-sage-professional.wav'),
-  'coral': new Audio('/src/assets/audio/sample_voice/openai-fm-coral-professional.wav'),
-  'verse': new Audio('/src/assets/audio/sample_voice/openai-fm-verse-professional.wav'),
-  'ballad': new Audio('/src/assets/audio/sample_voice/openai-fm-ballad-professional.wav'),
-  'ash': new Audio('/src/assets/audio/sample_voice/openai-fm-ash-professional.wav'),
+  'alloy': new Audio('@/assets/audio/sample_voice/openai-fm-alloy-professional.wav'),
+  'echo': new Audio('@/assets/audio/sample_voice/openai-fm-echo-professional.wav'),
+  'fable': new Audio('@/assets/audio/sample_voice/openai-fm-fable-professional.wav'),
+  'onyx': new Audio('@/assets/audio/sample_voice/openai-fm-onyx-professional.wav'),
+  'nova': new Audio('@/assets/audio/sample_voice/openai-fm-nova-professional.wav'),
+  'shimmer': new Audio('@/assets/audio/sample_voice/openai-fm-shimmer-professional.wav'),
+  'sage': new Audio('@/assets/audio/sample_voice/openai-fm-sage-professional.wav'),
+  'coral': new Audio('@/assets/audio/sample_voice/openai-fm-coral-professional.wav'),
+  'verse': new Audio('@/assets/audio/sample_voice/openai-fm-verse-professional.wav'),
+  'ballad': new Audio('@/assets/audio/sample_voice/openai-fm-ballad-professional.wav'),
+  'ash': new Audio('@/assets/audio/sample_voice/openai-fm-ash-professional.wav'),
 }
 
 const isPlayingSample = ref(false)
