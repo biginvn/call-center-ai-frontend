@@ -5,7 +5,7 @@
       @pointer-down-outside.prevent>
       <DialogTitle class="sr-only">AI Assistant - {{ getCallStateText }}</DialogTitle>
       <DialogDescription class="sr-only">
-        Interface điều khiển cuộc gọi với AI Assistant
+        Call control interface with AI Assistant
       </DialogDescription>
       <div class="w-full max-w-md mx-auto bg-background rounded-lg shadow-lg p-6">
         <div class="flex flex-col items-center justify-center space-y-6">
@@ -14,15 +14,15 @@
 
             <TransitionGroup name="fade">
               <div v-if="callState === 'connecting'" key="connecting" class="text-sm text-muted-foreground mt-1">
-                Đang kết nối...
+                Connecting...
               </div>
 
               <div v-if="callState === 'active'" key="active" class="text-sm text-muted-foreground mt-1">
-                Đang trong cuộc gọi • {{ formatCallDuration(callDuration) }}
+                In call • {{ formatCallDuration(callDuration) }}
               </div>
 
               <div v-if="callState === 'ended'" key="ended" class="text-sm text-muted-foreground mt-1">
-                Cuộc gọi kết thúc • {{ formatCallDuration(callDuration) }}
+                Call ended • {{ formatCallDuration(callDuration) }}
               </div>
             </TransitionGroup>
           </div>
@@ -32,7 +32,7 @@
             <div v-if="callState === 'connecting'" class="flex justify-center">
               <n-button size="lg" variant="destructive" class="h-14 w-14 rounded-full" @click="handleEndCall">
                 <PhoneOff class="h-6 w-6" />
-                <span class="sr-only">Hủy</span>
+                <span class="sr-only">Cancel</span>
               </n-button>
             </div>
 
@@ -40,19 +40,19 @@
               <n-button variant="outline" class="flex flex-col items-center justify-center h-16 p-2"
                 @click="isMuted = !isMuted">
                 <component :is="isMuted ? MicOff : Mic" class="h-5 w-5 mb-1" />
-                <span class="text-xs">{{ isMuted ? 'Bật mic' : 'Tắt mic' }}</span>
+                <span class="text-xs">{{ isMuted ? 'Unmute' : 'Mute' }}</span>
               </n-button>
 
               <n-button variant="destructive" class="flex flex-col items-center justify-center h-16 p-2"
                 @click="handleEndCall">
                 <PhoneOff class="h-5 w-5 mr-2" />
-                Kết thúc
+                End Call
               </n-button>
             </div>
 
             <div v-if="callState === 'ended'" class="flex justify-center mt-4">
               <n-button variant="outline" @click="onOpenChange(false)">
-                Đóng
+                Close
               </n-button>
             </div>
           </div>
@@ -118,11 +118,11 @@ const stopTimer = () => {
 const getCallStateText = computed(() => {
   switch (callState.value) {
     case 'connecting':
-      return 'Đang kết nối'
+      return 'Connecting'
     case 'active':
-      return `Đang trong cuộc gọi • ${formatCallDuration(callDuration.value)}`
+      return `In call • ${formatCallDuration(callDuration.value)}`
     case 'ended':
-      return callDuration.value > 0 ? `Cuộc gọi kết thúc • ${formatCallDuration(callDuration.value)}` : 'Cuộc gọi kết thúc'
+      return callDuration.value > 0 ? `Call ended • ${formatCallDuration(callDuration.value)}` : 'Call ended'
     default:
       return ''
   }

@@ -24,23 +24,23 @@ const TEXT_LIMITS = {
   instructions: {
     min: 10,
     max: 2000,
-    label: 'Chỉ dẫn trả lời'
+    label: 'Response Instructions'
   },
   ttsText: {
     min: 1,
     max: 500,
-    label: 'Nội dung kiểm tra'
+    label: 'Test Content'
   }
 } as const
 
 const formSchema = toTypedSchema(z.object({
   instructions: z.string()
-    .min(TEXT_LIMITS.instructions.min, `${TEXT_LIMITS.instructions.label} phải có ít nhất ${TEXT_LIMITS.instructions.min} ký tự`)
-    .max(TEXT_LIMITS.instructions.max, `${TEXT_LIMITS.instructions.label} không được vượt quá ${TEXT_LIMITS.instructions.max} ký tự`),
-  voice: z.string().min(1, 'Vui lòng chọn một giọng nói'),
+    .min(TEXT_LIMITS.instructions.min, `${TEXT_LIMITS.instructions.label} must have at least ${TEXT_LIMITS.instructions.min} characters`)
+    .max(TEXT_LIMITS.instructions.max, `${TEXT_LIMITS.instructions.label} cannot exceed ${TEXT_LIMITS.instructions.max} characters`),
+  voice: z.string().min(1, 'Please select a voice'),
   ttsText: z.string()
-    .min(TEXT_LIMITS.ttsText.min, `${TEXT_LIMITS.ttsText.label} phải có ít nhất ${TEXT_LIMITS.ttsText.min} ký tự`)
-    .max(TEXT_LIMITS.ttsText.max, `${TEXT_LIMITS.ttsText.label} không được vượt quá ${TEXT_LIMITS.ttsText.max} ký tự`)
+    .min(TEXT_LIMITS.ttsText.min, `${TEXT_LIMITS.ttsText.label} must have at least ${TEXT_LIMITS.ttsText.min} characters`)
+    .max(TEXT_LIMITS.ttsText.max, `${TEXT_LIMITS.ttsText.label} cannot exceed ${TEXT_LIMITS.ttsText.max} characters`)
     .optional()
     .or(z.literal('')),
 }))
@@ -431,7 +431,7 @@ onUnmounted(() => {
                     <Loader2 v-if="isGeneratingTTS" class="h-5 w-5 animate-spin" />
                     <Volume2 v-else class="h-5 w-5" :class="{ 'animate-pulse': isPlaying }" />
                     <span>{{ isGeneratingTTS ? 'Đang tạo...' : isPlaying ? 'Đang phát...' : 'Kiểm tra giọng nói'
-                      }}</span>
+                    }}</span>
                   </n-button>
                 </div>
               </div>

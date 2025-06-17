@@ -117,17 +117,17 @@ const handleRowClick = async (conversation: Conversation) => {
             <n-table class="hidden md:table">
               <TableHeader>
                 <TableRow>
-                  <TableHead class="col-span-3 md:col-span-2">Ngày</TableHead>
-                  <TableHead class="col-span-3 md:col-span-2">Từ</TableHead>
-                  <TableHead class="col-span-3 md:col-span-2">Đến</TableHead>
-                  <TableHead class="hidden md:table-cell md:col-span-5">Tóm tắt</TableHead>
-                  <TableHead class="col-span-3 md:col-span-1 text-right">Tâm trạng</TableHead>
+                  <TableHead class="col-span-3 md:col-span-2">Date</TableHead>
+                  <TableHead class="col-span-3 md:col-span-2">From</TableHead>
+                  <TableHead class="col-span-3 md:col-span-2">To</TableHead>
+                  <TableHead class="hidden md:table-cell md:col-span-5">Summary</TableHead>
+                  <TableHead class="col-span-3 md:col-span-1 text-right">Sentiment</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 <TableRow v-if="conversationStore.loading">
                   <TableCell colspan="12" class="text-center">
-                    Đang tải...
+                    Loading...
                   </TableCell>
                 </TableRow>
                 <TableRow v-else-if="conversationStore.error || conversationStore.conversations.length === 0">

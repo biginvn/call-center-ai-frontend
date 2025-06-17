@@ -23,16 +23,16 @@ import * as z from 'zod'
 
 const formSchema = toTypedSchema(z.object({
   username: z.string({
-    required_error: 'Tên đăng nhập là bắt buộc',
-    invalid_type_error: 'Tên đăng nhập phải là chuỗi',
+    required_error: 'Username is required',
+    invalid_type_error: 'Username must be a string',
   }).max(50, {
-    message: 'Tên đăng nhập không được vượt quá 50 ký tự',
+    message: 'Username cannot exceed 50 characters',
   }),
   password: z.string({
-    required_error: 'Mật khẩu là bắt buộc',
-    invalid_type_error: 'Mật khẩu phải là chuỗi',
+    required_error: 'Password is required',
+    invalid_type_error: 'Password must be a string',
   }).max(50, {
-    message: 'Mật khẩu không được vượt quá 50 ký tự',
+    message: 'Password cannot exceed 50 characters',
   }),
   ext: z.string({
     invalid_type_error: 'Ext phải là số',
@@ -207,7 +207,7 @@ const onSubmit = handleSubmit(async (values) => {
   <form class="space-y-4" @submit.prevent="handleFormSubmit">
     <FormField v-slot="{ componentField }" name="username" :validate-on-blur="!isFieldDirty">
       <FormItem v-auto-animate>
-        <FormLabel>Tên đăng nhập</FormLabel>
+        <FormLabel>Username</FormLabel>
         <FormControl>
           <n-input type="text" v-bind="componentField" />
         </FormControl>
@@ -216,7 +216,7 @@ const onSubmit = handleSubmit(async (values) => {
     </FormField>
     <FormField v-slot="{ componentField }" name="password" :validate-on-blur="!isFieldDirty">
       <FormItem v-auto-animate>
-        <FormLabel>Mật khẩu</FormLabel>
+        <FormLabel>Password</FormLabel>
         <FormControl>
           <n-input type="password" v-bind="componentField" />
         </FormControl>
@@ -233,8 +233,8 @@ const onSubmit = handleSubmit(async (values) => {
       </FormItem>
     </FormField>
     <n-button type="submit" :disabled="isLoading" class="w-full">
-      <template v-if="isLoading">Đang đăng nhập...</template>
-      <template v-else>Đăng nhập</template>
+      <template v-if="isLoading">Signing in...</template>
+      <template v-else>Sign in</template>
     </n-button>
   </form>
 </template>

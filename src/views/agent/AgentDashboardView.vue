@@ -211,10 +211,10 @@ const startAICall = async () => {
 
         // Type the promise data correctly
         const promiseData = {
-          loading: 'Đang tải lên...',
+          loading: 'Uploading...',
           success: (data: { name: string; path: string }) =>
-            `${data.name} đã được tải lên và gửi thành công`,
-          error: (error: Error) => `Lỗi: ${error.message}`
+            `${data.name} has been uploaded and sent successfully`,
+          error: (error: Error) => `Error: ${error.message}`
         }
 
         // Use the toast.promise with correct typing
@@ -274,7 +274,7 @@ const startAICall = async () => {
             {
               type: 'function',
               name: 'callAgent',
-              description: 'Công cụ dùng để thực hiện cuộc gọi đến một tổng đài viên (agent) cụ thể bằng cách sử dụng số máy nội bộ (extension) do người dùng cung cấp. Hãy sử dụng công cụ getActiveAgent để truy vấn danh sách agent đang hoạt động trước, sau đó hỏi người dùng muốn chọn số nào. Không được gọi khi chưa được người dùng xác nhận',
+              description: 'Tool to make a call to a specific agent using the extension number provided by the user. Use the getActiveAgent tool to query the list of active agents first, then ask the user which number they want to choose. Do not call without user confirmation',
 
               parameters: {
                 type: 'object',
@@ -404,7 +404,7 @@ const handleBotCallEnd = () => {
           class="hidden md:inline-flex">
           <span class="text-xs font-semibold flex items-center gap-1">
 
-            {{ isConnected ? 'Đã kết nối' : 'Không kết nối' }}
+            {{ isConnected ? 'Connected' : 'Disconnected' }}
             {{ authStore.user?.extensionNumber }}
             <!-- <Wifi v-if="isConnected" class="h-3 w-3" />
             <WifiOff v-else class="h-3 w-3" /> -->
@@ -427,14 +427,14 @@ const handleBotCallEnd = () => {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>
               <div class="flex flex-col">
-                <span>Tài khoản của tôi</span>
+                <span>My Account</span>
                 <span v-if="authStore.user" class="text-sm text-gray-500">
                   {{ authStore.user.username }} ({{ authStore.user.extensionNumber }})
                 </span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem @click="handleLogout">Đăng xuất</DropdownMenuItem>
+            <DropdownMenuItem @click="handleLogout">Logout</DropdownMenuItem>
           </DropdownMenuContent>
         </n-dropdown-menu>
       </div>
@@ -443,14 +443,14 @@ const handleBotCallEnd = () => {
       <div class="grid gap-4 md:gap-8 lg:grid-cols-2">
         <n-card>
           <CardHeader>
-            <CardTitle>Quay số</CardTitle>
+            <CardTitle>Dialer</CardTitle>
           </CardHeader>
           <CardContent>
             <div class="flex flex-col gap-4">
               <n-button variant="outline" class="flex items-center justify-center gap-2" @click="startAICall"
                 :disabled="isAICall">
                 <Bot class="h-5 w-5" />
-                <span>Gọi AI Bot</span>
+                <span>Call AI Bot</span>
               </n-button>
 
               <PhoneDialpad :onCall="onStartCall" />
@@ -460,7 +460,7 @@ const handleBotCallEnd = () => {
 
         <n-card>
           <CardHeader>
-            <CardTitle>Danh bạ</CardTitle>
+            <CardTitle>Contacts</CardTitle>
           </CardHeader>
           <CardContent>
             <div class="flex items-center justify-center">

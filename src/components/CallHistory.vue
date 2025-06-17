@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-4">
     <template v-if="calls.length === 0">
-      <div class="text-center py-8 text-muted-foreground">Không có lịch sử cuộc gọi.</div>
+      <div class="text-center py-8 text-muted-foreground">No call history.</div>
     </template>
     <n-card v-else v-for="call in calls" :key="call.id" :class="compact ? 'p-3' : ''">
       <CardContent>
@@ -15,7 +15,7 @@
           </div>
           <div class="text-right">
             <div class="text-sm text-muted-foreground">
-              {{ formatDistanceToNow(new Date(call.timestamp), { addSuffix: true, locale: vi }) }}
+              {{ formatDistanceToNow(new Date(call.timestamp), { addSuffix: true }) }}
             </div>
             <div class="flex items-center justify-end mt-1">
               <div v-if="call.status === 'completed'" class="flex items-center text-sm text-muted-foreground mr-2">
@@ -43,7 +43,6 @@
 // import { ref } from 'vue'
 import { NBadge } from '@/components/ui/badge'
 import { formatDistanceToNow } from 'date-fns'
-import { vi } from 'date-fns/locale'
 import { NCard, CardContent } from '@/components/ui/card'
 // import {
 //   Dialog,

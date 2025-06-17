@@ -72,8 +72,8 @@ const handleCall = () => {
   if (phoneNumber.value.length > 0) {
     // Check if trying to call own extension
     if (authStore.user?.extensionNumber?.toString() === phoneNumber.value) {
-      toast.error('Không thể gọi số Ext của chính mình', {
-        description: 'Vui lòng nhập số Ext khác',
+      toast.error('Cannot call your own extension', {
+        description: 'Please enter a different extension number',
         duration: 3000,
       });
       return;

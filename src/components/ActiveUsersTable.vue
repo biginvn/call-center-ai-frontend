@@ -46,16 +46,16 @@ const filteredUsers = computed(() => {
 
 const handleCall = (extension: string) => {
   if (!extension) {
-    toast.error('Không thể thực hiện cuộc gọi', {
-      description: 'Số Extension không hợp lệ',
+    toast.error('Cannot make call', {
+      description: 'Invalid extension number',
       duration: 3000,
     });
     return;
   }
 
   if (authStore.user?.extensionNumber?.toString() === extension) {
-    toast.error('Không thể gọi số Ext của chính mình', {
-      description: 'Vui lòng nhập số Ext khác',
+    toast.error('Cannot call your own extension', {
+      description: 'Please enter a different extension number',
       duration: 3000,
     });
     return;
@@ -85,8 +85,8 @@ onMounted(async () => {
         <!-- <TableCaption>Danh sách người dùng đang hoạt động</TableCaption> -->
         <TableHeader>
           <TableRow>
-            <TableHead class="w-[200px]">Họ và tên</TableHead>
-            <TableHead>Số Extension</TableHead>
+            <TableHead class="w-[200px]">Full Name</TableHead>
+            <TableHead>Extension</TableHead>
             <TableHead class="w-[50px] text-right">
               <n-button variant="ghost" size="icon" @click="refreshUsers" :disabled="isLoading">
                 <RefreshCw class="h-4 w-4" :class="{ 'animate-spin': isLoading }" />
@@ -109,7 +109,7 @@ onMounted(async () => {
           <template v-else-if="filteredUsers.length === 0">
             <TableRow>
               <TableCell colspan="3" class="text-center text-muted-foreground py-4">
-                Không có tổng đài khả dụng
+                No available agents
               </TableCell>
             </TableRow>
           </template>

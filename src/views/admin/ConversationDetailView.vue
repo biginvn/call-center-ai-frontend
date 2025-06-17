@@ -110,13 +110,13 @@ onUnmounted(() => {
 const getMoodText = (mood: string) => {
   switch (mood) {
     case 'positive':
-      return 'Tích cực'
+      return 'Positive'
     case 'negative':
-      return 'Tiêu cực'
+      return 'Negative'
     case 'unknown':
-      return 'Không xác định'
+      return 'Unknown'
     case 'neutral':
-      return 'Trung tính'
+      return 'Neutral'
     default:
       return mood
   }
@@ -125,13 +125,13 @@ const getMoodText = (mood: string) => {
 const getStatusText = (status: string) => {
   switch (status) {
     case 'start':
-      return 'Bắt đầu'
+      return 'Started'
     case 'accept':
-      return 'Trả lời'
+      return 'Accepted'
     case 'decline':
-      return 'Từ chối'
+      return 'Declined'
     case 'closed':
-      return 'Đã đóng'
+      return 'Closed'
     default:
       return status
   }
@@ -168,7 +168,7 @@ const moodSegments = computed(() => {
     <AdminNavbar />
     <header class="sticky top-[64px] left-0 right-0 bg-white dark:bg-gray-900 shadow-md p-4 md:px-8 z-10">
       <div class="grid gap-1 mb-4">
-        <h1 class="text-xl font-bold">Chi tiết cuộc gọi</h1>
+        <h1 class="text-xl font-bold">Call Details</h1>
       </div>
       <div v-if="conversation" class="space-y-4">
         <div ref="waveformRef" class="w-full"></div>
@@ -203,14 +203,14 @@ const moodSegments = computed(() => {
         <!-- Column 1: Call Details -->
         <div class="md:col-span-1">
           <div class="bg-card rounded-lg border p-4">
-            <h3 class="font-semibold mb-4">Thông tin cuộc gọi</h3>
+            <h3 class="font-semibold mb-4">Call Information</h3>
             <div class="text-sm space-y-3">
               <div class="flex items-center justify-between">
-                <span class="text-muted-foreground">Thời gian:</span>
+                <span class="text-muted-foreground">Time:</span>
                 <span>{{ formatDate(conversation.created_at) }}</span>
               </div>
               <div class="flex items-center justify-between">
-                <span class="text-muted-foreground">Từ:</span>
+                <span class="text-muted-foreground">From:</span>
                 <div class="text-right">
                   <div class="flex items-center gap-1">
                     {{ conversation.from_user.fullname }}
@@ -220,7 +220,7 @@ const moodSegments = computed(() => {
                 </div>
               </div>
               <div class="flex items-center justify-between">
-                <span class="text-muted-foreground">Đến:</span>
+                <span class="text-muted-foreground">To:</span>
                 <div class="text-right">
                   <div class="flex items-center gap-1">
                     {{ conversation.to_user.fullname }}
@@ -230,7 +230,7 @@ const moodSegments = computed(() => {
                 </div>
               </div>
               <div class="flex items-center justify-between">
-                <span class="text-muted-foreground">Trạng thái:</span>
+                <span class="text-muted-foreground">Status:</span>
                 <n-badge class="text-xs" :variant="conversation.status === 'closed' ? 'default' :
                   conversation.status === 'decline' ? 'destructive' :
                     conversation.status === 'accept' ? 'default' : 'outline'">
@@ -238,16 +238,16 @@ const moodSegments = computed(() => {
                 </n-badge>
               </div>
               <div class="flex items-center justify-between">
-                <span class="text-muted-foreground">Tâm trạng:</span>
+                <span class="text-muted-foreground">Sentiment:</span>
                 <n-badge class="text-xs" :class="{ 'bg-green-500': conversation.sentiment === 'positive' }"
                   :variant="conversation.sentiment === 'positive' ? 'default' : conversation.sentiment === 'negative' ? 'destructive' : 'outline'">
                   {{ getMoodText(conversation.sentiment) }}
                 </n-badge>
               </div>
               <div class="mt-4">
-                <h4 class="font-medium mb-2">Tóm tắt</h4>
+                <h4 class="font-medium mb-2">Summary</h4>
                 <div class="p-3 rounded-lg bg-muted">
-                  {{ conversation.summarize || 'Không có tóm tắt' }}
+                  {{ conversation.summarize || 'No summary available' }}
                 </div>
               </div>
             </div>
@@ -257,16 +257,16 @@ const moodSegments = computed(() => {
         <!-- Column 2: Messages -->
         <div class="md:col-span-1">
           <div class="bg-card rounded-lg border p-4 h-full">
-            <h3 class="font-semibold mb-4">Tin nhắn</h3>
+            <h3 class="font-semibold mb-4">Messages</h3>
             <div class="space-y-4">
               <div v-if="conversationStore.loading"
                 class="flex items-center justify-center h-[200px] text-muted-foreground">
-                Đang tải cuộc hội thoại...
+                Loading conversation...
               </div>
               <div
                 v-else-if="!conversation.messages || conversation.messages.length === 0 || (conversation.messages[0] && conversation.messages[0].content === 'Không thể nghe được nội dung hoặc nội dung không có ý nghĩa')"
                 class="flex items-center justify-center h-[200px] text-muted-foreground">
-                Không có chi tiết cuộc hội thoại
+                No conversation details available
               </div>
               <div v-else v-for="(message, index) in conversation.messages" :key="message.id" :class="[
                 'flex space-x-2 cursor-pointer hover:bg-muted/30 transition-colors',
