@@ -23,14 +23,14 @@ export const useSipStore = defineStore('sip', () => {
   const authStore = useAuthStore()
   const displayName = computed(() => {
     // First try to get from auth store
-    const authUser = authStore.user;
+    const authUser = authStore.user
     if (authUser?.fullName) {
-      return authUser.fullName;
+      return authUser.fullName
     }
     // Fallback to localStorage
-    const storedFullName = localStorage.getItem("fullName");
-    return storedFullName || 'Unknown';
-  });
+    const storedFullName = localStorage.getItem('fullName')
+    return storedFullName || 'Unknown'
+  })
 
   // Helper function to determine web client
   const determineWebClient = (extension: string) => {
@@ -40,34 +40,39 @@ export const useSipStore = defineStore('sip', () => {
       return 'web2'
     } else if (extension.startsWith('101'))
       return 'test2' // default fallback
-    else if (extension.startsWith('100'))
-      return 'test1'
-    else
-      return 'web1'
+    else if (extension.startsWith('100')) return 'test1'
+    else return 'web1'
   }
 
   // Watch for changes in user data and reinitialize SIP service if needed
-  watch(() => authStore.user, async (newUser) => {
-    if (newUser && newUser.role === 'agent' && newUser.extensionNumber) {
-      // Wait for auth store to be fully loaded
-      if (!authStore.isUserDataLoaded) {
-        await authStore.loadFromStorage();
-      }
+  watch(
+    () => authStore.user,
+    async (newUser) => {
+      if (newUser && newUser.role === 'agent' && newUser.extensionNumber) {
+        // Wait for auth store to be fully loaded
+        if (!authStore.isUserDataLoaded) {
+          await authStore.loadFromStorage()
+        }
 
-      const extension = determineWebClient(newUser.extensionNumber.toString())
-      const password = "1234" // This should be stored securely
-      if (extension && password) {
-        await initializeSip(extension, password)
+        const extension = determineWebClient(newUser.extensionNumber.toString())
+        const password = '1234' // This should be stored securely
+        if (extension && password) {
+          await initializeSip(extension, password)
+        }
       }
-    }
-  }, { immediate: true })
+    },
+    { immediate: true },
+  )
 
   // Update watch to handle localStorage as well
-  watch(() => displayName.value, (newName) => {
-    if (sipService.value && newName !== 'Unknown') {
-      sipService.value.updateDisplayName(newName);
-    }
-  });
+  watch(
+    () => displayName.value,
+    (newName) => {
+      if (sipService.value && newName !== 'Unknown') {
+        sipService.value.updateDisplayName(newName)
+      }
+    },
+  )
 
   // Initialize SIP service
   const initializeSip = async (extension: string, password: string) => {
@@ -83,7 +88,8 @@ export const useSipStore = defineStore('sip', () => {
 
     // Create SIP service instance if it doesn't exist
     if (!sipService.value) {
-      const currentDisplayName = authStore.user?.fullName || localStorage.getItem("fullName") || 'Unknown'
+      const currentDisplayName =
+        authStore.user?.fullName || localStorage.getItem('fullName') || 'Unknown'
       sipService.value = new SipService({
         server: config.value.SIP_SERVER,
         wsServer: `wss://${config.value.SIP_SERVER}:${config.value.SIP_PORT}/ws`,
@@ -99,7 +105,7 @@ export const useSipStore = defineStore('sip', () => {
 
     // Ensure we have the latest display name before login
     if (authStore.user?.fullName) {
-      sipService.value.updateDisplayName(authStore.user.fullName);
+      sipService.value.updateDisplayName(authStore.user.fullName)
     }
 
     await sipService.value.login(extension, password)
@@ -139,7 +145,7 @@ export const useSipStore = defineStore('sip', () => {
             if (receiver.track) {
               const stream = new MediaStream([receiver.track])
               remoteAudioRef.value!.srcObject = stream
-              remoteAudioRef.value!.play().catch(() => { })
+              remoteAudioRef.value!.play().catch(() => {})
             }
           })
         }
@@ -182,7 +188,6 @@ export const useSipStore = defineStore('sip', () => {
       if (newSession) {
         session.value = newSession
       }
-
     } catch (error) {
       debug.value += `\n[Error] Failed to make call: ${error}`
       callStatus.value = 'Ended'
@@ -217,16 +222,16 @@ export const useSipStore = defineStore('sip', () => {
         case SessionState.Establishing:
           if (session.value instanceof Inviter) {
             session.value.cancel()
-            toast.info('Đã hủy cuộc gọi', {
+            toast.info('Call cancelled', {
               description: '',
               duration: 3000,
-            });
+            })
           } else {
-            (session.value as Invitation).reject()
-            toast.info('Đã từ chối cuộc gọi', {
+            ;(session.value as Invitation).reject()
+            toast.info('Call rejected', {
               description: '',
               duration: 3000,
-            });
+            })
           }
           break
         case SessionState.Established:
@@ -265,7 +270,10 @@ export const useSipStore = defineStore('sip', () => {
   const reject = async () => {
     if (session.value && sipService.value) {
       // Check session state before rejecting
-      if (session.value.state === SessionState.Initial || session.value.state === SessionState.Establishing) {
+      if (
+        session.value.state === SessionState.Initial ||
+        session.value.state === SessionState.Establishing
+      ) {
         if (session.value instanceof Invitation) {
           session.value.reject()
         } else if (session.value instanceof Inviter) {

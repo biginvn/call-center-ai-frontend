@@ -1,5 +1,5 @@
-import { useAuthStore } from "@/stores/auth";
-import { connectUser, disconnectUser } from "./authService";
+import { useAuthStore } from '@/stores/auth'
+import { connectUser, disconnectUser } from './authService'
 import {
   UserAgent,
   Registerer,
@@ -8,54 +8,54 @@ import {
   RegistererState,
   Invitation,
   Session,
-} from "sip.js";
-import { toast } from "vue-sonner";
-import { ref } from 'vue';
-import { useSipStore } from "@/stores/sip";
+} from 'sip.js'
+import { toast } from 'vue-sonner'
+import { ref } from 'vue'
+import { useSipStore } from '@/stores/sip'
 // import { determineWebClient } from "@/lib/utils";
 
 type SipServiceOptions = {
-  server: string;
-  wsServer: string;
-  displayName?: string;
-};
+  server: string
+  wsServer: string
+  displayName?: string
+}
 
 type SipServiceEvents = {
-  onRegistered?: () => void;
-  onUnregistered?: () => void;
-  onRegistrationFailed?: (error: Error) => void;
-  onIncomingCall?: (session: Session, caller: string) => void;
-  onCallEstablished?: (session: Session) => void;
-  onCallEnded?: () => void;
-  onDebug?: (msg: string) => void;
-};
+  onRegistered?: () => void
+  onUnregistered?: () => void
+  onRegistrationFailed?: (error: Error) => void
+  onIncomingCall?: (session: Session, caller: string) => void
+  onCallEstablished?: (session: Session) => void
+  onCallEnded?: () => void
+  onDebug?: (msg: string) => void
+}
 
 export class SipService {
-  private ua: UserAgent | null = null;
-  private registerer: Registerer | null = null;
-  private session: Session | null = null;
-  private events: SipServiceEvents = {};
-  private store: ReturnType<typeof useSipStore>;
-  public isConnected = ref(false);
+  private ua: UserAgent | null = null
+  private registerer: Registerer | null = null
+  private session: Session | null = null
+  private events: SipServiceEvents = {}
+  private store: ReturnType<typeof useSipStore>
+  public isConnected = ref(false)
 
   constructor(private options: SipServiceOptions) {
-    this.store = useSipStore();
+    this.store = useSipStore()
     window.addEventListener('beforeunload', async () => {
       if (this.ua) {
-        await this.logout();
+        await this.logout()
       }
-    });
+    })
   }
 
   public setEvents(events: SipServiceEvents) {
-    this.events = events;
+    this.events = events
   }
 
   public async login(extension: string, password: string) {
-    if (this.ua) return;
+    if (this.ua) return
 
     // Get the current display name before creating UserAgent
-    const currentDisplayName = this.options.displayName || extension;
+    const currentDisplayName = this.options.displayName || extension
 
     this.ua = new UserAgent({
       uri: UserAgent.makeURI(`sip:${extension}@${this.options.server}`),
@@ -63,201 +63,197 @@ export class SipService {
       authorizationUsername: extension,
       authorizationPassword: password,
       transportOptions: { server: this.options.wsServer },
-    });
+    })
 
     // Update the options to keep displayName in sync
-    this.options.displayName = currentDisplayName;
+    this.options.displayName = currentDisplayName
 
     this.ua.delegate = {
       onConnect: async () => {
-        this.store.isConnected = true;
-        this.events.onDebug?.("[DEBUG] WebSocket connected.")
-        toast.success('Đã kết nối với WebSocket', {
+        this.store.isConnected = true
+        this.events.onDebug?.('[DEBUG] WebSocket connected.')
+        toast.success('WebSocket connected', {
           description: '',
           duration: 3000,
-        });
+        })
 
-        const authStore = useAuthStore();
+        const authStore = useAuthStore()
         if (authStore.user && authStore.user.extensionNumber) {
           try {
             await connectUser({
               username: authStore.user.username,
-              extension: authStore.user.extensionNumber
-            });
+              extension: authStore.user.extensionNumber,
+            })
           } catch (error) {
-            console.error('Failed to connect user:', error);
+            console.error('Failed to connect user:', error)
           }
         }
       },
       onDisconnect: async (error) => {
-        this.store.isConnected = false;
-        this.events.onDebug?.(
-          `[DEBUG] WebSocket disconnected. ${error?.message || ""}`
-        );
-        toast.error('Đã ngắt kết nối với WebSocket', {
+        this.store.isConnected = false
+        this.events.onDebug?.(`[DEBUG] WebSocket disconnected. ${error?.message || ''}`)
+        toast.error('WebSocket disconnected', {
           description: '',
           duration: 3000,
-        });
+        })
 
-        const authStore = useAuthStore();
+        const authStore = useAuthStore()
         if (authStore.user && authStore.user.extensionNumber) {
           try {
             await disconnectUser({
               username: authStore.user.username,
-              extension: authStore.user.extensionNumber
-            });
+              extension: authStore.user.extensionNumber,
+            })
           } catch (error) {
-            console.error('Failed to disconnect user:', error);
+            console.error('Failed to disconnect user:', error)
           }
         }
-        this.events.onUnregistered?.();
+        this.events.onUnregistered?.()
       },
       onInvite: async (incomingSession: Invitation) => {
-        const callerId = incomingSession.remoteIdentity.uri.user || "";
-        this.events.onIncomingCall?.(incomingSession, callerId);
+        const callerId = incomingSession.remoteIdentity.uri.user || ''
+        this.events.onIncomingCall?.(incomingSession, callerId)
 
         // Save the session
-        this.session = incomingSession;
+        this.session = incomingSession
 
         incomingSession.stateChange.addListener((state) => {
-          this.events.onDebug?.(`[DEBUG] Incoming Call State: ${state}`);
+          this.events.onDebug?.(`[DEBUG] Incoming Call State: ${state}`)
           if (state === SessionState.Established) {
-            this.events.onCallEstablished?.(incomingSession);
+            this.events.onCallEstablished?.(incomingSession)
           }
           if (state === SessionState.Terminated) {
-            this.session = null;
-            this.events.onCallEnded?.();
+            this.session = null
+            this.events.onCallEnded?.()
           }
-        });
+        })
       },
-    };
+    }
 
-    await this.ua.start();
+    await this.ua.start()
 
-    this.registerer = new Registerer(this.ua);
+    this.registerer = new Registerer(this.ua)
     this.registerer.stateChange.addListener((newState) => {
-      this.events.onDebug?.(`[DEBUG] Registerer State Change: ${newState}`);
+      this.events.onDebug?.(`[DEBUG] Registerer State Change: ${newState}`)
       if (newState === RegistererState.Registered) {
-        this.events.onRegistered?.();
+        this.events.onRegistered?.()
       } else if (
         newState === RegistererState.Unregistered ||
         newState === RegistererState.Terminated
       ) {
-        this.events.onUnregistered?.();
+        this.events.onUnregistered?.()
       }
-    });
+    })
 
     try {
-      await this.registerer.register();
+      await this.registerer.register()
     } catch (err: unknown) {
-      this.events.onRegistrationFailed?.(err as Error);
+      this.events.onRegistrationFailed?.(err as Error)
     }
   }
 
   public async logout() {
     if (this.registerer) {
-      await this.registerer.unregister();
-      this.registerer = null;
+      await this.registerer.unregister()
+      this.registerer = null
     }
     if (this.ua) {
-      await this.ua.stop();
-      this.ua = null;
+      await this.ua.stop()
+      this.ua = null
     }
-    this.session = null;
-    this.events.onUnregistered?.();
+    this.session = null
+    this.events.onUnregistered?.()
   }
 
   public async call(destination: string): Promise<Inviter | undefined> {
     if (!this.ua) {
-      this.events.onDebug?.("[Error] UserAgent not initialized.");
+      this.events.onDebug?.('[Error] UserAgent not initialized.')
       // Show toast for error
-      toast.error('Lỗi', {
-        description: 'Vui lòng tải lại trang',
+      toast.error('Error', {
+        description: 'Please reload the page',
         duration: 3000,
-      }
-      )
-      return;
+      })
+      return
     }
-    const target = UserAgent.makeURI(`sip:${destination}@${this.options.server}`);
+    const target = UserAgent.makeURI(`sip:${destination}@${this.options.server}`)
     if (!target) {
-      this.events.onDebug?.("[Error] Invalid destination URI.");
+      this.events.onDebug?.('[Error] Invalid destination URI.')
       // Show toast for error
-      toast.error('Số Ext không hợp lệ', {
-        description: 'Vui lòng nhập số Ext khác',
+      toast.error('Invalid destination URI', {
+        description: 'Please enter a different Ext number',
         duration: 3000,
-      }
-      )
-      return;
+      })
+      return
     }
 
-    const inviter = new Inviter(this.ua, target);
+    const inviter = new Inviter(this.ua, target)
     inviter.stateChange.addListener((callState) => {
-      this.events.onDebug?.(`[DEBUG] Call State: ${callState}`);
+      this.events.onDebug?.(`[DEBUG] Call State: ${callState}`)
 
       if (callState === SessionState.Establishing) {
-        this.events.onDebug?.("[INFO] Call is being established...");
+        this.events.onDebug?.('[INFO] Call is being established...')
       } else if (callState === SessionState.Established) {
-        this.events.onDebug?.("[INFO] Call has been established");
-        this.events.onCallEstablished?.(inviter);
+        this.events.onDebug?.('[INFO] Call has been established')
+        this.events.onCallEstablished?.(inviter)
 
         // Handle audio setup immediately on establishment
-        const sdh = inviter.sessionDescriptionHandler as { peerConnection?: RTCPeerConnection };
+        const sdh = inviter.sessionDescriptionHandler as { peerConnection?: RTCPeerConnection }
         if (sdh?.peerConnection) {
           sdh.peerConnection.getReceivers().forEach((receiver: RTCRtpReceiver) => {
             if (receiver.track) {
-              this.events.onDebug?.("[INFO] Setting up audio stream");
+              this.events.onDebug?.('[INFO] Setting up audio stream')
               // Audio setup will be handled in the store through onCallEstablished
             }
-          });
+          })
         }
       } else if (callState === SessionState.Terminated) {
-        this.events.onDebug?.("[INFO] Call has been terminated");
-        this.session = null;
-        this.events.onCallEnded?.();
+        this.events.onDebug?.('[INFO] Call has been terminated')
+        this.session = null
+        this.events.onCallEnded?.()
       }
-    });
+    })
 
-    this.session = inviter;
-    this.events.onDebug?.("[INFO] Sending invite...");
-    await inviter.invite();
-    return inviter;
+    this.session = inviter
+    this.events.onDebug?.('[INFO] Sending invite...')
+    await inviter.invite()
+    return inviter
   }
 
   public async acceptCall(session: Invitation) {
-    await session.accept();
-    this.session = session;
+    await session.accept()
+    this.session = session
   }
 
   public rejectCall(session: Invitation) {
     // Send 480 Temporarily Unavailable response
     session.reject({
       statusCode: 480,
-      reasonPhrase: "Temporarily Unavailable"
-    });
+      reasonPhrase: 'Temporarily Unavailable',
+    })
     // Ensure session is terminated
-    this.session = null;
-    this.events.onCallEnded?.();
+    this.session = null
+    this.events.onCallEnded?.()
   }
 
   public hangup(session?: Session) {
-    const target = session || this.session;
+    const target = session || this.session
     if (target) {
       // Stop all audio tracks before hanging up
-      const sdh = target.sessionDescriptionHandler as { peerConnection?: RTCPeerConnection };
+      const sdh = target.sessionDescriptionHandler as { peerConnection?: RTCPeerConnection }
       if (sdh?.peerConnection) {
         // Stop all senders (microphone)
         sdh.peerConnection.getSenders().forEach((sender: RTCRtpSender) => {
           if (sender.track) {
-            sender.track.stop();
-            sender.track.enabled = false;
+            sender.track.stop()
+            sender.track.enabled = false
           }
-        });
+        })
         // Stop all receivers (speaker)
         sdh.peerConnection.getReceivers().forEach((receiver: RTCRtpReceiver) => {
           if (receiver.track) {
-            receiver.track.stop();
+            receiver.track.stop()
           }
-        });
+        })
       }
       // End the call based on session state and type
       switch (target.state) {
@@ -265,57 +261,56 @@ export class SipService {
         case SessionState.Establishing:
           if (target instanceof Inviter) {
             // Outgoing call not yet established
-            target.cancel();
+            target.cancel()
           } else if (target instanceof Invitation) {
             // Incoming call not yet established
-            target.reject();
+            target.reject()
           }
-          break;
+          break
         case SessionState.Established:
           // Established call
-          if ("bye" in target) {
-            (target as Inviter).bye();
+          if ('bye' in target) {
+            ;(target as Inviter).bye()
           }
-          break;
+          break
         case SessionState.Terminating:
         case SessionState.Terminated:
           // Already terminating/terminated, do nothing
-          break;
+          break
       }
-      if ("bye" in target) {
-        (target as Inviter).bye();
+      if ('bye' in target) {
+        ;(target as Inviter).bye()
       }
     }
-    toast.info('Cuộc gọi kết thúc', {
+    toast.info('Call ended', {
       description: '',
       duration: 3000,
-    }
-    )
-    this.session = null;
-    this.events.onCallEnded?.();
+    })
+    this.session = null
+    this.events.onCallEnded?.()
   }
 
   public toggleMute(isMuted: boolean) {
-    if (!this.session) return;
-    const sdh = this.session.sessionDescriptionHandler as { peerConnection?: RTCPeerConnection };
-    const pc = sdh?.peerConnection;
-    if (!pc) return;
+    if (!this.session) return
+    const sdh = this.session.sessionDescriptionHandler as { peerConnection?: RTCPeerConnection }
+    const pc = sdh?.peerConnection
+    if (!pc) return
     pc.getSenders().forEach((sender: RTCRtpSender) => {
-      if (sender.track?.kind === "audio") {
-        sender.track.enabled = !isMuted;
+      if (sender.track?.kind === 'audio') {
+        sender.track.enabled = !isMuted
       }
-    });
+    })
   }
 
   public updateDisplayName(newDisplayName: string) {
     if (this.ua) {
       // Update both the UserAgent configuration and options
-      this.ua.configuration.displayName = newDisplayName;
-      this.options.displayName = newDisplayName;
+      this.ua.configuration.displayName = newDisplayName
+      this.options.displayName = newDisplayName
 
       // Re-register to apply the new display name
       if (this.registerer) {
-        this.registerer.register();
+        this.registerer.register()
       }
     }
   }
