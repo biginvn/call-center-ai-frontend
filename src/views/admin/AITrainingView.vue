@@ -95,16 +95,16 @@ const testTTS = async (e: Event) => {
 
   // Validate required fields for TTS testing
   if (!ttsText?.trim()) {
-    toast.error('Vui lòng điền đầy đủ thông tin', {
-      description: 'Cần có nội dung kiểm tra để thử giọng nói',
+    toast.error('Please fill in all information', {
+      description: 'Test content is required to try the voice',
       duration: 3000,
     })
     return
   }
 
   if (!voice || !instructions) {
-    toast.error('Vui lòng điền đầy đủ thông tin', {
-      description: 'Cần có giọng nói và chỉ dẫn trả lời',
+    toast.error('Please fill in all information', {
+      description: 'Voice and response instructions are required',
       duration: 3000,
     })
     return
@@ -166,8 +166,8 @@ const testTTS = async (e: Event) => {
     console.error('Error testing TTS:', error)
     isPlaying.value = false
     currentAudio.value = null
-    toast.error('Lỗi khi tạo giọng nói', {
-      description: 'Vui lòng thử lại sau',
+    toast.error('Error generating voice', {
+      description: 'Please try again later',
       duration: 3000,
     })
   } finally {
@@ -185,14 +185,14 @@ const onSubmit = form.handleSubmit(async (values) => {
     })
 
     // Show success message
-    toast.success('Cấu hình đã được lưu thành công', {
-      description: 'Các thay đổi của bạn đã được áp dụng',
+    toast.success('Configuration saved successfully', {
+      description: 'Your changes have been applied',
       duration: 3000,
     })
   } catch (error) {
     console.error('Error saving configuration:', error)
-    toast.error('Lỗi khi lưu cấu hình', {
-      description: 'Vui lòng thử lại sau',
+    toast.error('Error saving configuration', {
+      description: 'Please try again later',
       duration: 3000,
     })
   } finally {
@@ -289,13 +289,13 @@ onUnmounted(() => {
     <header
       class="sticky top-[64px] left-0 right-0 bg-white dark:bg-gray-900 shadow-md p-4 md:px-8 z-10 flex items-center justify-between">
       <div class="grid gap-1">
-        <h1 class="text-xl font-bold">Chỉ dẫn AI</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Quản lý và cấu hình mô hình AI của bạn</p>
+        <h1 class="text-xl font-bold">AI Instructions</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Manage and configure your AI model</p>
       </div>
       <n-button type="submit" class="flex items-center justify-center gap-2" @click="onSubmit" :disabled="isSaving">
         <Loader2 v-if="isSaving" class="h-5 w-5 animate-spin" />
         <Bot v-else class="h-5 w-5" />
-        <span>{{ isSaving ? 'Đang lưu...' : 'Lưu Cấu hình' }}</span>
+        <span>{{ isSaving ? 'Saving...' : 'Save Configuration' }}</span>
       </n-button>
     </header>
     <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 mt-4">
@@ -304,9 +304,9 @@ onUnmounted(() => {
         <n-card class="max-h-[calc(100vh-200px)] overflow-auto">
           <CardHeader>
             <div class="grid gap-2">
-              <CardTitle>Chỉ dẫn trả lời</CardTitle>
+              <CardTitle>Response Instructions</CardTitle>
               <CardDescription>
-                Nhập nội dung để chỉ dẫn mô hình AI
+                Enter content to guide the AI model
 
               </CardDescription>
             </div>
@@ -315,10 +315,10 @@ onUnmounted(() => {
             <div class="flex flex-col gap-4 h-full">
               <FormField v-slot="{ componentField }" name="instructions" class="flex-1">
                 <FormItem class="h-full flex flex-col">
-                  <FormLabel>Chỉ dẫn trả lời <span class="text-red-500">*</span></FormLabel>
+                  <FormLabel>Response Instructions <span class="text-red-500">*</span></FormLabel>
                   <FormControl>
                     <div class="relative h-full">
-                      <TextareaComponent v-bind="componentField" placeholder="Nhập chỉ dẫn trả lời cho AI..."
+                      <TextareaComponent v-bind="componentField" placeholder="Enter response instructions for AI..."
                         class="h-full min-h-[calc(100vh-400px)] max-h-[calc(100vh-400px)] resize-none pr-12" />
                       <div
                         class="absolute bottom-2 right-2 text-xs text-gray-500 bg-white dark:bg-gray-900 px-1 rounded">
@@ -339,9 +339,9 @@ onUnmounted(() => {
           <n-card>
             <CardHeader>
               <div class="grid gap-2">
-                <CardTitle>Cấu hình giọng nói</CardTitle>
+                <CardTitle>Voice Configuration</CardTitle>
                 <CardDescription>
-                  Tùy chỉnh giọng nói AI
+                  Customize AI voice
                 </CardDescription>
               </div>
             </CardHeader>
@@ -350,7 +350,7 @@ onUnmounted(() => {
                 <!-- Voice Selection -->
                 <FormField name="voice">
                   <FormItem>
-                    <FormLabel>Chọn giọng nói <span class="text-red-500">*</span></FormLabel>
+                    <FormLabel>Select Voice <span class="text-red-500">*</span></FormLabel>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
                       <div v-for="voice in sortedVoices" :key="voice.value" @click="() => {
                         form.setFieldValue('voice', voice.value);
@@ -375,7 +375,7 @@ onUnmounted(() => {
                           <div
                             v-if="isPlayingSample && currentPlayingSample === voiceSamples[voice.value as keyof typeof voiceSamples]"
                             class="text-xs text-blue-500">
-                            Đang phát...
+                            Playing...
                           </div>
                           <n-button
                             v-if="isPlayingSample && currentPlayingSample === voiceSamples[voice.value as keyof typeof voiceSamples]"
@@ -395,9 +395,9 @@ onUnmounted(() => {
           <n-card>
             <CardHeader>
               <div class="grid gap-2">
-                <CardTitle>Kiểm tra giọng nói</CardTitle>
+                <CardTitle>Test Voice</CardTitle>
                 <CardDescription>
-                  Thử nghiệm giọng nói với nội dung mẫu
+                  Test voice with sample content
                 </CardDescription>
               </div>
             </CardHeader>
@@ -406,10 +406,10 @@ onUnmounted(() => {
                 <!-- Test Content -->
                 <FormField v-slot="{ componentField }" name="ttsText">
                   <FormItem>
-                    <FormLabel>Nội dung kiểm tra</FormLabel>
+                    <FormLabel>Test Content</FormLabel>
                     <FormControl>
                       <div class="relative">
-                        <TextareaComponent v-bind="componentField" placeholder="Nhập nội dung để kiểm tra giọng nói..."
+                        <TextareaComponent v-bind="componentField" placeholder="Enter content to test the voice..."
                           class="h-[100px] resize-none pr-12" />
                         <div class="absolute bottom-2 right-2 text-xs text-gray-500 bg-white dark:bg-gray-900 px-1">
                           {{ (form.values.ttsText || '').length }}/{{ TEXT_LIMITS.ttsText.max }}
@@ -424,14 +424,14 @@ onUnmounted(() => {
                   <n-button v-if="isPlaying" type="button" variant="outline"
                     class="flex items-center justify-center gap-2" @click="stopAudio">
                     <Volume2 class="h-5 w-5" />
-                    <span>Dừng</span>
+                    <span>Stop</span>
                   </n-button>
                   <n-button type="button" variant="outline" class="flex items-center justify-center gap-2"
                     @click="testTTS" :disabled="isPlaying || isGeneratingTTS">
                     <Loader2 v-if="isGeneratingTTS" class="h-5 w-5 animate-spin" />
                     <Volume2 v-else class="h-5 w-5" :class="{ 'animate-pulse': isPlaying }" />
-                    <span>{{ isGeneratingTTS ? 'Đang tạo...' : isPlaying ? 'Đang phát...' : 'Kiểm tra giọng nói'
-                    }}</span>
+                    <span>{{ isGeneratingTTS ? 'Generating...' : isPlaying ? 'Playing...' : 'Test Voice'
+                      }}</span>
                   </n-button>
                 </div>
               </div>
