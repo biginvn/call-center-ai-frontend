@@ -4,7 +4,6 @@ export const TTS_VOICES = [
   { value: 'ballad', label: 'Ballad' },
   { value: 'coral', label: 'Coral' },
   { value: 'echo', label: 'Echo' },
-  { value: 'fable', label: 'Fable' },
   { value: 'nova', label: 'Nova' },
   { value: 'onyx', label: 'Onyx' },
   { value: 'sage', label: 'Sage' },

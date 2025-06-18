@@ -5,7 +5,7 @@
       @pointer-down-outside.prevent>
       <DialogTitle class="sr-only">{{ callerName }} - {{ getCallStateText }}</DialogTitle>
       <DialogDescription class="sr-only">
-        Interface điều khiển cuộc gọi cho phép bạn trả lời, từ chối, hoặc quản lý cuộc gọi đang diễn ra với {{
+        Call control interface that allows you to answer, reject, or manage ongoing calls with {{
           callerName }}
       </DialogDescription>
       <div class="w-full max-w-md mx-auto bg-background rounded-lg shadow-lg p-6">
@@ -15,33 +15,33 @@
 
             <TransitionGroup name="fade">
               <div v-if="callState === 'incoming'" key="incoming" class="text-sm text-muted-foreground mt-1">
-                Cuộc gọi đến...
+                Incoming call...
               </div>
 
               <div v-if="callState === 'connecting'" key="connecting" class="text-sm text-muted-foreground mt-1">
-                Đang kết nối...
+                Connecting...
               </div>
 
               <div v-if="callState === 'ringing'" key="ringing" class="text-sm text-muted-foreground mt-1">
-                Đang đổ chuông...
+                Ringing...
               </div>
 
               <div v-if="callState === 'active'" key="active" class="text-sm text-muted-foreground mt-1">
-                Đang trong cuộc gọi • {{ formatCallDuration(callDuration) }}
+                In call • {{ formatCallDuration(callDuration) }}
               </div>
 
               <div v-if="callState === 'ended' && callDuration > 0" key="ended"
                 class="text-sm text-muted-foreground mt-1">
-                Cuộc gọi kết thúc • {{ formatCallDuration(callDuration) }}
+                Call ended • {{ formatCallDuration(callDuration) }}
               </div>
 
               <div v-if="callState === 'ended' && callDuration === 0" key="ended-no-duration"
                 class="text-sm text-muted-foreground mt-1">
-                Cuộc gọi kết thúc
+                Call ended
               </div>
 
               <div v-if="callState === 'rejected'" key="rejected" class="text-sm text-muted-foreground mt-1">
-                Cuộc gọi bị từ chối
+                Call rejected
               </div>
             </TransitionGroup>
           </div>
@@ -51,13 +51,13 @@
             <div v-if="callState === 'incoming'" class="flex justify-center gap-4">
               <n-button size="lg" variant="destructive" class="h-14 w-14 rounded-full" @click="handleEndCall">
                 <PhoneOff class="h-6 w-6" />
-                <span class="sr-only">Từ chối</span>
+                <span class="sr-only">Reject</span>
               </n-button>
 
               <n-button size="lg" variant="default" class="h-14 w-14 rounded-full bg-green-600 hover:bg-green-700"
                 @click="handleAnswer">
                 <Phone class="h-6 w-6" />
-                <span class="sr-only">Trả lời</span>
+                <span class="sr-only">Answer</span>
               </n-button>
             </div>
 
@@ -79,7 +79,7 @@
               <n-button variant="outline" class="flex flex-col items-center justify-center h-16 p-2"
                 @click="isMuted = !isMuted">
                 <component :is="isMuted ? MicOff : Mic" class="h-5 w-5 mb-1" />
-                <span class="text-xs">{{ isMuted ? 'Bật mic' : 'Tắt mic' }}</span>
+                <span class="text-xs">{{ isMuted ? 'Unmute' : 'Mute' }}</span>
               </n-button>
 
               <!-- <n-button variant="outline" class="flex flex-col items-center justify-center h-16 p-2"
@@ -92,13 +92,13 @@
               <n-button variant="destructive" class="flex flex-col items-center justify-center h-16 p-2"
                 @click="handleEndCall">
                 <PhoneOff class="h-5 w-5 mr-2" />
-                Kết thúc
+                End call
               </n-button>
             </div>
 
             <div v-if="callState === 'ended'" class="flex justify-center mt-4">
               <n-button variant="outline" @click="onOpenChange(false)">
-                Đóng
+                Close
               </n-button>
             </div>
           </div>
@@ -213,17 +213,17 @@ const callerName = computed(() => {
 const getCallStateText = computed(() => {
   switch (callState.value) {
     case 'incoming':
-      return 'Cuộc gọi đến'
+      return 'Incoming call'
     case 'connecting':
-      return 'Đang kết nối'
+      return 'Connecting'
     case 'ringing':
-      return 'Đang đổ chuông'
+      return 'Ringing'
     case 'active':
-      return `Đang trong cuộc gọi • ${formatCallDuration(callDuration.value)}`
+      return `In call • ${formatCallDuration(callDuration.value)}`
     case 'ended':
-      return callDuration.value > 0 ? `Cuộc gọi kết thúc • ${formatCallDuration(callDuration.value)}` : 'Cuộc gọi kết thúc'
+      return callDuration.value > 0 ? `Call ended • ${formatCallDuration(callDuration.value)}` : 'Call ended'
     case 'rejected':
-      return 'Cuộc gọi bị từ chối'
+      return 'Call rejected'
     default:
       return ''
   }
