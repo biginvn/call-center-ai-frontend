@@ -110,9 +110,9 @@
   <audio ref="ringtoneRef" preload="auto" loop>
     <source src="@/assets/audio/ringtone.mp3" type="audio/mpeg">
   </audio>
-  <audio ref="dialingRef" preload="auto" loop>
+  <!-- <audio ref="dialingRef" preload="auto" loop>
     <source src="@/assets/audio/dialing.mp3" type="audio/mpeg">
-  </audio>
+  </audio> -->
   <audio ref="connectedRef" preload="auto">
     <source src="@/assets/audio/connected.mp3" type="audio/mpeg">
   </audio>
