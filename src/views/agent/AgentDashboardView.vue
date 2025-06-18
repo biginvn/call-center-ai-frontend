@@ -217,7 +217,6 @@ const startAICall = async () => {
 
         // Use the toast.promise with correct typing
         toast.promise(uploadPromise, promiseData)
-        a.click()
         URL.revokeObjectURL(url)
         chunks.value = []
       }
