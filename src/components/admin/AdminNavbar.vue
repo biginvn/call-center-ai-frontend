@@ -44,11 +44,11 @@ const isActive = (path: string) => {
       <div class="hidden md:flex items-center gap-4">
         <a href="#" class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
           :class="{ 'text-primary': isActive('/admin') }" @click.prevent="navigateTo('/admin')">
-          Trang chủ
+          Home
         </a>
         <a href="#" class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
           :class="{ 'text-primary': isActive('/admin/ai-training') }" @click.prevent="navigateTo('/admin/ai-training')">
-          Chỉ dẫn AI
+          AI Instruction
 
         </a>
       </div>
@@ -83,22 +83,22 @@ const isActive = (path: string) => {
         <div class="flex flex-col gap-4">
           <a href="#" class="text-sm font-medium transition-colors hover:text-primary"
             :class="{ 'text-primary': isActive('/admin') }" @click.prevent="navigateTo('/admin')">
-            Trang chủ
+            Home
           </a>
           <a href="#" class="text-sm font-medium transition-colors hover:text-primary"
             :class="{ 'text-primary': isActive('/admin/ai-training') }"
             @click.prevent="navigateTo('/admin/ai-training')">
-            Chỉ dẫn AI
+            AI Instruction
 
           </a>
           <div class="border-t my-2"></div>
           <div class="flex items-center gap-2 px-2 py-1">
             <CircleUser class="h-5 w-5" />
-            <span class="text-sm font-medium">Quản trị viên</span>
+            <span class="text-sm font-medium">Admin</span>
           </div>
           <button class="text-sm font-medium text-red-500 hover:text-red-600 transition-colors px-2 py-1 text-left"
             @click="handleLogout">
-            Đăng xuất
+            Log out
           </button>
         </div>
       </div>
@@ -113,11 +113,11 @@ const isActive = (path: string) => {
         <DropdownMenuContent align="end" class="w-56">
           <DropdownMenuLabel>
             <div class="flex flex-col">
-              <span>Quản trị viên</span>
+              <span>Admin</span>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem @click="handleLogout">Đăng xuất</DropdownMenuItem>
+          <DropdownMenuItem @click="handleLogout">Log out</DropdownMenuItem>
         </DropdownMenuContent>
       </n-dropdown-menu>
     </div>

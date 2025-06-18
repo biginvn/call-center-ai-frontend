@@ -257,7 +257,7 @@ const moodSegments = computed(() => {
         <!-- Column 2: Messages -->
         <div class="md:col-span-1">
           <div class="bg-card rounded-lg border p-4 h-full">
-            <h3 class="font-semibold mb-4">Messages</h3>
+            <h3 class="font-semibold mb-4">Transcription</h3>
             <div class="space-y-4">
               <div v-if="conversationStore.loading"
                 class="flex items-center justify-center h-[200px] text-muted-foreground">

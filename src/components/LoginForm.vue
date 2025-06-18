@@ -159,23 +159,23 @@ const onSubmit = handleSubmit(async (values) => {
       const errors = errorResponse.response?.data?.errors;
 
       if (errorDetail === 'Incorrect username') {
-        setFieldError('username', 'Tên đăng nhập không chính xác');
+        setFieldError('username', 'Incorrect username');
       } else if (errorDetail === 'Incorrect password') {
-        setFieldError('password', 'Mật khẩu không chính xác');
+        setFieldError('password', 'Incorrect password');
       } else if (errorDetail === 'Only admins can use this endpoint') {
-        setFieldError('ext', 'Vui lòng điền số Extension');
+        setFieldError('ext', 'Please enter Extension number');
       } else if (errorDetail === 'Extension number is already in use') {
-        setFieldError('ext', 'Số Extension đã được sử dụng');
+        setFieldError('ext', 'Extension number is already in use');
       } else if (errorDetail === 'Only agents can use this endpoint') {
-        setFieldError('ext', 'Vui lòng xoá số Extension');
+        setFieldError('ext', 'Please remove Extension number');
       } else if (errorDetail === 'Extension number must be a 3-digit number') {
-        setFieldError('ext', 'Số Extension phải là số có 3 chữ số');
+        setFieldError('ext', 'Extension number must be a 3-digit number');
       } else if (errorDetail === 'Extension not found') {
-        setFieldError('ext', 'Số không hợp lệ')
+        setFieldError('ext', 'Invalid extension number')
       } else if (errorDetail === 'User already on connection, please login another account') {
-        setFieldError('username', 'Người dùng đã đăng nhập trên thiết bị khác');
+        setFieldError('username', 'User is already logged in on another device');
       } else {
-        setFieldError('username', 'Vui lòng kiểm tra thông tin đăng nhập')
+        setFieldError('username', 'Please check your login information')
         setFieldError('password', '')
         setFieldError('ext', '')
       }
@@ -193,7 +193,7 @@ const onSubmit = handleSubmit(async (values) => {
       }
     } else {
       console.error('General error:', error);
-      setFieldError('username', 'Vui lòng kiểm tra thông tin đăng nhập')
+      setFieldError('username', 'Please check your login information')
       setFieldError('password', '')
       setFieldError('ext', '')
     }

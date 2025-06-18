@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 export function formatDate(dateString: string): string {
   const date = new Date(dateString)
   // Convert to GMT+7
-  const gmt7Date = new Date(date.getTime() + (7 * 60 * 60 * 1000))
+  const gmt7Date = new Date(date.getTime() + 7 * 60 * 60 * 1000)
 
   const hours = gmt7Date.getHours().toString().padStart(2, '0')
   const minutes = gmt7Date.getMinutes().toString().padStart(2, '0')
@@ -26,8 +26,9 @@ export const determineWebClient = (extension: string) => {
     return 'web2'
   } else if (extension.startsWith('101'))
     return 'test2' // default fallback
-  else if (extension.startsWith('100'))
+  else if (extension.startsWith('100')) {
     return 'test1'
-  else
+  } else {
     return 'web1'
+  }
 }

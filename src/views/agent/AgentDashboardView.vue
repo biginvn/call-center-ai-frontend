@@ -219,7 +219,6 @@ const startAICall = async () => {
 
         // Use the toast.promise with correct typing
         toast.promise(uploadPromise, promiseData)
-        a.download = 'conversation.webm'
         a.click()
         URL.revokeObjectURL(url)
         chunks.value = []
