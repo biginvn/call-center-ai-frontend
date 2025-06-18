@@ -44,11 +44,11 @@ const isActive = (path: string) => {
       <div class="hidden md:flex items-center gap-4">
         <a href="#" class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
           :class="{ 'text-primary': isActive('/admin') }" @click.prevent="navigateTo('/admin')">
-          Home
+          Trang chủ
         </a>
         <a href="#" class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
           :class="{ 'text-primary': isActive('/admin/ai-training') }" @click.prevent="navigateTo('/admin/ai-training')">
-          AI instruction
+          Chỉ dẫn AI
 
         </a>
       </div>
@@ -83,12 +83,12 @@ const isActive = (path: string) => {
         <div class="flex flex-col gap-4">
           <a href="#" class="text-sm font-medium transition-colors hover:text-primary"
             :class="{ 'text-primary': isActive('/admin') }" @click.prevent="navigateTo('/admin')">
-            Home
+            Trang chủ
           </a>
           <a href="#" class="text-sm font-medium transition-colors hover:text-primary"
             :class="{ 'text-primary': isActive('/admin/ai-training') }"
             @click.prevent="navigateTo('/admin/ai-training')">
-            AI instruction
+            Chỉ dẫn AI
 
           </a>
           <div class="border-t my-2"></div>

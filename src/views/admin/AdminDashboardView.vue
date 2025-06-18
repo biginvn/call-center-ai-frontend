@@ -23,15 +23,11 @@ const getMoodText = (mood: string) => {
   switch (mood) {
     case 'positive':
       return 'Positive'
-      return 'Positive'
     case 'negative':
-      return 'Negative'
       return 'Negative'
     case 'unknown':
       return 'Unknown'
-      return 'Unknown'
     case 'neutral':
-      return 'Neutral'
       return 'Neutral'
     default:
       return mood
@@ -76,18 +72,13 @@ const handleRowClick = async (conversation: Conversation) => {
           <CardHeader class="flex flex-row items-center justify-between">
             <div class="grid gap-2">
               <CardTitle>Call Records</CardTitle>
-              <CardTitle>Call Records</CardTitle>
               <CardDescription>
-                Page {{ currentPage }} / {{ conversationStore.pagination.total_pages }}
                 Page {{ currentPage }} / {{ conversationStore.pagination.total_pages }}
               </CardDescription>
             </div>
             <div class="flex items-center gap-2">
               <select v-model="pageSize" @change="handlePageSizeChange(Number(pageSize))"
                 class="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors">
-                <option :value="10">10 / page</option>
-                <option :value="20">20 / page</option>
-                <option :value="50">50 / page</option>
                 <option :value="10">10 / page</option>
                 <option :value="20">20 / page</option>
                 <option :value="50">50 / page</option>
@@ -174,17 +165,13 @@ const handleRowClick = async (conversation: Conversation) => {
               <div class="text-sm text-muted-foreground">
                 Showing {{ conversationStore.conversations.length }} / {{ conversationStore.pagination.total_items }}
                 records
-                Showing {{ conversationStore.conversations.length }} / {{ conversationStore.pagination.total_items }}
-                records
               </div>
               <div class="flex items-center gap-2">
                 <n-button variant="outline" :disabled="currentPage === 1" @click="handlePageChange(currentPage - 1)">
                   Previous
-                  Previous
                 </n-button>
                 <n-button variant="outline" :disabled="currentPage === conversationStore.pagination.total_pages"
                   @click="handlePageChange(currentPage + 1)">
-                  Next
                   Next
                 </n-button>
               </div>

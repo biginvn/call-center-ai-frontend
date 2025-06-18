@@ -168,123 +168,117 @@ const testTTS = async (e: Event) => {
     currentAudio.value = null
     toast.error('Error generating voice', {
       description: 'Please try again later',
-      toast.error('Error generating voice', {
-        description: 'Please try again later',
-        duration: 3000,
-      })
-    } finally {
-      isGeneratingTTS.value = false
-    }
+      duration: 3000,
+    })
+  } finally {
+    isGeneratingTTS.value = false
+  }
+}
+
+const onSubmit = form.handleSubmit(async (values) => {
+  try {
+    isSaving.value = true
+    // Configure session with AI instruction and voice only
+    await AiCallService.configSession({
+      instructions: values.instructions,
+      voice: values.voice
+    })
+
+    // Show success message
+    toast.success('Configuration saved successfully', {
+      description: 'Your changes have been applied',
+      duration: 3000,
+    })
+  } catch (error) {
+    console.error('Error saving configuration:', error)
+    toast.error('Error saving configuration', {
+      description: 'Please try again later',
+      duration: 3000,
+    })
+  } finally {
+    isSaving.value = false
+  }
+})
+
+// Import all voice samples
+const voiceSamples = {
+  'alloy': new Audio('@/assets/audio/sample_voice/openai-fm-alloy-professional.wav'),
+  'echo': new Audio('@/assets/audio/sample_voice/openai-fm-echo-professional.wav'),
+  'onyx': new Audio('@/assets/audio/sample_voice/openai-fm-onyx-professional.wav'),
+  'nova': new Audio('@/assets/audio/sample_voice/openai-fm-nova-professional.wav'),
+  'shimmer': new Audio('@/assets/audio/sample_voice/openai-fm-shimmer-professional.wav'),
+  'sage': new Audio('@/assets/audio/sample_voice/openai-fm-sage-professional.wav'),
+  'coral': new Audio('@/assets/audio/sample_voice/openai-fm-coral-professional.wav'),
+  'verse': new Audio('@/assets/audio/sample_voice/openai-fm-verse-professional.wav'),
+  'ballad': new Audio('@/assets/audio/sample_voice/openai-fm-ballad-professional.wav'),
+  'ash': new Audio('@/assets/audio/sample_voice/openai-fm-ash-professional.wav'),
+}
+
+const isPlayingSample = ref(false)
+const currentPlayingSample = ref<HTMLAudioElement | null>(null)
+
+const stopSampleVoice = () => {
+  if (currentPlayingSample.value) {
+    currentPlayingSample.value.pause()
+    currentPlayingSample.value.currentTime = 0
+    isPlayingSample.value = false
+    currentPlayingSample.value = null
+  }
+}
+
+const playVoiceSample = (voice: string) => {
+  // Stop any currently playing sample
+  if (currentPlayingSample.value) {
+    currentPlayingSample.value.pause()
+    currentPlayingSample.value.currentTime = 0
   }
 
-  const onSubmit = form.handleSubmit(async (values) => {
-    try {
-      isSaving.value = true
-      // Configure session with AI instruction and voice only
-      await AiCallService.configSession({
-        instructions: values.instructions,
-        voice: values.voice
-      })
+  const sample = voiceSamples[voice as keyof typeof voiceSamples]
+  if (sample) {
+    isPlayingSample.value = true
+    currentPlayingSample.value = sample
 
-      // Show success message
-      toast.success('Configuration saved successfully', {
-        description: 'Your changes have been applied',
-        toast.success('Configuration saved successfully', {
-          description: 'Your changes have been applied',
-          duration: 3000,
-        })
-      } catch (error) {
-        console.error('Error saving configuration:', error)
-        toast.error('Error saving configuration', {
-          description: 'Please try again later',
-          toast.error('Error saving configuration', {
-            description: 'Please try again later',
-            duration: 3000,
-          })
-        } finally {
-          isSaving.value = false
-        }
-      })
-
-  // Import all voice samples
-  const voiceSamples = {
-    'alloy': new Audio('@/assets/audio/sample_voice/openai-fm-alloy-professional.wav'),
-    'echo': new Audio('@/assets/audio/sample_voice/openai-fm-echo-professional.wav'),
-    'onyx': new Audio('@/assets/audio/sample_voice/openai-fm-onyx-professional.wav'),
-    'nova': new Audio('@/assets/audio/sample_voice/openai-fm-nova-professional.wav'),
-    'shimmer': new Audio('@/assets/audio/sample_voice/openai-fm-shimmer-professional.wav'),
-    'sage': new Audio('@/assets/audio/sample_voice/openai-fm-sage-professional.wav'),
-    'coral': new Audio('@/assets/audio/sample_voice/openai-fm-coral-professional.wav'),
-    'verse': new Audio('@/assets/audio/sample_voice/openai-fm-verse-professional.wav'),
-    'ballad': new Audio('@/assets/audio/sample_voice/openai-fm-ballad-professional.wav'),
-    'ash': new Audio('@/assets/audio/sample_voice/openai-fm-ash-professional.wav'),
-  }
-
-  const isPlayingSample = ref(false)
-  const currentPlayingSample = ref<HTMLAudioElement | null>(null)
-
-  const stopSampleVoice = () => {
-    if (currentPlayingSample.value) {
-      currentPlayingSample.value.pause()
-      currentPlayingSample.value.currentTime = 0
+    sample.onended = () => {
       isPlayingSample.value = false
       currentPlayingSample.value = null
     }
-  }
 
-  const playVoiceSample = (voice: string) => {
-    // Stop any currently playing sample
-    if (currentPlayingSample.value) {
-      currentPlayingSample.value.pause()
-      currentPlayingSample.value.currentTime = 0
-    }
-
-    const sample = voiceSamples[voice as keyof typeof voiceSamples]
-    if (sample) {
-      isPlayingSample.value = true
-      currentPlayingSample.value = sample
-
-      sample.onended = () => {
-        isPlayingSample.value = false
-        currentPlayingSample.value = null
-      }
-
-      sample.play().catch(error => {
-        console.error('Error playing voice sample:', error)
-        isPlayingSample.value = false
-        currentPlayingSample.value = null
-      })
-    }
-  }
-
-  const RECOMMENDED_VOICES = ['sage', 'coral']
-
-  const sortedVoices = computed(() => {
-    return [...TTS_VOICES].sort((a, b) => {
-      const aIsRecommended = RECOMMENDED_VOICES.includes(a.value)
-      const bIsRecommended = RECOMMENDED_VOICES.includes(b.value)
-      if (aIsRecommended && !bIsRecommended) return -1
-      if (!aIsRecommended && bIsRecommended) return 1
-      return 0
-    })
-  })
-
-  // Clean up audio resources when component is unmounted
-  onUnmounted(() => {
-    if (cachedAudio.value?.url) {
-      URL.revokeObjectURL(cachedAudio.value.url)
-    }
-    // Stop any playing sample
-    if (currentPlayingSample.value) {
-      currentPlayingSample.value.pause()
+    sample.play().catch(error => {
+      console.error('Error playing voice sample:', error)
+      isPlayingSample.value = false
       currentPlayingSample.value = null
-    }
-    // Stop any playing audio
-    if (currentAudio.value) {
-      currentAudio.value.pause()
-      currentAudio.value = null
-    }
+    })
+  }
+}
+
+const RECOMMENDED_VOICES = ['sage', 'coral']
+
+const sortedVoices = computed(() => {
+  return [...TTS_VOICES].sort((a, b) => {
+    const aIsRecommended = RECOMMENDED_VOICES.includes(a.value)
+    const bIsRecommended = RECOMMENDED_VOICES.includes(b.value)
+    if (aIsRecommended && !bIsRecommended) return -1
+    if (!aIsRecommended && bIsRecommended) return 1
+    return 0
   })
+})
+
+// Clean up audio resources when component is unmounted
+onUnmounted(() => {
+  if (cachedAudio.value?.url) {
+    URL.revokeObjectURL(cachedAudio.value.url)
+  }
+  // Stop any playing sample
+  if (currentPlayingSample.value) {
+    currentPlayingSample.value.pause()
+    currentPlayingSample.value = null
+  }
+  // Stop any playing audio
+  if (currentAudio.value) {
+    currentAudio.value.pause()
+    currentAudio.value = null
+  }
+})
 
 </script>
 
@@ -296,13 +290,10 @@ const testTTS = async (e: Event) => {
       <div class="grid gap-1">
         <h1 class="text-xl font-bold">AI Instructions</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400">Manage and configure your AI model</p>
-        <h1 class="text-xl font-bold">AI Instructions</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Manage and configure your AI model</p>
       </div>
       <n-button type="submit" class="flex items-center justify-center gap-2" @click="onSubmit" :disabled="isSaving">
         <Loader2 v-if="isSaving" class="h-5 w-5 animate-spin" />
         <Bot v-else class="h-5 w-5" />
-        <span>{{ isSaving ? 'Saving...' : 'Save Configuration' }}</span>
         <span>{{ isSaving ? 'Saving...' : 'Save Configuration' }}</span>
       </n-button>
     </header>
@@ -312,7 +303,6 @@ const testTTS = async (e: Event) => {
         <n-card class="max-h-[calc(100vh-200px)] overflow-auto">
           <CardHeader>
             <div class="grid gap-2">
-              <CardTitle>Response Instructions</CardTitle>
               <CardTitle>Response Instructions</CardTitle>
               <CardDescription>
                 Enter content to instruct the AI model
@@ -324,11 +314,9 @@ const testTTS = async (e: Event) => {
               <FormField v-slot="{ componentField }" name="instructions" class="flex-1">
                 <FormItem class="h-full flex flex-col">
                   <FormLabel>Response Instructions <span class="text-red-500">*</span></FormLabel>
-                  <FormLabel>Response Instructions <span class="text-red-500">*</span></FormLabel>
                   <FormControl>
                     <div class="relative h-full">
                       <TextareaComponent v-bind="componentField" placeholder="Enter response instructions for AI..."
-                        <TextareaComponent v-bind="componentField" placeholder="Enter response instructions for AI..."
                         class="h-full min-h-[calc(100vh-400px)] max-h-[calc(100vh-400px)] resize-none pr-12" />
                       <div
                         class="absolute bottom-2 right-2 text-xs text-gray-500 bg-white dark:bg-gray-900 px-1 rounded">
@@ -350,9 +338,7 @@ const testTTS = async (e: Event) => {
             <CardHeader>
               <div class="grid gap-2">
                 <CardTitle>Voice Configuration</CardTitle>
-                <CardTitle>Voice Configuration</CardTitle>
                 <CardDescription>
-                  Customize AI voice
                   Customize AI voice
                 </CardDescription>
               </div>
@@ -362,7 +348,6 @@ const testTTS = async (e: Event) => {
                 <!-- Voice Selection -->
                 <FormField name="voice">
                   <FormItem>
-                    <FormLabel>Select Voice <span class="text-red-500">*</span></FormLabel>
                     <FormLabel>Select Voice <span class="text-red-500">*</span></FormLabel>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
                       <div v-for="voice in sortedVoices" :key="voice.value" @click="() => {
@@ -389,7 +374,6 @@ const testTTS = async (e: Event) => {
                             v-if="isPlayingSample && currentPlayingSample === voiceSamples[voice.value as keyof typeof voiceSamples]"
                             class="text-xs text-blue-500">
                             Playing...
-                            Playing...
                           </div>
                           <n-button
                             v-if="isPlayingSample && currentPlayingSample === voiceSamples[voice.value as keyof typeof voiceSamples]"
@@ -410,7 +394,6 @@ const testTTS = async (e: Event) => {
             <CardHeader>
               <div class="grid gap-2">
                 <CardTitle>Test Voice</CardTitle>
-                <CardTitle>Test Voice</CardTitle>
                 <CardDescription>
                   Try the voice with sample content
                 </CardDescription>
@@ -422,11 +405,9 @@ const testTTS = async (e: Event) => {
                 <FormField v-slot="{ componentField }" name="ttsText">
                   <FormItem>
                     <FormLabel>Test Content</FormLabel>
-                    <FormLabel>Test Content</FormLabel>
                     <FormControl>
                       <div class="relative">
                         <TextareaComponent v-bind="componentField" placeholder="Enter content to test the voice..."
-                          <TextareaComponent v-bind="componentField" placeholder="Enter content to test the voice..."
                           class="h-[100px] resize-none pr-12" />
                         <div class="absolute bottom-2 right-2 text-xs text-gray-500 bg-white dark:bg-gray-900 px-1">
                           {{ (form.values.ttsText || '').length }}/{{ TEXT_LIMITS.ttsText.max }}
@@ -442,16 +423,13 @@ const testTTS = async (e: Event) => {
                     class="flex items-center justify-center gap-2" @click="stopAudio">
                     <Volume2 class="h-5 w-5" />
                     <span>Stop</span>
-                    <span>Stop</span>
                   </n-button>
                   <n-button type="button" variant="outline" class="flex items-center justify-center gap-2"
                     @click="testTTS" :disabled="isPlaying || isGeneratingTTS">
                     <Loader2 v-if="isGeneratingTTS" class="h-5 w-5 animate-spin" />
                     <Volume2 v-else class="h-5 w-5" :class="{ 'animate-pulse': isPlaying }" />
                     <span>{{ isGeneratingTTS ? 'Generating...' : isPlaying ? 'Playing...' : 'Test Voice'
-                    }}</span>
-                    <span>{{ isGeneratingTTS ? 'Generating...' : isPlaying ? 'Playing...' : 'Test Voice'
-                    }}</span>
+                      }}</span>
                   </n-button>
                 </div>
               </div>
