@@ -23,12 +23,12 @@ import AiCallService from '@/services/AiCallService'
 const TEXT_LIMITS = {
   instructions: {
     min: 10,
-    max: 2000,
+    max: 10000,
     label: 'Response Instructions'
   },
   ttsText: {
     min: 1,
-    max: 500,
+    max: 200,
     label: 'Test Content'
   }
 } as const
