@@ -6,7 +6,7 @@ import { formatDate } from '@/lib/utils'
 import { NBadge } from '@/components/ui/badge'
 import type { Conversation, Message } from '@/types/conversation'
 import AdminNavbar from '@/components/admin/AdminNavbar.vue'
-import { Bot, Play, Pause, Rewind, FastForward } from 'lucide-vue-next'
+import { Bot, Play, Pause, Rewind, FastForward, Download } from 'lucide-vue-next'
 import WaveSurfer from 'wavesurfer.js'
 
 const route = useRoute()
@@ -101,6 +101,25 @@ const handleMessageClick = (message: Message) => {
   }
 }
 
+const handleDownload = async () => {
+  if (!conversation.value?.record_url) return
+  
+  try {
+    const response = await fetch(conversation.value.record_url)
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `call-recording-${conversation.value.id}.mp3` // or whatever extension is appropriate
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+  } catch (error) {
+    console.error('Error downloading audio:', error)
+  }
+}
+
 onUnmounted(() => {
   if (wavesurfer.value) {
     wavesurfer.value.destroy()
@@ -191,6 +210,13 @@ const moodSegments = computed(() => {
           </button>
           <button @click="skipForward" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
             <FastForward class="h-6 w-6" />
+          </button>
+          <button 
+            @click="handleDownload" 
+            class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+            title="Download audio"
+          >
+            <Download class="h-6 w-6" />
           </button>
         </div>
         <div class="flex justify-center text-sm text-muted-foreground">

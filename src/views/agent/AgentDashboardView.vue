@@ -172,8 +172,6 @@ const startAICall = async () => {
         // Use correct MIME type and extension for webm (native MediaRecorder output)
         const blob = new Blob(chunks.value, { type: 'audio/webm' })
         const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
         // Use toast.promise for upload and submit
         interface UploadResponse {
           file_path: string;
