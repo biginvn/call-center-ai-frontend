@@ -22,13 +22,13 @@ const pageSize = ref(10)
 const getMoodText = (mood: string) => {
   switch (mood) {
     case 'positive':
-      return 'Tích cực'
+      return 'Positive'
     case 'negative':
-      return 'Tiêu cực'
+      return 'Negative'
     case 'unknown':
-      return 'Không xác định'
+      return 'Unknown'
     case 'neutral':
-      return 'Trung tính'
+      return 'Neutral'
     default:
       return mood
   }
@@ -71,17 +71,17 @@ const handleRowClick = async (conversation: Conversation) => {
         <n-card class="">
           <CardHeader class="flex flex-row items-center justify-between">
             <div class="grid gap-2">
-              <CardTitle>Bản ghi cuộc gọi</CardTitle>
+              <CardTitle>Call Records</CardTitle>
               <CardDescription>
-                Trang {{ currentPage }} / {{ conversationStore.pagination.total_pages }}
+                Page {{ currentPage }} / {{ conversationStore.pagination.total_pages }}
               </CardDescription>
             </div>
             <div class="flex items-center gap-2">
               <select v-model="pageSize" @change="handlePageSizeChange(Number(pageSize))"
                 class="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors">
-                <option :value="10">10 / trang</option>
-                <option :value="20">20 / trang</option>
-                <option :value="50">50 / trang</option>
+                <option :value="10">10 / page</option>
+                <option :value="20">20 / page</option>
+                <option :value="50">50 / page</option>
               </select>
             </div>
           </CardHeader>
@@ -94,7 +94,7 @@ const handleRowClick = async (conversation: Conversation) => {
 
               <div v-else-if="conversationStore.error || conversationStore.conversations.length === 0"
                 class="text-center py-4">
-                Không có bản ghi cuộc gọi
+                No call records found
               </div>
               <div v-else v-for="conversation in conversationStore.conversations" :key="conversation.id"
                 class="bg-card rounded-lg border p-4 space-y-2 cursor-pointer hover:bg-accent"
@@ -132,7 +132,7 @@ const handleRowClick = async (conversation: Conversation) => {
                 </TableRow>
                 <TableRow v-else-if="conversationStore.error || conversationStore.conversations.length === 0">
                   <TableCell colspan="12" class="text-center">
-                    Không có bản ghi cuộc gọi
+                    No call records found
                   </TableCell>
                 </TableRow>
                 <TableRow v-for="conversation in conversationStore.conversations" :key="conversation.id"
@@ -163,16 +163,16 @@ const handleRowClick = async (conversation: Conversation) => {
             <!-- Pagination Controls -->
             <div class="flex items-center justify-between mt-4">
               <div class="text-sm text-muted-foreground">
-                Hiển thị {{ conversationStore.conversations.length }} / {{ conversationStore.pagination.total_items }}
-                bản ghi
+                Showing {{ conversationStore.conversations.length }} / {{ conversationStore.pagination.total_items }}
+                records
               </div>
               <div class="flex items-center gap-2">
                 <n-button variant="outline" :disabled="currentPage === 1" @click="handlePageChange(currentPage - 1)">
-                  Trước
+                  Previous
                 </n-button>
                 <n-button variant="outline" :disabled="currentPage === conversationStore.pagination.total_pages"
                   @click="handlePageChange(currentPage + 1)">
-                  Sau
+                  Next
                 </n-button>
               </div>
             </div>
