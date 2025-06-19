@@ -4,7 +4,7 @@ import { NCard, CardContent, CardDescription, CardHeader, CardTitle } from '@/co
 import { NButton } from '@/components/ui/button'
 import { Bot, Volume2, Loader2, Square } from 'lucide-vue-next'
 import { TextareaComponent } from '@/components/ui/textarea'
-import { ref, computed, onUnmounted } from 'vue'
+import { ref, computed, onUnmounted, onMounted } from 'vue'
 import OpenAI from 'openai'
 import { TTS_VOICES, type TTSVoice } from '@/config/ttsConfig'
 import { useForm } from 'vee-validate'
@@ -62,6 +62,7 @@ const openai = new OpenAI({
 const isPlaying = ref(false)
 const isSaving = ref(false)
 const isGeneratingTTS = ref(false)
+const isFetching = ref(false)
 const cachedAudio = ref<{
   url: string
   config: {
@@ -263,6 +264,33 @@ const sortedVoices = computed(() => {
   })
 })
 
+// Hydrate form with existing configuration
+const hydrateConfig = async () => {
+  try {
+    isFetching.value = true
+    const config = await AiCallService.getConfig()
+
+    // Update form values with existing configuration
+    form.setValues({
+      ...form.values,
+      instructions: config.instructions,
+      voice: config.voice
+    })
+  } catch (error) {
+    console.error('Error fetching AI configuration:', error)
+    toast.error('Error loading configuration', {
+      description: 'Unable to load existing configuration',
+      duration: 3000,
+    })
+  } finally {
+    isFetching.value = false
+  }
+}
+
+onMounted(() => {
+  hydrateConfig()
+})
+
 // Clean up audio resources when component is unmounted
 onUnmounted(() => {
   if (cachedAudio.value?.url) {
@@ -289,7 +317,9 @@ onUnmounted(() => {
       class="sticky top-[64px] left-0 right-0 bg-white dark:bg-gray-900 shadow-md p-4 md:px-8 z-10 flex items-center justify-between">
       <div class="grid gap-1">
         <h1 class="text-xl font-bold">AI Instructions</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Manage and configure your AI model</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          {{ isFetching ? 'Loading configuration...' : 'Manage and configure your AI model' }}
+        </p>
       </div>
       <n-button type="submit" class="flex items-center justify-center gap-2" @click="onSubmit" :disabled="isSaving">
         <Loader2 v-if="isSaving" class="h-5 w-5 animate-spin" />
@@ -429,7 +459,7 @@ onUnmounted(() => {
                     <Loader2 v-if="isGeneratingTTS" class="h-5 w-5 animate-spin" />
                     <Volume2 v-else class="h-5 w-5" :class="{ 'animate-pulse': isPlaying }" />
                     <span>{{ isGeneratingTTS ? 'Generating...' : isPlaying ? 'Playing...' : 'Test Voice'
-                      }}</span>
+                    }}</span>
                   </n-button>
                 </div>
               </div>
