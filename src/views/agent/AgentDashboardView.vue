@@ -33,6 +33,7 @@ import AiCallService from '@/services/AiCallService'
 import axiosInstance from '@/services/axiosInstance'
 import axios from 'axios'
 import { toast } from 'vue-sonner'
+import type { ConfigurationData } from '@/services/AiCallService'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -51,6 +52,7 @@ const micStream = ref<MediaStream | null>(null)
 const recorder = ref<MediaRecorder | null>(null)
 const chunks = ref<Blob[]>([])
 const botCallInterfaceRef = ref<InstanceType<typeof BotCallInterface> | null>(null)
+const config = ref<ConfigurationData | null>(null)
 
 // Watch for incoming calls
 watch(() => sipStore.callStatus, (newStatus) => {
@@ -80,6 +82,13 @@ watch(() => sipStore.isConnected, (newStatus) => {
 onMounted(async () => {
   // Load user data from storage first
   await authStore.loadFromStorage()
+
+  // Hydrate config from AiCallService
+  try {
+    config.value = await AiCallService.getConfig()
+  } catch (e) {
+    console.error('Failed to load config', e)
+  }
 
   // Ensure we have valid auth state
   // if (!authStore.isAuthenticated) {

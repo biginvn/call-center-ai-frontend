@@ -1,5 +1,4 @@
-import axiosInstance from "./axiosInstance";
-
+import axiosInstance from './axiosInstance'
 
 interface SessionResponse {
   id: string
@@ -31,7 +30,7 @@ interface SessionResponse {
   }
 }
 
-interface ConfigurationData {
+export interface ConfigurationData {
   instructions: string
   voice: string
 }
@@ -40,20 +39,24 @@ class AiCallService {
   async configSession({ instructions, voice }: ConfigurationData): Promise<SessionResponse> {
     const response = await axiosInstance.post<SessionResponse>('/realtime/config', {
       instructions,
-      voice
-    });
-    return response.data;
+      voice,
+    })
+    return response.data
+  }
+  async getConfig(): Promise<ConfigurationData> {
+    const response = await axiosInstance.get<ConfigurationData>('/realtime/config')
+    return response.data
   }
 
   async getSession(): Promise<SessionResponse> {
-    const response = await axiosInstance.get<SessionResponse>('/realtime/session');
-    return response.data;
+    const response = await axiosInstance.get<SessionResponse>('/realtime/session')
+    return response.data
   }
 
   async submitVoice(url: string): Promise<string> {
-    const response = await axiosInstance.post<string>(`/realtime/finish?audio_url=${url}`);
-    return response.data;
+    const response = await axiosInstance.post<string>(`/realtime/finish?audio_url=${url}`)
+    return response.data
   }
 }
 
-export default new AiCallService();
+export default new AiCallService()
