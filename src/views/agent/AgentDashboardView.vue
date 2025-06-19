@@ -304,8 +304,14 @@ const startAICall = async () => {
       configureData()
     })
 
+    let sessionCreated = false; // Track if session.created has been received
     dataChannel.addEventListener('message', async (ev) => {
       const msg = JSON.parse(ev.data) as { type: string; name: keyof typeof fns; arguments: string; call_id: string }
+      // Trigger response.create only after session is created and not before
+      if (!sessionCreated && (msg.type === 'session.created' || msg.type === 'assistant.speaking')) {
+        sessionCreated = true;
+        dataChannel.send(JSON.stringify({ type: 'response.create' }));
+      }
       // Handle function calls
       if (msg.type === 'response.function_call_arguments.done') {
         const fn = fns[msg.name]
@@ -325,7 +331,7 @@ const startAICall = async () => {
           }
           dataChannel.send(JSON.stringify(event))
           // Have assistant respond after getting the results
-          dataChannel.send(JSON.stringify({ type: "response.create" }))
+          // dataChannel.send(JSON.stringify({ type: "response.create" }))
         }
       }
     })
