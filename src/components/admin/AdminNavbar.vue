@@ -46,6 +46,11 @@ const isActive = (path: string) => {
           :class="{ 'text-primary': isActive('/admin') }" @click.prevent="navigateTo('/admin')">
           Home
         </a>
+        <router-link to="/admin/clients"
+          class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
+          :class="{ 'text-primary': isActive('/admin/clients') }" @click.prevent="navigateTo('/admin/clients')">
+          Client Management
+        </router-link>
         <a href="#" class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
           :class="{ 'text-primary': isActive('/admin/ai-training') }" @click.prevent="navigateTo('/admin/ai-training')">
           AI Instruction
@@ -85,12 +90,17 @@ const isActive = (path: string) => {
             :class="{ 'text-primary': isActive('/admin') }" @click.prevent="navigateTo('/admin')">
             Home
           </a>
+          <router-link to="/admin/clients" class="text-sm font-medium transition-colors hover:text-primary"
+            :class="{ 'text-primary': isActive('/admin/clients') }" @click.prevent="navigateTo('/admin/clients')">
+            Client Management
+          </router-link>
           <a href="#" class="text-sm font-medium transition-colors hover:text-primary"
             :class="{ 'text-primary': isActive('/admin/ai-training') }"
             @click.prevent="navigateTo('/admin/ai-training')">
             AI Instruction
 
           </a>
+
           <div class="border-t my-2"></div>
           <div class="flex items-center gap-2 px-2 py-1">
             <CircleUser class="h-5 w-5" />

@@ -6,6 +6,7 @@ import LoginView from '@/views/LoginView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
 import ConversationDetailView from '@/views/admin/ConversationDetailView.vue'
 import AITrainingView from '@/views/admin/AITrainingView.vue'
+import ClientManagementView from '@/views/admin/ClientManagementView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { requiresGuest: true } },
@@ -25,6 +26,12 @@ const routes = [
     path: '/admin/ai-training',
     name: 'ai-training',
     component: AITrainingView,
+    // meta: { requiresAuth: true, role: 'admin' },
+  },
+  {
+    path: '/admin/clients',
+    name: 'client-management',
+    component: ClientManagementView,
     // meta: { requiresAuth: true, role: 'admin' },
   },
   // { path: '/admin/ai-training', name: 'ai-training', component: AITrainingView },
