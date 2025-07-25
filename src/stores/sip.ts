@@ -6,6 +6,7 @@ import type { SessionDescriptionHandler, Session } from 'sip.js'
 import { SessionState, Inviter, Invitation } from 'sip.js'
 import { loadConfig } from '@/config'
 import { toast } from 'vue-sonner'
+import { determineWebClient } from '@/lib/utils'
 
 type SipSessionType = Session | Invitation | Inviter
 
@@ -31,18 +32,6 @@ export const useSipStore = defineStore('sip', () => {
     const storedFullName = localStorage.getItem('fullName')
     return storedFullName || 'Unknown'
   })
-
-  // Helper function to determine web client
-  const determineWebClient = (extension: string) => {
-    if (extension.startsWith('111')) {
-      return 'web1'
-    } else if (extension.startsWith('112')) {
-      return 'web2'
-    } else if (extension.startsWith('101'))
-      return 'test2' // default fallback
-    else if (extension.startsWith('100')) return 'test1'
-    else return 'web1'
-  }
 
   // Watch for changes in user data and reinitialize SIP service if needed
   watch(
