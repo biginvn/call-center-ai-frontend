@@ -10,6 +10,7 @@ export interface UserBase {
 export interface Agent extends UserBase {
   role: 'agent';
   extensionNumber: string;  // Required for agent
+  extension?: string;
 }
 
 export interface Admin extends UserBase {

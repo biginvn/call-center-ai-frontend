@@ -6,7 +6,6 @@ import type { SessionDescriptionHandler, Session } from 'sip.js'
 import { SessionState, Inviter, Invitation } from 'sip.js'
 import { loadConfig } from '@/config'
 import { toast } from 'vue-sonner'
-import { determineWebClient } from '@/lib/utils'
 
 type SipSessionType = Session | Invitation | Inviter
 
@@ -43,7 +42,7 @@ export const useSipStore = defineStore('sip', () => {
           await authStore.loadFromStorage()
         }
 
-        const extension = determineWebClient(newUser.extensionNumber.toString())
+        const extension = newUser.extension || localStorage.getItem('extension')
         const password = '1234' // This should be stored securely
         if (extension && password) {
           await initializeSip(extension, password)

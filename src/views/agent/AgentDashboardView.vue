@@ -28,7 +28,6 @@ import { useAuthStore } from '@/stores/auth'
 import { useSipStore } from '@/stores/sip'
 import { getActiveUserByExtension, getAllActiveUsers } from '@/services/callService'
 import ActiveUsersTable from '@/components/ActiveUsersTable.vue'
-import { determineWebClient } from "@/lib/utils";
 import AiCallService from '@/services/AiCallService'
 import axiosInstance from '@/services/axiosInstance'
 import axios from 'axios'
@@ -103,7 +102,7 @@ onMounted(async () => {
 
   // Initialize SIP if we have user data
   if (authStore.user?.extensionNumber) {
-    const extension = determineWebClient(authStore.user.extensionNumber.toString())
+    const extension = authStore.user.extension || localStorage.getItem('extension') || ''
     const password = "1234" // This should be stored securely
     await sipStore.initializeSip(extension, password)
   }

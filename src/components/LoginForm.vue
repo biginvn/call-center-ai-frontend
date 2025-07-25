@@ -128,6 +128,8 @@ const onSubmit = handleSubmit(async (values) => {
         extension_number: values.ext ?? ''
       });
 
+      // Find the selected extension object
+      const selectedExtObj = availableExtensions.value.find(ext => ext.value === values.ext);
       user = {
         id: '', // This should come from the API response
         username: values.username,
@@ -136,31 +138,37 @@ const onSubmit = handleSubmit(async (values) => {
         lastLogin: new Date().toISOString(),
         role: 'agent',
         fullName: '',
-        extensionNumber: values.ext ?? ''
+        extensionNumber: values.ext ?? '',
+        extension: selectedExtObj ? selectedExtObj.label : ''
       };
 
-      // Store extension number in local storage for SIP
       if (values.ext) {
         localStorage.setItem('extension_number', values.ext)
+        localStorage.setItem('extension', selectedExtObj ? selectedExtObj.label : '')
       }
     }
 
     // Update auth store with tokens and user info
-    authStore.login({
-      access_token: response.access_token,
-      refresh_token: response.refresh_token,
-      user
-    });
+      authStore.login({
+        access_token: response.access_token,
+        refresh_token: response.refresh_token,
+        user
+      });
 
     await nextTick();
 
     // Get user info immediately after login
     try {
       const userData = await getUserInfo(response.access_token);
+      // Find the selected extension object again for fallback
+      const selectedExtObj = availableExtensions.value.find(ext => ext.value === userData.extension_number);
       const updatedUser = {
         ...user,
         ...userData,
-        ...(user.role === 'agent' ? { extensionNumber: userData.extension_number ?? '' } : {})
+        ...(user.role === 'agent' ? {
+          extensionNumber: userData.extension_number ?? '',
+          extension: selectedExtObj ? selectedExtObj.label : user.extension
+        } : {})
       } as Agent | Admin;
 
       // Update the store with the complete user data
