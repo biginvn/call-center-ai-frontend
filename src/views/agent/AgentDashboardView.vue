@@ -9,7 +9,7 @@ export const containerClass = 'w-full h-full'
 import { ref, onMounted, watch } from 'vue'
 import { NButton } from '@/components/ui/button'
 import { NCard, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CircleUser, Bot } from 'lucide-vue-next'
+import { CircleUser, Bot, Phone } from 'lucide-vue-next'
 import { Wifi, WifiOff } from 'lucide-vue-next'
 import PhoneDialpad from '@/components/PhoneDialpad.vue'
 import {
@@ -34,6 +34,7 @@ import axiosInstance from '@/services/axiosInstance'
 import axios from 'axios'
 import { toast } from 'vue-sonner'
 import type { ConfigurationData } from '@/services/AiCallService'
+import { NTabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -453,19 +454,34 @@ const handleBotCallEnd = () => {
     <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <div class="grid gap-4 md:gap-8 lg:grid-cols-2">
         <n-card>
-          <CardHeader>
-            <CardTitle>Dialer</CardTitle>
-          </CardHeader>
           <CardContent>
-            <div class="flex flex-col gap-4">
-              <n-button variant="outline" class="flex items-center justify-center gap-2" @click="startAICall"
-                :disabled="isAICall">
-                <Bot class="h-5 w-5" />
-                <span>Call AI Bot</span>
-              </n-button>
-
-              <PhoneDialpad :onCall="onStartCall" />
-            </div>
+            <n-tabs default-value="ai-bot" class="w-full">
+              <TabsList class="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="ai-bot">AI Bot</TabsTrigger>
+                <TabsTrigger value="dialpad">Dial Pad</TabsTrigger>
+              </TabsList>
+              <TabsContent value="ai-bot">
+                <div class="flex flex-col items-center gap-4">
+                  <div
+                    class="w-24 h-24 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg mb-4">
+                    <Bot class="w-12 h-12 text-white" />
+                  </div>
+                  <h2 class="text-2xl font-bold text-slate-900 mb-2">Start a New Call</h2>
+                  <p class="text-slate-600 mb-8">Connect with your AI assistant for instant help and support</p>
+                  <n-button
+                    class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-full font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center gap-2"
+                    @click="startAICall" :disabled="isAICall">
+                    <Phone class="w-6 h-6 mr-2" />
+                    Call AI Bot
+                  </n-button>
+                </div>
+              </TabsContent>
+              <TabsContent value="dialpad">
+                <div class="flex flex-col items-center gap-4">
+                  <PhoneDialpad :onCall="onStartCall" />
+                </div>
+              </TabsContent>
+            </n-tabs>
           </CardContent>
         </n-card>
 
