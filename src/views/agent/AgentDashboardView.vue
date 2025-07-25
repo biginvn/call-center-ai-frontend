@@ -9,7 +9,7 @@ export const containerClass = 'w-full h-full'
 import { ref, onMounted, watch } from 'vue'
 import { NButton } from '@/components/ui/button'
 import { NCard, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CircleUser, Bot, Phone } from 'lucide-vue-next'
+import { CircleUser, Phone } from 'lucide-vue-next'
 import { Wifi, WifiOff } from 'lucide-vue-next'
 import PhoneDialpad from '@/components/PhoneDialpad.vue'
 import {
@@ -35,6 +35,10 @@ import axios from 'axios'
 import { toast } from 'vue-sonner'
 import type { ConfigurationData } from '@/services/AiCallService'
 import { NTabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import TooltipProvider from '@/components/ui/tooltip/TooltipProvider.vue'
+import TooltipTrigger from '@/components/ui/tooltip/TooltipTrigger.vue'
+import TooltipContent from '@/components/ui/tooltip/TooltipContent.vue'
+import TooltipComponent from '@/components/ui/tooltip/TooltipComponent.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -412,16 +416,25 @@ const handleBotCallEnd = () => {
       </nav>
       <div class="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
         <form class="ml-auto flex-1 sm:flex-initial"></form>
-        <n-badge v-if="true" :variant="isConnected ? 'default' : 'destructive'" :class="{ 'bg-green-500': isConnected }"
-          class="hidden md:inline-flex">
-          <span class="text-xs font-semibold flex items-center gap-1">
-
-            {{ isConnected ? 'Connected' : 'Disconnected' }}
-            {{ authStore.user?.extensionNumber }}
-            <!-- <Wifi v-if="isConnected" class="h-3 w-3" />
-            <WifiOff v-else class="h-3 w-3" /> -->
-          </span>
-        </n-badge>
+        <TooltipProvider>
+          <TooltipComponent>
+            <TooltipTrigger as-child>
+              <div class="flex items-center gap-2">
+                <n-badge v-if="true" :variant="isConnected ? 'default' : 'destructive'"
+                  :class="{ 'bg-green-500': isConnected }" class="hidden md:inline-flex">
+                  <span class="text-xs font-semibold flex items-center gap-1">
+                    {{ isConnected ? 'Connected' : 'Disconnected' }}
+                    {{ authStore.user?.extensionNumber }}
+                  </span>
+                </n-badge>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>This shows the connection status between agents. It does <b>not</b> indicate connection to the
+                voicebot.</p>
+            </TooltipContent>
+          </TooltipComponent>
+        </TooltipProvider>
         <n-badge v-if="true" :variant="isConnected ? 'default' : 'destructive'" :class="{ 'bg-green-500': isConnected }"
           class="md:hidden">
           <span class="text-xs font-semibold flex items-center gap-1">
@@ -463,13 +476,13 @@ const handleBotCallEnd = () => {
               <TabsContent value="ai-bot">
                 <div class="flex flex-col items-center gap-4">
                   <div
-                    class="w-24 h-24 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg mb-4">
-                    <Bot class="w-12 h-12 text-white" />
+                    class="w-24 h-24 rounded-full flex items-center justify-center shadow-lg mb-4 overflow-hidden bg-primary">
+                    <img src="/src/assets/Diallog.png" alt="AI Avatar" class="w-full h-full object-cover" />
                   </div>
                   <h2 class="text-2xl font-bold text-slate-900 mb-2">Start a New Call</h2>
-                  <p class="text-slate-600 mb-8">Connect with your AI assistant for instant help and support</p>
+                  <p class="text-slate-600 mb-8">Connect with your DialoggAI Voicebot for instant help and support</p>
                   <n-button
-                    class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-4 rounded-full font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center gap-2"
+                    class=" text-white px-8 py-4 rounded-full transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center gap-2"
                     @click="startAICall" :disabled="isAICall">
                     <Phone class="w-6 h-6 mr-2" />
                     Call AI Bot

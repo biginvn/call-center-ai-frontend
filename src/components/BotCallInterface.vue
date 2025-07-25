@@ -1,35 +1,29 @@
 <template>
   <n-dialog :open="modelValue" @update:open="onOpenChange" :closeOnClickOutside="false">
     <DialogOverlay class="bg-black/80" />
-    <DialogContent class="p-0 border-none bg-transparent shadow-none [&>button:last-child]:hidden"
+    <DialogContent
+      class="p-0 !w-screen min-h-screen sm:max-w-none bg-gradient-to-br from-slate-900 to-blue-900 border-none [&>button:last-child]:hidden"
       @pointer-down-outside.prevent>
-      <div class="min-h-screen bg-gradient-to-br from-slate-900 to-blue-900 flex items-center justify-center">
+      <div class=" flex items-center justify-center">
         <div class="text-center w-full">
           <!-- AI Avatar -->
           <div class="relative mb-8 flex justify-center">
             <div
-              class="w-48 h-48 bg-gradient-to-r from-blue-400 to-blue-700 rounded-full flex items-center justify-center shadow-2xl mx-auto">
-              <div v-if="callState === 'connecting'" class="animate-pulse">
-                <Phone class="w-24 h-24 text-white" />
-              </div>
-              <div v-else-if="callState === 'active'" class="animate-bounce">
-                <MessageSquare class="w-24 h-24 text-white" />
-              </div>
+              class="w-48 h-48 rounded-full flex items-center justify-center shadow-2xl mx-auto overflow-hidden bg-gradient-to-r from-blue-400 to-blue-700">
+              <img src="/src/assets/Diallog.png" alt="AI Avatar" class="w-full h-full object-cover" />
             </div>
-            <div v-if="callState === 'active'"
-              class="absolute -inset-4 border-4 border-blue-300 rounded-full animate-ping opacity-20"></div>
           </div>
 
           <!-- Status -->
           <div class="mb-6">
             <h2 class="text-3xl font-bold text-white mb-2">
               <span v-if="callState === 'connecting'">Connecting...</span>
-              <span v-else-if="callState === 'active'">Connected to AI Assistant</span>
+              <span v-else-if="callState === 'active'">DialoggAI Voicebot</span>
               <span v-else-if="callState === 'ended'">Call Ended</span>
             </h2>
             <div v-if="callState === 'active'" class="flex items-center justify-center space-x-2 text-blue-200">
               <Clock class="w-5 h-5" />
-              <span class="text-xl font-mono">{{ formatCallDuration(callDuration) }}</span>
+              <span class="text-xl">{{ formatCallDuration(callDuration) }}</span>
             </div>
           </div>
 
@@ -39,20 +33,6 @@
               :class="['w-14 h-14 rounded-full flex items-center justify-center transition-all', isMuted ? 'bg-red-500 hover:bg-red-600' : 'bg-slate-700 hover:bg-slate-600']">
               <component :is="isMuted ? MicOff : Mic" class="w-6 h-6 text-white" />
             </button>
-            <div class="flex items-center space-x-3">
-              <button @click="adjustVolume(Math.max(0, volume - 10))"
-                class="w-10 h-10 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-colors">
-                <VolumeX class="w-4 h-4 text-white" />
-              </button>
-              <div class="w-24 bg-slate-600 rounded-full h-2">
-                <div class="bg-blue-400 h-2 rounded-full transition-all duration-200" :style="{ width: volume + '%' }">
-                </div>
-              </div>
-              <button @click="adjustVolume(Math.min(100, volume + 10))"
-                class="w-10 h-10 rounded-full bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-colors">
-                <Volume2 class="w-4 h-4 text-white" />
-              </button>
-            </div>
           </div>
 
           <!-- End Call Button -->
@@ -65,10 +45,8 @@
 
           <!-- Ended State -->
           <div v-if="callState === 'ended'" class="text-blue-200">
-            <p class="mb-4">Processing transcription...</p>
+            <p class="mb-4">Ending call...</p>
             <div class="w-8 h-8 border-2 border-blue-300 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <button class="mt-6 px-6 py-2 rounded-lg bg-slate-700 text-white hover:bg-slate-600"
-              @click="onOpenChange(false)">Close</button>
           </div>
         </div>
       </div>
@@ -79,7 +57,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onUnmounted } from 'vue'
-import { Phone, MessageSquare, Mic, MicOff, Volume2, VolumeX, Clock } from 'lucide-vue-next'
+import { Mic, MicOff, Clock } from 'lucide-vue-next'
 import { NDialog, DialogContent, DialogOverlay } from '@/components/ui/dialog'
 
 type CallState = 'connecting' | 'active' | 'ended'
@@ -181,11 +159,6 @@ const onOpenChange = (value: boolean) => {
   emit('update:modelValue', value)
 }
 
-// Add volume state and adjustVolume method
-const volume = ref(80)
-const adjustVolume = (newVolume: number) => {
-  volume.value = Math.max(0, Math.min(100, newVolume))
-}
 
 // Expose methods and refs for parent component
 defineExpose({

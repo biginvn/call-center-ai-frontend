@@ -22,10 +22,13 @@ const error = ref('')
 
 const newClientName = ref('')
 const newClientDescription = ref('')
+const newClientUsername = ref('')
+const newClientPassword = ref('')
 const creating = ref(false)
 const createError = ref('')
 
 const editModalOpen = ref(false)
+const deleteModalOpen = ref(false)
 const selectedClient = ref<Client | null>(null)
 const editName = ref('')
 const editDescription = ref('')
@@ -38,17 +41,29 @@ async function handleCreateClient() {
     createError.value = 'Name is required.'
     return
   }
+  if (!newClientUsername.value) {
+    createError.value = 'Account username is required.'
+    return
+  }
+  if (!newClientPassword.value) {
+    createError.value = 'Account password is required.'
+    return
+  }
   creating.value = true
   createError.value = ''
   try {
     await axios.post('/clients/create', {
       name: newClientName.value,
       description: newClientDescription.value,
+      account_username: newClientUsername.value,
+      account_password: newClientPassword.value,
     })
     // Refresh client list
     await fetchClients()
     newClientName.value = ''
     newClientDescription.value = ''
+    newClientUsername.value = ''
+    newClientPassword.value = ''
   } catch {
     createError.value = 'Failed to create client.'
   } finally {
@@ -79,6 +94,11 @@ function openEditModal(client: Client) {
   editModalOpen.value = true
 }
 
+function openDeleteModal(client: Client) {
+  selectedClient.value = client
+  deleteModalOpen.value = true
+}
+
 async function handleUpdateClient() {
   if (!editName.value) {
     editError.value = 'Name is required.'
@@ -104,12 +124,12 @@ async function handleUpdateClient() {
 async function handleDeleteClient() {
   if (!selectedClient.value) return
   deleteLoading.value = true
-  editError.value = ''
   try {
     await axios.delete(`/clients/${selectedClient.value.id}`)
+    deleteModalOpen.value = false
     editModalOpen.value = false
   } catch {
-    editError.value = 'Failed to delete client.'
+    // Optionally show error in a toast or modal
   } finally {
     deleteLoading.value = false
     await fetchClients()
@@ -149,6 +169,16 @@ async function handleDeleteClient() {
                     <NInput id="description" v-model="newClientDescription" placeholder="Description"
                       class="col-span-3" />
                   </div>
+                  <div class="grid grid-cols-4 items-center gap-4">
+                    <NLabel for="account-username" class="text-right">Username</NLabel>
+                    <NInput id="account-username" v-model="newClientUsername" placeholder="Account username"
+                      class="col-span-3" />
+                  </div>
+                  <div class="grid grid-cols-4 items-center gap-4">
+                    <NLabel for="account-password" class="text-right">Password</NLabel>
+                    <NInput id="account-password" v-model="newClientPassword" placeholder="Account password"
+                      type="password" class="col-span-3" />
+                  </div>
                   <div v-if="createError" class="col-span-4 text-red-500 text-sm">{{ createError }}</div>
                 </div>
                 <DialogFooter>
@@ -167,17 +197,19 @@ async function handleDeleteClient() {
             <n-table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Description</TableHead>
+                  <TableHead class="w-[100px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow v-for="client in clients" :key="client.id" class="cursor-pointer hover:bg-gray-100"
-                  @click="openEditModal(client)">
-                  <TableCell>{{ client.id }}</TableCell>
+                <TableRow v-for="client in clients" :key="client.id" class="hover:bg-gray-100">
                   <TableCell>{{ client.name }}</TableCell>
                   <TableCell>{{ client.description }}</TableCell>
+                  <TableCell class="flex gap-2">
+                    <NButton size="sm" variant="outline" @click="openEditModal(client)">Edit</NButton>
+                    <NButton size="sm" variant="destructive" @click="openDeleteModal(client)">Delete</NButton>
+                  </TableCell>
                 </TableRow>
               </TableBody>
               <!-- Edit/Delete Modal -->
@@ -202,13 +234,27 @@ async function handleDeleteClient() {
                     <div v-if="editError" class="col-span-4 text-red-500 text-sm">{{ editError }}</div>
                   </div>
                   <DialogFooter class="flex flex-row gap-2 items-center justify-between">
-                    <NButton :loading="deleteLoading" @click="handleDeleteClient" variant="destructive">Delete</NButton>
                     <NButton :loading="editLoading" @click="handleUpdateClient" variant="default">Save</NButton>
                   </DialogFooter>
                 </DialogContent>
               </NDialog>
             </n-table>
             <div v-if="clients.length === 0" class="text-center py-4">No clients found.</div>
+            <!-- Delete Confirmation Modal -->
+            <NDialog v-model:open="deleteModalOpen">
+              <DialogContent class="sm:max-w-[400px]">
+                <DialogHeader>
+                  <DialogTitle>Confirm Delete</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to delete <span class="font-bold">{{ selectedClient?.name }}</span>?
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter class="flex flex-row gap-2 items-center justify-end">
+                  <NButton variant="outline" @click="deleteModalOpen = false">Cancel</NButton>
+                  <NButton :loading="deleteLoading" variant="destructive" @click="handleDeleteClient">Delete</NButton>
+                </DialogFooter>
+              </DialogContent>
+            </NDialog>
           </div>
         </CardContent>
       </n-card>

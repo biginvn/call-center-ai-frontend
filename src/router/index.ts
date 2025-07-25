@@ -7,6 +7,7 @@ import NotFoundView from '@/views/NotFoundView.vue'
 import ConversationDetailView from '@/views/admin/ConversationDetailView.vue'
 import AITrainingView from '@/views/admin/AITrainingView.vue'
 import ClientManagementView from '@/views/admin/ClientManagementView.vue'
+import UserManagementView from '@/views/admin/UserManagementView.vue'
 
 const routes = [
   { path: '/login', name: 'login', component: LoginView, meta: { requiresGuest: true } },
@@ -14,25 +15,31 @@ const routes = [
     path: '/',
     name: 'dashboard',
     component: AgentDashboardView,
-    // meta: { requiresAuth: true, role: 'agent' },
+    meta: { requiresAuth: true, role: 'agent' },
   },
   {
     path: '/admin',
     name: 'admin-dashboard',
     component: AdminDashboardView,
-    // meta: { requiresAuth: true, role: 'admin' },
+    meta: { requiresAuth: true, role: 'admin' },
   },
   {
     path: '/admin/ai-training',
     name: 'ai-training',
     component: AITrainingView,
-    // meta: { requiresAuth: true, role: 'admin' },
+    meta: { requiresAuth: true, role: 'admin' },
   },
   {
     path: '/admin/clients',
     name: 'client-management',
     component: ClientManagementView,
-    // meta: { requiresAuth: true, role: 'admin' },
+    meta: { requiresAuth: true, role: 'admin' },
+  },
+  {
+    path: '/admin/users',
+    name: 'user-management',
+    component: UserManagementView,
+    meta: { requiresAuth: true, role: 'admin' },
   },
   // { path: '/admin/ai-training', name: 'ai-training', component: AITrainingView },
   //  { path: '/admin/conversations/:id', name: 'conversation-detail', component: ConversationDetailView, meta: { requiresAuth: true, role: 'admin' } },
@@ -40,6 +47,7 @@ const routes = [
     path: '/admin/conversations/:id',
     name: 'conversation-detail',
     component: ConversationDetailView,
+    meta: { requiresAuth: true, role: 'admin' },
   },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
   { path: '/admin/test', name: 'admin-dashboard-test', component: AdminDashboardView },
@@ -75,7 +83,8 @@ router.beforeEach(async (to, from, next) => {
     if (!authStore.isAuthenticated) {
       next('/login')
     } else if (to.meta.role && authStore.user?.role !== to.meta.role) {
-      next('/')
+      // Redirect to correct dashboard based on user role
+      next(authStore.user?.role === 'admin' ? '/admin' : '/')
     } else {
       next()
     }

@@ -51,6 +51,11 @@ const isActive = (path: string) => {
           :class="{ 'text-primary': isActive('/admin/clients') }" @click.prevent="navigateTo('/admin/clients')">
           Client Management
         </router-link>
+        <router-link to="/admin/users"
+          class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
+          :class="{ 'text-primary': isActive('/admin/users') }" @click.prevent="navigateTo('/admin/users')">
+          User Management
+        </router-link>
         <a href="#" class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
           :class="{ 'text-primary': isActive('/admin/ai-training') }" @click.prevent="navigateTo('/admin/ai-training')">
           AI Instruction

@@ -200,7 +200,11 @@ const onSubmit = handleSubmit(async (values) => {
       } else if (errorDetail === 'Incorrect password') {
         setFieldError('password', 'Incorrect password');
       } else if (errorDetail === 'Only admins can use this endpoint') {
-        setFieldError('ext', 'Please enter Extension number');
+        if (props.isAdmin) {
+          setFieldError('username', 'Only admins can use this endpoint');
+        } else {
+          setFieldError('ext', 'Only admins can use this endpoint');
+        }
       } else if (errorDetail === 'Extension number is already in use') {
         setFieldError('ext', 'Extension number is already in use');
       } else if (errorDetail === 'Only agents can use this endpoint') {
