@@ -9,7 +9,7 @@ export const containerClass = 'w-full h-full'
 import { ref, onMounted, watch } from 'vue'
 import { NButton } from '@/components/ui/button'
 import { NCard, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CircleUser, Bot } from 'lucide-vue-next'
+import { CircleUser, Phone } from 'lucide-vue-next'
 import { Wifi, WifiOff } from 'lucide-vue-next'
 import PhoneDialpad from '@/components/PhoneDialpad.vue'
 import {
@@ -28,12 +28,16 @@ import { useAuthStore } from '@/stores/auth'
 import { useSipStore } from '@/stores/sip'
 import { getActiveUserByExtension, getAllActiveUsers } from '@/services/callService'
 import ActiveUsersTable from '@/components/ActiveUsersTable.vue'
-import { determineWebClient } from "@/lib/utils";
 import AiCallService from '@/services/AiCallService'
 import axiosInstance from '@/services/axiosInstance'
 import axios from 'axios'
 import { toast } from 'vue-sonner'
 import type { ConfigurationData } from '@/services/AiCallService'
+import { NTabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import TooltipProvider from '@/components/ui/tooltip/TooltipProvider.vue'
+import TooltipTrigger from '@/components/ui/tooltip/TooltipTrigger.vue'
+import TooltipContent from '@/components/ui/tooltip/TooltipContent.vue'
+import TooltipComponent from '@/components/ui/tooltip/TooltipComponent.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -98,7 +102,7 @@ onMounted(async () => {
 
   // Initialize SIP if we have user data
   if (authStore.user?.extensionNumber) {
-    const extension = determineWebClient(authStore.user.extensionNumber.toString())
+    const extension = authStore.user.extension || localStorage.getItem('extension') || ''
     const password = "1234" // This should be stored securely
     await sipStore.initializeSip(extension, password)
   }
@@ -411,16 +415,31 @@ const handleBotCallEnd = () => {
       </nav>
       <div class="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
         <form class="ml-auto flex-1 sm:flex-initial"></form>
-        <n-badge v-if="true" :variant="isConnected ? 'default' : 'destructive'" :class="{ 'bg-green-500': isConnected }"
-          class="hidden md:inline-flex">
-          <span class="text-xs font-semibold flex items-center gap-1">
-
-            {{ isConnected ? 'Connected' : 'Disconnected' }}
-            {{ authStore.user?.extensionNumber }}
-            <!-- <Wifi v-if="isConnected" class="h-3 w-3" />
-            <WifiOff v-else class="h-3 w-3" /> -->
-          </span>
-        </n-badge>
+        <TooltipProvider>
+          <TooltipComponent>
+            <TooltipTrigger as-child>
+              <div class="flex items-center gap-2">
+                <n-badge v-if="true" :variant="isConnected ? 'default' : 'destructive'"
+                  :class="{ 'bg-green-500': isConnected }" class="hidden md:inline-flex">
+                  <span class="text-xs font-semibold flex items-center gap-1">
+                    {{ isConnected ? 'Connected' : 'Disconnected' }}
+                    {{ authStore.user?.extensionNumber }}
+                  </span>
+                </n-badge>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>
+                This shows the connection status between agents. It does <b>not</b> indicate connection to the
+                voicebot.<br /><br />
+                <b>Having connection issues?</b><br />
+                Please open <a href="https://3.0.91.201/" target="_blank" rel="noopener noreferrer"
+                  class="underline text-blue-600">https://3.0.91.201/</a> in your browser and click <b>Advanced</b>
+                &rarr; <b>Proceed</b> to allow the <code>ERR_CERT_AUTHORITY_INVALID</code> warning.
+              </p>
+            </TooltipContent>
+          </TooltipComponent>
+        </TooltipProvider>
         <n-badge v-if="true" :variant="isConnected ? 'default' : 'destructive'" :class="{ 'bg-green-500': isConnected }"
           class="md:hidden">
           <span class="text-xs font-semibold flex items-center gap-1">
@@ -442,6 +461,9 @@ const handleBotCallEnd = () => {
                 <span v-if="authStore.user" class="text-sm text-gray-500">
                   {{ authStore.user.username }} ({{ authStore.user.extensionNumber }})
                 </span>
+                <span v-if="authStore.user && authStore.user.client_name" class="text-xs text-gray-400">
+                  {{ authStore.user.client_name }}
+                </span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -453,19 +475,34 @@ const handleBotCallEnd = () => {
     <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
       <div class="grid gap-4 md:gap-8 lg:grid-cols-2">
         <n-card>
-          <CardHeader>
-            <CardTitle>Dialer</CardTitle>
-          </CardHeader>
           <CardContent>
-            <div class="flex flex-col gap-4">
-              <n-button variant="outline" class="flex items-center justify-center gap-2" @click="startAICall"
-                :disabled="isAICall">
-                <Bot class="h-5 w-5" />
-                <span>Call AI Bot</span>
-              </n-button>
-
-              <PhoneDialpad :onCall="onStartCall" />
-            </div>
+            <n-tabs default-value="ai-bot" class="w-full">
+              <TabsList class="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="ai-bot">AI Bot</TabsTrigger>
+                <TabsTrigger value="dialpad">Dial Pad</TabsTrigger>
+              </TabsList>
+              <TabsContent value="ai-bot">
+                <div class="flex flex-col items-center gap-4">
+                  <div
+                    class="w-24 h-24 rounded-full flex items-center justify-center shadow-lg mb-4 overflow-hidden bg-primary">
+                    <img src="/src/assets/Diallog.png" alt="AI Avatar" class="w-full h-full object-cover" />
+                  </div>
+                  <h2 class="text-2xl font-bold text-slate-900 mb-2">Start a New Call</h2>
+                  <p class="text-slate-600 mb-8">Connect with your DialoggAI Voicebot for instant help and support</p>
+                  <n-button
+                    class=" text-white px-8 py-4 rounded-full transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300 flex items-center gap-2"
+                    @click="startAICall" :disabled="isAICall">
+                    <Phone class="w-6 h-6 mr-2" />
+                    Call AI Bot
+                  </n-button>
+                </div>
+              </TabsContent>
+              <TabsContent value="dialpad">
+                <div class="flex flex-col items-center gap-4">
+                  <PhoneDialpad :onCall="onStartCall" />
+                </div>
+              </TabsContent>
+            </n-tabs>
           </CardContent>
         </n-card>
 

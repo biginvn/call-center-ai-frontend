@@ -5,6 +5,7 @@ export const containerClass = 'w-full h-full'
 </script>
 
 <script setup lang="ts">
+import { useAuthStore } from '@/stores/auth'
 import { NBadge } from '@/components/ui/badge'
 import { NCard, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { NTable, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -15,6 +16,7 @@ import AdminNavbar from '@/components/admin/AdminNavbar.vue'
 import type { Conversation } from '@/types/conversation'
 import { NButton } from '@/components/ui/button'
 
+const authStore = useAuthStore()
 const conversationStore = useConversationStore()
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -71,7 +73,10 @@ const handleRowClick = async (conversation: Conversation) => {
         <n-card class="">
           <CardHeader class="flex flex-row items-center justify-between">
             <div class="grid gap-2">
-              <CardTitle>Call Records</CardTitle>
+              <CardTitle>
+                Call Records
+                <span v-if="authStore.user?.client_name">- {{ authStore.user.client_name }}</span>
+              </CardTitle>
               <CardDescription>
                 Page {{ currentPage }} / {{ conversationStore.pagination.total_pages }}
               </CardDescription>
@@ -130,33 +135,35 @@ const handleRowClick = async (conversation: Conversation) => {
                     Loading...
                   </TableCell>
                 </TableRow>
-                <TableRow v-else-if="conversationStore.error || conversationStore.conversations.length === 0">
-                  <TableCell colspan="12" class="text-center">
-                    No call records
-                  </TableCell>
-                </TableRow>
-                <TableRow v-for="conversation in conversationStore.conversations" :key="conversation.id"
-                  class="cursor-pointer hover:bg-accent" @click="handleRowClick(conversation)">
-                  <TableCell class="col-span-3 md:col-span-2">
-                    {{ formatDate(conversation.created_at) }}
-                  </TableCell>
-                  <TableCell class="col-span-3 md:col-span-2">
-                    {{ conversation.from_user.fullname }}
-                  </TableCell>
-                  <TableCell class="col-span-3 md:col-span-2">
-                    {{ conversation.to_user.fullname }}
-                  </TableCell>
-                  <TableCell class="hidden md:table-cell md:col-span-5 whitespace-pre-wrap">
-                    {{ conversation.summarize ? (conversation.summarize.length > 300 ?
-                      conversation.summarize.substring(0, 300) + '...' : conversation.summarize) : '-' }}
-                  </TableCell>
-                  <TableCell class="col-span-3 md:col-span-1 text-right">
-                    <n-badge class="text-xs" :class="{ 'bg-green-500': conversation.sentiment === 'positive' }"
-                      :variant="conversation.sentiment === 'positive' ? 'default' : conversation.sentiment === 'negative' ? 'destructive' : 'outline'">
-                      {{ getMoodText(conversation.sentiment) }}
-                    </n-badge>
-                  </TableCell>
-                </TableRow>
+                <template v-else>
+                  <TableRow v-if="conversationStore.error || conversationStore.conversations.length === 0">
+                    <TableCell colspan="12" class="text-center">
+                      No call records
+                    </TableCell>
+                  </TableRow>
+                  <TableRow v-else v-for="conversation in conversationStore.conversations" :key="conversation.id"
+                    class="cursor-pointer hover:bg-accent" @click="handleRowClick(conversation)">
+                    <TableCell class="col-span-3 md:col-span-2">
+                      {{ formatDate(conversation.created_at) }}
+                    </TableCell>
+                    <TableCell class="col-span-3 md:col-span-2">
+                      {{ conversation.from_user.fullname }}
+                    </TableCell>
+                    <TableCell class="col-span-3 md:col-span-2">
+                      {{ conversation.to_user.fullname }}
+                    </TableCell>
+                    <TableCell class="hidden md:table-cell md:col-span-5 whitespace-pre-wrap">
+                      {{ conversation.summarize ? (conversation.summarize.length > 300 ?
+                        conversation.summarize.substring(0, 300) + '...' : conversation.summarize) : '-' }}
+                    </TableCell>
+                    <TableCell class="col-span-3 md:col-span-1 text-right">
+                      <n-badge class="text-xs" :class="{ 'bg-green-500': conversation.sentiment === 'positive' }"
+                        :variant="conversation.sentiment === 'positive' ? 'default' : conversation.sentiment === 'negative' ? 'destructive' : 'outline'">
+                        {{ getMoodText(conversation.sentiment) }}
+                      </n-badge>
+                    </TableCell>
+                  </TableRow>
+                </template>
               </TableBody>
             </n-table>
 

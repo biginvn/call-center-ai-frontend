@@ -42,15 +42,29 @@ const isActive = (path: string) => {
       </a>
       <!-- Desktop Navigation -->
       <div class="hidden md:flex items-center gap-4">
-        <a href="#" class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
-          :class="{ 'text-primary': isActive('/admin') }" @click.prevent="navigateTo('/admin')">
-          Home
-        </a>
-        <a href="#" class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
-          :class="{ 'text-primary': isActive('/admin/ai-training') }" @click.prevent="navigateTo('/admin/ai-training')">
-          AI Instruction
-
-        </a>
+        <template v-if="authStore.user?.role === 'admin'">
+          <a href="#" class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
+            :class="{ 'text-primary': isActive('/admin') }" @click.prevent="navigateTo('/admin')">
+            Home
+          </a>
+          <router-link to="/admin/users"
+            class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
+            :class="{ 'text-primary': isActive('/admin/users') }" @click.prevent="navigateTo('/admin/users')">
+            User Management
+          </router-link>
+          <a href="#" class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
+            :class="{ 'text-primary': isActive('/admin/ai-training') }"
+            @click.prevent="navigateTo('/admin/ai-training')">
+            AI Instruction
+          </a>
+        </template>
+        <template v-else-if="authStore.user?.role === 'system'">
+          <router-link to="/admin/clients"
+            class="text-sm font-medium transition-colors hover:text-primary whitespace-nowrap"
+            :class="{ 'text-primary': isActive('/admin/clients') }" @click.prevent="navigateTo('/admin/clients')">
+            Client Management
+          </router-link>
+        </template>
       </div>
     </nav>
 
@@ -81,20 +95,32 @@ const isActive = (path: string) => {
           </n-button>
         </div>
         <div class="flex flex-col gap-4">
-          <a href="#" class="text-sm font-medium transition-colors hover:text-primary"
-            :class="{ 'text-primary': isActive('/admin') }" @click.prevent="navigateTo('/admin')">
-            Home
-          </a>
-          <a href="#" class="text-sm font-medium transition-colors hover:text-primary"
-            :class="{ 'text-primary': isActive('/admin/ai-training') }"
-            @click.prevent="navigateTo('/admin/ai-training')">
-            AI Instruction
+          <template v-if="authStore.user?.role === 'admin'">
+            <a href="#" class="text-sm font-medium transition-colors hover:text-primary"
+              :class="{ 'text-primary': isActive('/admin') }" @click.prevent="navigateTo('/admin')">
+              Home
+            </a>
+            <router-link to="/admin/users" class="text-sm font-medium transition-colors hover:text-primary"
+              :class="{ 'text-primary': isActive('/admin/users') }" @click.prevent="navigateTo('/admin/users')">
+              User Management
+            </router-link>
+            <a href="#" class="text-sm font-medium transition-colors hover:text-primary"
+              :class="{ 'text-primary': isActive('/admin/ai-training') }"
+              @click.prevent="navigateTo('/admin/ai-training')">
+              AI Instruction
+            </a>
+          </template>
+          <template v-else-if="authStore.user?.role === 'system'">
+            <router-link to="/admin/clients" class="text-sm font-medium transition-colors hover:text-primary"
+              :class="{ 'text-primary': isActive('/admin/clients') }" @click.prevent="navigateTo('/admin/clients')">
+              Client Management
+            </router-link>
+          </template>
 
-          </a>
           <div class="border-t my-2"></div>
           <div class="flex items-center gap-2 px-2 py-1">
             <CircleUser class="h-5 w-5" />
-            <span class="text-sm font-medium">Admin</span>
+            <span class="text-sm font-medium">{{ authStore.user?.role === 'system' ? 'System' : 'Admin' }}</span>
           </div>
           <button class="text-sm font-medium text-red-500 hover:text-red-600 transition-colors px-2 py-1 text-left"
             @click="handleLogout">
@@ -113,7 +139,10 @@ const isActive = (path: string) => {
         <DropdownMenuContent align="end" class="w-56">
           <DropdownMenuLabel>
             <div class="flex flex-col">
-              <span>Admin</span>
+              <span v-if="authStore.user">{{ authStore.user.fullName }}</span>
+              <span v-if="authStore.user && authStore.user.client_name" class="text-xs text-gray-400">
+                {{ authStore.user.client_name }}
+              </span>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />

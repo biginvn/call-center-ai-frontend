@@ -1,60 +1,52 @@
 <template>
   <n-dialog :open="modelValue" @update:open="onOpenChange" :closeOnClickOutside="false">
-    <DialogOverlay class="bg-black/200" />
-    <DialogContent class="sm:max-w-md p-0 border-none bg-transparent shadow-none [&>button:last-child]:hidden"
+    <DialogOverlay class="bg-black/80" />
+    <DialogContent
+      class="p-0 !w-screen min-h-screen sm:max-w-none bg-gradient-to-br from-slate-900 to-blue-900 border-none [&>button:last-child]:hidden"
       @pointer-down-outside.prevent>
-      <DialogTitle class="sr-only">AI Assistant - {{ getCallStateText }}</DialogTitle>
-      <DialogDescription class="sr-only">
-        Call control interface with AI Assistant
-      </DialogDescription>
-      <div class="w-full max-w-md mx-auto bg-background rounded-lg shadow-lg p-6">
-        <div class="flex flex-col items-center justify-center space-y-6">
-          <div class="text-center">
-            <h2 class="text-2xl font-bold">AI Assistant</h2>
-
-            <TransitionGroup name="fade">
-              <div v-if="callState === 'connecting'" key="connecting" class="text-sm text-muted-foreground mt-1">
-                Connecting...
-              </div>
-
-              <div v-if="callState === 'active'" key="active" class="text-sm text-muted-foreground mt-1">
-                In call • {{ formatCallDuration(callDuration) }}
-              </div>
-
-              <div v-if="callState === 'ended'" key="ended" class="text-sm text-muted-foreground mt-1">
-                Call ended • {{ formatCallDuration(callDuration) }}
-              </div>
-            </TransitionGroup>
+      <div class=" flex items-center justify-center">
+        <div class="text-center w-full">
+          <!-- AI Avatar -->
+          <div class="relative mb-8 flex justify-center">
+            <div
+              class="w-48 h-48 rounded-full flex items-center justify-center shadow-2xl mx-auto overflow-hidden bg-gradient-to-r from-blue-400 to-blue-700">
+              <img src="/src/assets/Diallog.png" alt="AI Avatar" class="w-full h-full object-cover" />
+            </div>
           </div>
 
-          <!-- Call Controls -->
-          <div class="w-full">
-            <div v-if="callState === 'connecting'" class="flex justify-center">
-              <n-button size="lg" variant="destructive" class="h-14 w-14 rounded-full" @click="handleEndCall">
-                <PhoneOff class="h-6 w-6" />
-                <span class="sr-only">Cancel</span>
-              </n-button>
+          <!-- Status -->
+          <div class="mb-6">
+            <h2 class="text-3xl font-bold text-white mb-2">
+              <span v-if="callState === 'connecting'">Connecting...</span>
+              <span v-else-if="callState === 'active'">DialoggAI Voicebot</span>
+              <span v-else-if="callState === 'ended'">Call Ended</span>
+            </h2>
+            <div v-if="callState === 'active'" class="flex items-center justify-center space-x-2 text-blue-200">
+              <Clock class="w-5 h-5" />
+              <span class="text-xl">{{ formatCallDuration(callDuration) }}</span>
             </div>
+          </div>
 
-            <div v-if="callState === 'active'" class="grid grid-cols-2 gap-4 mt-4">
-              <n-button variant="outline" class="flex flex-col items-center justify-center h-16 p-2"
-                @click="isMuted = !isMuted">
-                <component :is="isMuted ? MicOff : Mic" class="h-5 w-5 mb-1" />
-                <span class="text-xs">{{ isMuted ? 'Unmute' : 'Mute' }}</span>
-              </n-button>
+          <!-- Controls -->
+          <div v-if="callState === 'active'" class="flex items-center justify-center space-x-6 mb-8">
+            <button @click="isMuted = !isMuted"
+              :class="['w-14 h-14 rounded-full flex items-center justify-center transition-all', isMuted ? 'bg-red-500 hover:bg-red-600' : 'bg-slate-700 hover:bg-slate-600']">
+              <component :is="isMuted ? MicOff : Mic" class="w-6 h-6 text-white" />
+            </button>
+          </div>
 
-              <n-button variant="destructive" class="flex flex-col items-center justify-center h-16 p-2"
-                @click="handleEndCall">
-                <PhoneOff class="h-5 w-5 mr-2" />
-                End Call
-              </n-button>
-            </div>
+          <!-- End Call Button -->
+          <div v-if="callState !== 'ended'" class="mb-4">
+            <button @click="handleEndCall"
+              class="bg-red-500 hover:bg-red-600 text-white px-8 py-4 rounded-full font-semibold text-lg transition-all duration-200 transform hover:scale-105 shadow-lg focus:outline-none focus:ring-4 focus:ring-red-300">
+              End Call
+            </button>
+          </div>
 
-            <div v-if="callState === 'ended'" class="flex justify-center mt-4">
-              <n-button variant="outline" @click="onOpenChange(false)">
-                Close
-              </n-button>
-            </div>
+          <!-- Ended State -->
+          <div v-if="callState === 'ended'" class="text-blue-200">
+            <p class="mb-4">Ending call...</p>
+            <div class="w-8 h-8 border-2 border-blue-300 border-t-transparent rounded-full animate-spin mx-auto"></div>
           </div>
         </div>
       </div>
@@ -64,10 +56,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onUnmounted, computed } from 'vue'
-import { PhoneOff, Mic, MicOff } from 'lucide-vue-next'
-import { NDialog, DialogContent, DialogOverlay, DialogTitle, DialogDescription } from '@/components/ui/dialog'
-import { NButton } from '@/components/ui/button'
+import { ref, watch, onUnmounted } from 'vue'
+import { Mic, MicOff, Clock } from 'lucide-vue-next'
+import { NDialog, DialogContent, DialogOverlay } from '@/components/ui/dialog'
 
 type CallState = 'connecting' | 'active' | 'ended'
 
@@ -113,20 +104,6 @@ const stopTimer = () => {
     timer = null
   }
 }
-
-// Get call state text
-const getCallStateText = computed(() => {
-  switch (callState.value) {
-    case 'connecting':
-      return 'Connecting'
-    case 'active':
-      return `In call • ${formatCallDuration(callDuration.value)}`
-    case 'ended':
-      return callDuration.value > 0 ? `Call ended • ${formatCallDuration(callDuration.value)}` : 'Call ended'
-    default:
-      return ''
-  }
-})
 
 // Reset state when dialog opens
 watch(() => props.modelValue, (newOpen) => {
@@ -181,6 +158,7 @@ const formatCallDuration = (seconds: number) => {
 const onOpenChange = (value: boolean) => {
   emit('update:modelValue', value)
 }
+
 
 // Expose methods and refs for parent component
 defineExpose({

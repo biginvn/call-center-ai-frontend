@@ -13,7 +13,7 @@ const goHome = () => {
   <div class="flex min-h-screen flex-col items-center justify-center gap-4 p-4 text-center">
     <!-- <img src="@/assets/nixxis_logo.webp" alt="Nixxis Logo" class="w-48 mb-8" /> -->
     <h1 class="text-4xl font-bold">404</h1>
-    <h2 class="text-2xl font-semibold">Không tìm thấy trang</h2>
+    <h2 class="text-2xl font-semibold">Not Found</h2>
     <p class="text-muted-foreground">
       The page you are looking for does not exist or has been moved.
     </p>

@@ -17,7 +17,7 @@ export const useSipStore = defineStore('sip', () => {
   const debug = ref('')
   const remoteAudioRef = ref<HTMLAudioElement | null>(null)
   const sipService = ref<SipService | null>(null)
-  const config = ref<{ API_URL: string; SIP_SERVER: string; SIP_PORT: string } | null>(null)
+  const config = ref<{ API_URL: string; SIP_SERVER: string; SIP_URL: string } | null>(null)
   const isConnected = ref(false)
 
   const authStore = useAuthStore()
@@ -32,18 +32,6 @@ export const useSipStore = defineStore('sip', () => {
     return storedFullName || 'Unknown'
   })
 
-  // Helper function to determine web client
-  const determineWebClient = (extension: string) => {
-    if (extension.startsWith('111')) {
-      return 'web1'
-    } else if (extension.startsWith('112')) {
-      return 'web2'
-    } else if (extension.startsWith('101'))
-      return 'test2' // default fallback
-    else if (extension.startsWith('100')) return 'test1'
-    else return 'web1'
-  }
-
   // Watch for changes in user data and reinitialize SIP service if needed
   watch(
     () => authStore.user,
@@ -54,7 +42,7 @@ export const useSipStore = defineStore('sip', () => {
           await authStore.loadFromStorage()
         }
 
-        const extension = determineWebClient(newUser.extensionNumber.toString())
+        const extension = newUser.extension || localStorage.getItem('extension')
         const password = '1234' // This should be stored securely
         if (extension && password) {
           await initializeSip(extension, password)
@@ -92,7 +80,7 @@ export const useSipStore = defineStore('sip', () => {
         authStore.user?.fullName || localStorage.getItem('fullName') || 'Unknown'
       sipService.value = new SipService({
         server: config.value.SIP_SERVER,
-        wsServer: `wss://${config.value.SIP_SERVER}:${config.value.SIP_PORT}/ws`,
+        wsServer: `${config.value.SIP_URL}`,
         displayName: currentDisplayName,
       })
       setupSipEvents()
