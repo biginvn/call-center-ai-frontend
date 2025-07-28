@@ -20,7 +20,4 @@ export default defineConfig({
   //     cert: fs.readFileSync(path.resolve(__dirname, 'ssl/bigin.top.crt')),
   //   },
   // },
-  server: {
-    allowedHosts: ['b844538785e6.ngrok-free.app', 'localhost'],
-  },
 })

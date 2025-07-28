@@ -6,7 +6,6 @@ export const containerClass = 'w-full h-full'
 
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth'
-const authStore = useAuthStore()
 import { NBadge } from '@/components/ui/badge'
 import { NCard, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { NTable, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -17,6 +16,7 @@ import AdminNavbar from '@/components/admin/AdminNavbar.vue'
 import type { Conversation } from '@/types/conversation'
 import { NButton } from '@/components/ui/button'
 
+const authStore = useAuthStore()
 const conversationStore = useConversationStore()
 const currentPage = ref(1)
 const pageSize = ref(10)
