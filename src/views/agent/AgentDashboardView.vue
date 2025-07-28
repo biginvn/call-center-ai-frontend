@@ -433,8 +433,8 @@ const handleBotCallEnd = () => {
                 This shows the connection status between agents. It does <b>not</b> indicate connection to the
                 voicebot.<br /><br />
                 <b>Having connection issues?</b><br />
-                Please open <a href="https://3.0.91.201/" target="_blank" rel="noopener noreferrer"
-                  class="underline text-blue-600">https://3.0.91.201/</a> in your browser and click <b>Advanced</b>
+                Please open <a href="https://3.0.91.201:8089/" target="_blank" rel="noopener noreferrer"
+                  class="underline text-blue-600">https://3.0.91.201:8089/</a> in your browser and click <b>Advanced</b>
                 &rarr; <b>Proceed</b> to allow the <code>ERR_CERT_AUTHORITY_INVALID</code> warning.
               </p>
             </TooltipContent>
