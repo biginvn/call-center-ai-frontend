@@ -5,6 +5,8 @@ export const containerClass = 'w-full h-full'
 </script>
 
 <script setup lang="ts">
+import { useAuthStore } from '@/stores/auth'
+const authStore = useAuthStore()
 import { NBadge } from '@/components/ui/badge'
 import { NCard, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { NTable, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -71,7 +73,10 @@ const handleRowClick = async (conversation: Conversation) => {
         <n-card class="">
           <CardHeader class="flex flex-row items-center justify-between">
             <div class="grid gap-2">
-              <CardTitle>Call Records</CardTitle>
+              <CardTitle>
+                Call Records
+                <span v-if="authStore.user?.client_name">- {{ authStore.user.client_name }}</span>
+              </CardTitle>
               <CardDescription>
                 Page {{ currentPage }} / {{ conversationStore.pagination.total_pages }}
               </CardDescription>

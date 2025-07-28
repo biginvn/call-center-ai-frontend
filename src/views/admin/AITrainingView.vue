@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useAuthStore } from '@/stores/auth'
+const authStore = useAuthStore()
 import AdminNavbar from '@/components/admin/AdminNavbar.vue'
 import { NCard, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { NButton } from '@/components/ui/button'
@@ -325,7 +327,10 @@ onUnmounted(() => {
     <header
       class="sticky top-[64px] left-0 right-0 bg-white dark:bg-gray-900 shadow-md p-4 md:px-8 z-10 flex items-center justify-between">
       <div class="grid gap-1">
-        <h1 class="text-xl font-bold">AI Instructions</h1>
+        <h1 class="text-xl font-bold">
+          AI Instructions
+          <span v-if="authStore.user?.client_name">- {{ authStore.user.client_name }}</span>
+        </h1>
         <p class="text-sm text-gray-500 dark:text-gray-400">
           {{ isFetching ? 'Loading configuration...' : 'Manage and configure your AI model' }}
         </p>
@@ -468,7 +473,7 @@ onUnmounted(() => {
                     <Loader2 v-if="isGeneratingTTS" class="h-5 w-5 animate-spin" />
                     <Volume2 v-else class="h-5 w-5" :class="{ 'animate-pulse': isPlaying }" />
                     <span>{{ isGeneratingTTS ? 'Generating...' : isPlaying ? 'Playing...' : 'Test Voice'
-                      }}</span>
+                    }}</span>
                   </n-button>
                 </div>
               </div>

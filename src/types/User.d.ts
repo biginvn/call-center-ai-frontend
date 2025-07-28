@@ -5,6 +5,7 @@ export interface UserBase {
   fullName: string
   status: 'active' | 'inactive' | 'suspended'
   lastLogin: string
+  client_name?: string // Optional client name for display
 }
 
 export interface Agent extends UserBase {

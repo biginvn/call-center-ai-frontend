@@ -139,7 +139,10 @@ const isActive = (path: string) => {
         <DropdownMenuContent align="end" class="w-56">
           <DropdownMenuLabel>
             <div class="flex flex-col">
-              <span>Admin</span>
+              <span v-if="authStore.user">{{ authStore.user.fullName }}</span>
+              <span v-if="authStore.user && authStore.user.client_name" class="text-xs text-gray-400">
+                {{ authStore.user.client_name }}
+              </span>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />

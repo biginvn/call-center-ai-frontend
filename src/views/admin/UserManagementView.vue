@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+const authStore = useAuthStore()
 import AdminNavbar from '@/components/admin/AdminNavbar.vue'
 import { NCard, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { NTable, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/table'
@@ -48,12 +50,40 @@ const newClientDescription = ref('') // Not used in API, but kept for UI
 const creating = ref(false)
 const createError = ref('')
 
+// State for delete user dialog
+const deleteUserDialogOpen = ref(false)
+const userToDelete = ref<User | null>(null)
+const deleting = ref(false)
+const deleteError = ref('')
+
+async function handleDeleteUser() {
+  if (!userToDelete.value) return
+  deleting.value = true
+  deleteError.value = ''
+  try {
+    await axios.delete(`/user/delete/${encodeURIComponent(userToDelete.value.username)}`)
+    deleteUserDialogOpen.value = false
+    userToDelete.value = null
+    await fetchUsers()
+  } catch (e: unknown) {
+    const err = e as AxiosError<{ message?: string }>
+    if (err.response?.data?.message) {
+      deleteError.value = err.response.data.message
+    } else {
+      deleteError.value = 'Failed to delete user.'
+    }
+  } finally {
+    deleting.value = false
+  }
+}
+
 function isValidEmail(email: string): boolean {
   // Simple email regex
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 }
 
 async function handleCreateClient() {
+  if (creating.value) return // Prevent double submit
   createError.value = ''
   if (!newClientUsername.value || !newClientPassword.value || !newClientName.value || !newClientRole.value) {
     createError.value = 'Please fill in all required fields.'
@@ -117,7 +147,8 @@ onMounted(fetchUsers)
       <n-card>
         <CardHeader class="flex flex-row items-center justify-between">
           <div class="grid gap-2">
-            <CardTitle>User Accounts</CardTitle>
+            <CardTitle>User Accounts <span v-if="authStore.user?.client_name">- {{ authStore.user.client_name }}</span>
+            </CardTitle>
             <CardDescription>Manage all user accounts in the system.</CardDescription>
           </div>
           <div class="flex items-center gap-2">
@@ -173,7 +204,7 @@ onMounted(fetchUsers)
                 </div>
                 <DialogFooter>
                   <DialogClose as-child>
-                    <NButton :loading="creating" @click="handleCreateClient">Create</NButton>
+                    <NButton :loading="creating" :disabled="creating" @click="handleCreateClient">Create</NButton>
                   </DialogClose>
                 </DialogFooter>
               </DialogContent>
@@ -191,6 +222,7 @@ onMounted(fetchUsers)
                   <TableHead>Full Name</TableHead>
                   <TableHead>Extension</TableHead>
                   <TableHead>Role</TableHead>
+                  <TableHead>Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -199,10 +231,31 @@ onMounted(fetchUsers)
                   <TableCell>{{ user.fullname }}</TableCell>
                   <TableCell>{{ user.extension_number }}</TableCell>
                   <TableCell>{{ user.role }}</TableCell>
+                  <TableCell style="width: 150px;">
+                    <NButton variant="destructive" size="sm" @click="userToDelete = user; deleteUserDialogOpen = true">
+                      Delete</NButton>
+                  </TableCell>
                 </TableRow>
               </TableBody>
             </n-table>
             <div v-if="users.length === 0" class="text-center py-4">No users found.</div>
+            <!-- Delete User Dialog -->
+            <NDialog v-model:open="deleteUserDialogOpen">
+              <DialogContent class="sm:max-w-[400px]">
+                <DialogHeader>
+                  <DialogTitle>Delete User</DialogTitle>
+                  <DialogDescription>
+                    Are you sure you want to delete user <b>{{ userToDelete?.username }}</b>? This action cannot be
+                    undone.
+                  </DialogDescription>
+                </DialogHeader>
+                <div v-if="deleteError" class="text-red-500 text-sm py-2">{{ deleteError }}</div>
+                <div class="flex justify-end gap-2 mt-4">
+                  <NButton variant="outline" @click="deleteUserDialogOpen = false" :disabled="deleting">Cancel</NButton>
+                  <NButton variant="destructive" :loading="deleting" @click="handleDeleteUser">Delete</NButton>
+                </div>
+              </DialogContent>
+            </NDialog>
           </div>
         </CardContent>
       </n-card>

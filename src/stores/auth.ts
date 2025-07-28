@@ -8,6 +8,7 @@ type UpdateUser = {
   extension_number: string
   role: string
   fullName: string
+  client_name?: string
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -77,11 +78,17 @@ export const useAuthStore = defineStore('auth', {
         this.user.username = user.username
         this.user.extensionNumber = user.extension_number
         this.user.role = user.role as 'agent' | 'admin' | 'system'
+        if (user.client_name) {
+          this.user.client_name = user.client_name
+        }
       }
       localStorage.setItem('extension_number', user.extension_number)
       localStorage.setItem('username', user.username)
       localStorage.setItem('role', user.role)
       localStorage.setItem('fullName', user.fullName)
+      if (user.client_name) {
+        localStorage.setItem('client_name', user.client_name)
+      }
     },
 
     async loadFromStorage(this: AuthState) {
@@ -112,12 +119,14 @@ export const useAuthStore = defineStore('auth', {
         this.isUserDataLoaded = true
       } catch (error) {
         console.error('Failed to load user data:', error)
-        // If we get a 401, try to refresh the token
-        if (
-          error instanceof Error &&
-          'response' in error &&
-          (error as AxiosError).response?.status === 401
-        ) {
+        // Only handle 401/403 errors for logout/refresh
+        const status =
+          (error &&
+            typeof error === 'object' &&
+            'response' in error &&
+            (error as AxiosError).response?.status) ||
+          null
+        if (status === 401 || status === 403) {
           try {
             // Refresh the token
             const response = await refreshToken(refresh_token)
@@ -143,9 +152,8 @@ export const useAuthStore = defineStore('auth', {
             store.logout()
           }
         } else {
-          // If it's not a 401 error, just logout
-          const store = useAuthStore()
-          store.logout()
+          // For other errors (e.g., 500), do NOT logout, just keep user as is
+          // Optionally, you can show a notification or set an error state here
         }
       }
     },

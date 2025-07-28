@@ -455,6 +455,9 @@ const handleBotCallEnd = () => {
                 <span v-if="authStore.user" class="text-sm text-gray-500">
                   {{ authStore.user.username }} ({{ authStore.user.extensionNumber }})
                 </span>
+                <span v-if="authStore.user && authStore.user.client_name" class="text-xs text-gray-400">
+                  {{ authStore.user.client_name }}
+                </span>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

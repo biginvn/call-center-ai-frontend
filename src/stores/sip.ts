@@ -17,7 +17,7 @@ export const useSipStore = defineStore('sip', () => {
   const debug = ref('')
   const remoteAudioRef = ref<HTMLAudioElement | null>(null)
   const sipService = ref<SipService | null>(null)
-  const config = ref<{ API_URL: string; SIP_SERVER: string; SIP_PORT: string } | null>(null)
+  const config = ref<{ API_URL: string; SIP_SERVER: string; SIP_URL: string } | null>(null)
   const isConnected = ref(false)
 
   const authStore = useAuthStore()
@@ -80,7 +80,7 @@ export const useSipStore = defineStore('sip', () => {
         authStore.user?.fullName || localStorage.getItem('fullName') || 'Unknown'
       sipService.value = new SipService({
         server: config.value.SIP_SERVER,
-        wsServer: `wss://${config.value.SIP_SERVER}:${config.value.SIP_PORT}/ws`,
+        wsServer: `${config.value.SIP_URL}`,
         displayName: currentDisplayName,
       })
       setupSipEvents()
