@@ -1,22 +1,27 @@
 export interface UserBase {
-  id: string;
-  username: string;
-  email: string;
-  fullName: string;
-  status: 'active' | 'inactive' | 'suspended';
-  lastLogin: string;
+  id: string
+  username: string
+  email: string
+  fullName: string
+  status: 'active' | 'inactive' | 'suspended'
+  lastLogin: string
 }
 
 export interface Agent extends UserBase {
-  role: 'agent';
-  extensionNumber: string;  // Required for agent
-  extension?: string;
+  role: 'agent'
+  extensionNumber: string // Required for agent
+  extension?: string
 }
 
 export interface Admin extends UserBase {
-  role: 'admin';
-  extensionNumber?: never;  // Forbidden for admin
+  role: 'admin'
+  extensionNumber?: never // Forbidden for admin
 }
 
-export type User = Agent | Admin;
-export default User;
+export interface SystemUser extends UserBase {
+  role: 'system'
+  extensionNumber?: never
+}
+
+export type User = Agent | Admin | SystemUser
+export default User

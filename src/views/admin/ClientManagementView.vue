@@ -208,7 +208,8 @@ async function handleDeleteClient() {
                   <TableCell>{{ client.description }}</TableCell>
                   <TableCell class="flex gap-2">
                     <NButton size="sm" variant="outline" @click="openEditModal(client)">Edit</NButton>
-                    <NButton size="sm" variant="destructive" @click="openDeleteModal(client)">Delete</NButton>
+                    <NButton v-if="client.name !== 'System Client'" size="sm" variant="destructive"
+                      @click="openDeleteModal(client)">Delete</NButton>
                   </TableCell>
                 </TableRow>
               </TableBody>
@@ -231,7 +232,7 @@ async function handleDeleteClient() {
                       <NInput id="edit-description" v-model="editDescription" placeholder="Description"
                         class="col-span-3" />
                     </div>
-                    <div v-if="editError" class="col-span-4 text-red-500 text-sm">{{ editError }}</div>
+                    <div v-if="editError" class="grid items-center text-red-500 text-sm">{{ editError }}</div>
                   </div>
                   <DialogFooter class="flex flex-row gap-2 items-center justify-between">
                     <NButton :loading="editLoading" @click="handleUpdateClient" variant="default">Save</NButton>

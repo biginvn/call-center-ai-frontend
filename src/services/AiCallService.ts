@@ -37,14 +37,14 @@ export interface ConfigurationData {
 
 class AiCallService {
   async configSession({ instructions, voice }: ConfigurationData): Promise<SessionResponse> {
-    const response = await axiosInstance.post<SessionResponse>('/realtime/config', {
+    const response = await axiosInstance.put<SessionResponse>('/ai/instructions', {
       instructions,
       voice,
     })
     return response.data
   }
   async getConfig(): Promise<ConfigurationData> {
-    const response = await axiosInstance.get<ConfigurationData>('/realtime/config')
+    const response = await axiosInstance.get<ConfigurationData>('/ai/instructions')
     return response.data
   }
 

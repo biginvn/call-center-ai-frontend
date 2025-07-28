@@ -8,11 +8,7 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   base: '/',
-  plugins: [
-    vue(),
-    vueDevTools(),
-    tailwindcss(),
-  ],
+  plugins: [vue(), vueDevTools(), tailwindcss()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -24,4 +20,7 @@ export default defineConfig({
   //     cert: fs.readFileSync(path.resolve(__dirname, 'ssl/bigin.top.crt')),
   //   },
   // },
+  server: {
+    allowedHosts: ['b844538785e6.ngrok-free.app', 'localhost'],
+  },
 })

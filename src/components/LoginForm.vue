@@ -65,7 +65,7 @@ const isError = ref(false)
 const router = useRouter()
 const authStore = useAuthStore()
 
-const availableExtensions = ref<{ label: string; value: string }[]>([])
+const availableExtensions = ref<{ label: string; value: string; extension: string }[]>([])
 const loadingExtensions = ref(false)
 
 onMounted(async () => {
@@ -76,7 +76,7 @@ onMounted(async () => {
       // Only show extensions with user == null
       availableExtensions.value = (res.data || [])
         .filter((ext) => ext.user == null)
-        .map((ext) => ({ label: `${ext.extension} (${ext.number})`, value: ext.number }))
+        .map((ext) => ({ label: `${ext.extension} (${ext.number})`, value: ext.number, extension: ext.extension }))
     } catch {
       availableExtensions.value = []
     } finally {
@@ -139,21 +139,21 @@ const onSubmit = handleSubmit(async (values) => {
         role: 'agent',
         fullName: '',
         extensionNumber: values.ext ?? '',
-        extension: selectedExtObj ? selectedExtObj.label : ''
+        extension: selectedExtObj ? selectedExtObj.extension : ''
       };
 
       if (values.ext) {
         localStorage.setItem('extension_number', values.ext)
-        localStorage.setItem('extension', selectedExtObj ? selectedExtObj.label : '')
+        localStorage.setItem('extension', selectedExtObj ? selectedExtObj.extension : '')
       }
     }
 
     // Update auth store with tokens and user info
-      authStore.login({
-        access_token: response.access_token,
-        refresh_token: response.refresh_token,
-        user
-      });
+    authStore.login({
+      access_token: response.access_token,
+      refresh_token: response.refresh_token,
+      user
+    });
 
     await nextTick();
 
@@ -167,7 +167,7 @@ const onSubmit = handleSubmit(async (values) => {
         ...userData,
         ...(user.role === 'agent' ? {
           extensionNumber: userData.extension_number ?? '',
-          extension: selectedExtObj ? selectedExtObj.label : user.extension
+          extension: selectedExtObj ? selectedExtObj.extension : user.extension
         } : {})
       } as Agent | Admin;
 
@@ -216,7 +216,7 @@ const onSubmit = handleSubmit(async (values) => {
       } else if (errorDetail === 'Extension number is already in use') {
         setFieldError('ext', 'Extension number is already in use');
       } else if (errorDetail === 'Only agents can use this endpoint') {
-        setFieldError('ext', 'Please remove Extension number');
+        setFieldError('username', 'Please switch to admin login');
       } else if (errorDetail === 'Extension number must be a 3-digit number') {
         setFieldError('ext', 'Extension number must be a 3-digit number');
       } else if (errorDetail === 'Extension not found') {

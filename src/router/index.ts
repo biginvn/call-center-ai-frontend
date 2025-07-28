@@ -33,7 +33,7 @@ const routes = [
     path: '/admin/clients',
     name: 'client-management',
     component: ClientManagementView,
-    meta: { requiresAuth: true, role: 'admin' },
+    meta: { requiresAuth: true, role: ['admin', 'system'] },
   },
   {
     path: '/admin/users',
@@ -42,7 +42,7 @@ const routes = [
     meta: { requiresAuth: true, role: 'admin' },
   },
   // { path: '/admin/ai-training', name: 'ai-training', component: AITrainingView },
-  //  { path: '/admin/conversations/:id', name: 'conversation-detail', component: ConversationDetailView, meta: { requiresAuth: true, role: 'admin' } },
+  // { path: '/admin/conversations/:id', name: 'conversation-detail', component: ConversationDetailView, meta: { requiresAuth: true, role: 'admin' } },
   {
     path: '/admin/conversations/:id',
     name: 'conversation-detail',
@@ -74,20 +74,49 @@ router.beforeEach(async (to, from, next) => {
   // If route requires guest (like login page) and user is authenticated
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
     // Redirect to appropriate dashboard based on role
-    next(authStore.user?.role === 'admin' ? '/admin' : '/')
-    return
+    if (authStore.user?.role === 'admin') {
+      next('/admin')
+      return
+    } else if (authStore.user?.role === 'system') {
+      next('/admin/clients')
+      return
+    } else {
+      next('/')
+      return
+    }
   }
 
   // If route requires auth
   if (to.meta.requiresAuth) {
     if (!authStore.isAuthenticated) {
       next('/login')
-    } else if (to.meta.role && authStore.user?.role !== to.meta.role) {
-      // Redirect to correct dashboard based on user role
-      next(authStore.user?.role === 'admin' ? '/admin' : '/')
-    } else {
-      next()
+      return
     }
+
+    // Handle role-based access
+    const routeRoles = Array.isArray(to.meta.role)
+      ? to.meta.role
+      : to.meta.role
+        ? [to.meta.role]
+        : []
+    const userRole = authStore.user?.role as string | undefined
+
+    // Special handling: system role can ONLY access /admin/clients, never any other route
+    if (userRole === 'system') {
+      if (to.path !== '/admin/clients') {
+        next('/admin/clients')
+        return
+      }
+    } else if (routeRoles.length > 0 && (!userRole || !routeRoles.includes(userRole))) {
+      if (userRole === 'admin') {
+        next('/admin')
+        return
+      } else {
+        next('/')
+        return
+      }
+    }
+    next()
     return
   }
 

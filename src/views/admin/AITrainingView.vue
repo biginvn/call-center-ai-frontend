@@ -270,12 +270,21 @@ const hydrateConfig = async () => {
     isFetching.value = true
     const config = await AiCallService.getConfig()
 
-    // Update form values with existing configuration
-    form.setValues({
-      ...form.values,
-      instructions: config.instructions,
-      voice: config.voice
-    })
+    // If config is null, set defaults
+    if (!config) {
+      form.setValues({
+        ...form.values,
+        instructions: '',
+        voice: ''
+      })
+    } else {
+      // Update form values with existing configuration
+      form.setValues({
+        ...form.values,
+        instructions: config.instructions ?? '',
+        voice: config.voice ?? ''
+      })
+    }
   } catch (error) {
     console.error('Error fetching AI configuration:', error)
     toast.error('Error loading configuration', {
@@ -459,7 +468,7 @@ onUnmounted(() => {
                     <Loader2 v-if="isGeneratingTTS" class="h-5 w-5 animate-spin" />
                     <Volume2 v-else class="h-5 w-5" :class="{ 'animate-pulse': isPlaying }" />
                     <span>{{ isGeneratingTTS ? 'Generating...' : isPlaying ? 'Playing...' : 'Test Voice'
-                    }}</span>
+                      }}</span>
                   </n-button>
                 </div>
               </div>
