@@ -1,5 +1,5 @@
 {
   "API_URL": "https://cb70de1950be.ngrok-free.app",
-  "SIP_SERVER": "3.0.91.201",
-  "SIP_URL": "wss://3.0.91.201:8089/ws"
+  "SIP_SERVER": "18.143.54.64",
+  "SIP_URL": "wss://18.143.54.64 :8089/ws"
 }

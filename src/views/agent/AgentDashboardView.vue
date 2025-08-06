@@ -38,6 +38,7 @@ import TooltipProvider from '@/components/ui/tooltip/TooltipProvider.vue'
 import TooltipTrigger from '@/components/ui/tooltip/TooltipTrigger.vue'
 import TooltipContent from '@/components/ui/tooltip/TooltipContent.vue'
 import TooltipComponent from '@/components/ui/tooltip/TooltipComponent.vue'
+import { loadConfig, type RuntimeConfig } from '@/config'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -57,6 +58,7 @@ const recorder = ref<MediaRecorder | null>(null)
 const chunks = ref<Blob[]>([])
 const botCallInterfaceRef = ref<InstanceType<typeof BotCallInterface> | null>(null)
 const config = ref<ConfigurationData | null>(null)
+const runtimeConfig = ref<RuntimeConfig | null>(null)
 
 // Watch for incoming calls
 watch(() => sipStore.callStatus, (newStatus) => {
@@ -86,6 +88,13 @@ watch(() => sipStore.isConnected, (newStatus) => {
 onMounted(async () => {
   // Load user data from storage first
   await authStore.loadFromStorage()
+
+  // Load runtime config
+  try {
+    runtimeConfig.value = await loadConfig()
+  } catch (e) {
+    console.error('Failed to load runtime config', e)
+  }
 
   // Hydrate config from AiCallService
   try {
@@ -433,8 +442,8 @@ const handleBotCallEnd = () => {
                 This shows the connection status between agents. It does <b>not</b> indicate connection to the
                 voicebot.<br /><br />
                 <b>Having connection issues?</b><br />
-                Please open <a href="https://3.0.91.201:8089/" target="_blank" rel="noopener noreferrer"
-                  class="underline text-blue-600">https://3.0.91.201:8089/</a> in your browser and click <b>Advanced</b>
+                Please open <a :href="`https://${runtimeConfig?.SIP_SERVER}:8089/`" target="_blank" rel="noopener noreferrer"
+                  class="underline text-blue-600">https://{{ runtimeConfig?.SIP_SERVER }}:8089/</a> in your browser and click <b>Advanced</b>
                 &rarr; <b>Proceed</b> to allow the <code>ERR_CERT_AUTHORITY_INVALID</code> warning.
               </p>
             </TooltipContent>
