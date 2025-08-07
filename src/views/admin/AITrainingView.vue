@@ -4,7 +4,7 @@ const authStore = useAuthStore()
 import AdminNavbar from '@/components/admin/AdminNavbar.vue'
 import { NCard, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { NButton } from '@/components/ui/button'
-import { Bot, Volume2, Loader2, Square } from 'lucide-vue-next'
+import { Bot, Volume2, Loader2, Square, Sparkles } from 'lucide-vue-next'
 import { TextareaComponent } from '@/components/ui/textarea'
 import { ref, computed, onUnmounted, onMounted } from 'vue'
 import OpenAI from 'openai'
@@ -65,6 +65,7 @@ const isPlaying = ref(false)
 const isSaving = ref(false)
 const isGeneratingTTS = ref(false)
 const isFetching = ref(false)
+const isGeneratingInstructions = ref(false)
 const cachedAudio = ref<{
   url: string
   config: {
@@ -202,6 +203,57 @@ const onSubmit = form.handleSubmit(async (values) => {
     isSaving.value = false
   }
 })
+
+const generateInstructions = async () => {
+  try {
+    isGeneratingInstructions.value = true
+
+    const prompt = form.values.instructions || `You are a professional call center AI assistant. Generate comprehensive and professional response instructions for a call center AI that should handle customer service interactions effectively according to language of the prompt.
+
+The instructions should include:
+1. Professional greeting and introduction
+2. Active listening and empathy guidelines
+3. Problem-solving approach
+4. Escalation procedures
+5. Closing conversation guidelines
+6. Tone and language requirements
+
+Please provide detailed, actionable instructions that will help the AI provide excellent customer service. The instructions should be around 500-800 words and be specific to call center scenarios.
+
+Make the instructions professional, empathetic, and solution-oriented.`
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      max_tokens: 1500,
+      temperature: 0.7,
+    })
+
+    const generatedInstructions = response.choices[0]?.message?.content
+    if (generatedInstructions) {
+      form.setFieldValue('instructions', generatedInstructions)
+      toast.success('Instructions generated successfully', {
+        description: 'AI-generated instructions have been added to the form',
+        duration: 3000,
+      })
+    } else {
+      throw new Error('No content generated')
+    }
+  } catch (error) {
+    console.error('Error generating instructions:', error)
+    toast.error('Error generating instructions', {
+      description: 'Please try again later',
+      duration: 3000,
+    })
+  } finally {
+    isGeneratingInstructions.value = false
+  }
+}
 
 // Import all voice samples
 const voiceSamples = {
@@ -357,7 +409,15 @@ onUnmounted(() => {
             <div class="flex flex-col gap-4 h-full">
               <FormField v-slot="{ componentField }" name="instructions" class="flex-1">
                 <FormItem class="h-full flex flex-col">
-                  <FormLabel>Response Instructions <span class="text-red-500">*</span></FormLabel>
+                  <div class="flex items-center justify-between">
+                    <FormLabel>Response Instructions <span class="text-red-500">*</span></FormLabel>
+                    <n-button type="button" variant="outline" size="sm" class="flex items-center gap-2"
+                      @click="generateInstructions" :disabled="isGeneratingInstructions">
+                      <Loader2 v-if="isGeneratingInstructions" class="h-4 w-4 animate-spin" />
+                      <Sparkles v-else class="h-4 w-4" />
+                      <span>{{ isGeneratingInstructions ? 'Generating...' : 'Generate AI Instructions' }}</span>
+                    </n-button>
+                  </div>
                   <FormControl>
                     <div class="relative h-full">
                       <TextareaComponent v-bind="componentField" placeholder="Enter response instructions for AI..."

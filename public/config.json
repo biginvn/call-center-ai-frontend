@@ -1,5 +1,5 @@
 {
-  "API_URL": "https://cb70de1950be.ngrok-free.app",
+  "API_URL": "https://callpilot.bigin.top/api",
   "SIP_SERVER": "18.143.54.64",
-  "SIP_URL": "wss://18.143.54.64 :8089/ws"
+  "SIP_URL": "wss://18.143.54.64:8089/ws"
 }
