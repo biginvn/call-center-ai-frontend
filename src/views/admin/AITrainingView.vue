@@ -8,8 +8,7 @@ import { Bot, Volume2, Loader2, Square, Sparkles, Globe } from 'lucide-vue-next'
 import { TextareaComponent } from '@/components/ui/textarea'
 import { NInput } from '@/components/ui/input'
 import { ref, computed, onUnmounted, onMounted } from 'vue'
-import OpenAI from 'openai'
-import { TTS_VOICES, type TTSVoice } from '@/config/ttsConfig'
+import { TTS_VOICES } from '@/config/ttsConfig'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import * as z from 'zod'
@@ -22,6 +21,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import AiCallService from '@/services/AiCallService'
+import axios from '@/services/axiosInstance'
 
 const TEXT_LIMITS = {
   instructions: {
@@ -57,10 +57,6 @@ const form = useForm({
   }
 })
 
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true
-})
 
 const isPlaying = ref(false)
 const isSaving = ref(false)
@@ -131,18 +127,19 @@ const testTTS = async (e: Event) => {
       return
     }
 
-    // Generate new audio
-    const response = await openai.audio.speech.create({
+    // Generate new audio using backend API
+    const response = await axios.post('/api/openai/tts', {
+      text: ttsText,
+      voice: voice,
       model: 'tts-1',
-      voice: voice as TTSVoice,
-      input: ttsText,
       response_format: 'mp3',
       speed: 1.0,
       instructions: instructions
-
+    }, {
+      responseType: 'blob'
     })
 
-    const audioBlob = await response.blob()
+    const audioBlob = response.data
     const audioUrl = URL.createObjectURL(audioBlob)
 
     // Cache the new audio
@@ -243,19 +240,19 @@ Please provide detailed, actionable instructions that will help the AI provide e
 Make the instructions professional, empathetic, and solution-oriented.`
     }
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+    const response = await axios.post('/api/openai/chat/completions', {
       messages: [
         {
           role: 'user',
           content: prompt
         }
       ],
-      max_tokens: 2000,
+      model: 'gpt-4o-mini',
+      max_tokens: 4096,
       temperature: 0.7,
     })
 
-    const generatedInstructions = response.choices[0]?.message?.content
+    const generatedInstructions = response.data?.content
     if (generatedInstructions) {
       form.setFieldValue('instructions', generatedInstructions)
       toast.success('Instructions generated successfully', {
@@ -291,27 +288,13 @@ const crawlWebsite = async () => {
 
   try {
     isCrawling.value = true
-
-    // Call the crawl server
-    const response = await fetch('http://localhost:3010/crawl', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url: crawlUrl.value,
-        collection: 'temp_crawl',
-        max_depth: 1,
-        chunk_size: 1000,
-        insert_to_db: false // We don't need to store in DB, just get the content
-      })
+    const { data: result } = await axios.post('/crawl', {
+      url: crawlUrl.value,
+      collection: 'temp_crawl',
+      max_depth: 1,
+      chunk_size: 1000,
+      insert_to_db: false // We don't need to store in DB, just get the content
     })
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
-    const result = await response.json()
 
     if (!result.success) {
       throw new Error(result.message || 'Crawling failed')
@@ -325,8 +308,12 @@ const crawlWebsite = async () => {
       })
       .join('\n\n---\n\n')
 
-    // Insert the crawled content directly into the instructions field
-    form.setFieldValue('instructions', combinedContent)
+    // Append the crawled content to the existing instructions field
+    const existingContent = form.values.instructions || ''
+    const newContent = existingContent
+      ? `${existingContent}\n\n---\n\n${combinedContent}`
+      : combinedContent
+    form.setFieldValue('instructions', newContent)
 
     toast.success('Website content crawled successfully', {
       description: `Crawled ${result.urls_crawled.length} pages and inserted content into instructions. Use "Generate AI Instructions" to convert this content.`,
@@ -467,7 +454,7 @@ onUnmounted(() => {
   <div class="flex min-h-screen w-full flex-col">
     <AdminNavbar />
     <header
-      class="sticky top-[64px] left-0 right-0 bg-white dark:bg-gray-900 shadow-md p-4 md:px-8 z-10 flex items-center justify-between">
+      class="sticky top-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-md p-4 md:px-8 z-10 flex items-center justify-between">
       <div class="grid gap-1">
         <h1 class="text-xl font-bold">
           AI Instructions

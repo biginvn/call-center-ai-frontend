@@ -32,7 +32,7 @@ const isActive = (path: string) => {
 </script>
 
 <template>
-  <header class="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
+  <header class="sticky top-0 flex h-16 items-center gap-4 border-b bg-white px-4 md:px-6">
     <nav class="flex items-center gap-6 text-lg font-medium md:text-sm lg:gap-6">
       <a href="#" class="flex items-center gap-2 text-lg font-semibold md:text-base">
         <img src="@/assets/nixxis_logo.webp" alt="Nixxis Logo" class="w-30" />

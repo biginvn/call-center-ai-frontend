@@ -1,5 +1,5 @@
 {
-  "API_URL": "https://callpilot.bigin.top/api",
+  "API_URL": "http://127.0.0.1:8000",
   "SIP_SERVER": "18.143.54.64",
   "SIP_URL": "wss://18.143.54.64:8089/ws"
 }
