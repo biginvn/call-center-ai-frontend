@@ -4,8 +4,9 @@ const authStore = useAuthStore()
 import AdminNavbar from '@/components/admin/AdminNavbar.vue'
 import { NCard, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { NButton } from '@/components/ui/button'
-import { Bot, Volume2, Loader2, Square, Sparkles } from 'lucide-vue-next'
+import { Bot, Volume2, Loader2, Square, Sparkles, Globe } from 'lucide-vue-next'
 import { TextareaComponent } from '@/components/ui/textarea'
+import { NInput } from '@/components/ui/input'
 import { ref, computed, onUnmounted, onMounted } from 'vue'
 import OpenAI from 'openai'
 import { TTS_VOICES, type TTSVoice } from '@/config/ttsConfig'
@@ -208,7 +209,26 @@ const generateInstructions = async () => {
   try {
     isGeneratingInstructions.value = true
 
-    const prompt = form.values.instructions || `You are a professional call center AI assistant. Generate comprehensive and professional response instructions for a call center AI that should handle customer service interactions effectively according to language of the prompt.
+    let prompt = ''
+
+    // Check if instructions already contain crawled content (likely contains page separators)
+    if (form.values.instructions && form.values.instructions.includes('---')) {
+      prompt = `Based on the following website content, generate comprehensive and professional response instructions for a call center AI assistant in the language of website content. The AI should be able to answer customer questions about the products, services, or information found on this website.
+
+Website Content:
+${form.values.instructions}
+
+Please create detailed instructions that include:
+1. Professional greeting mentioning the company/service
+2. Key information the AI should know from the website
+3. How to handle common customer inquiries based on the content
+4. Escalation procedures for complex issues
+5. Professional closing guidelines
+
+The instructions should be specific to the business/service described in the website content and help the AI provide accurate, helpful responses to customers. Make the instructions comprehensive but concise (500-1000 words).`
+    } else {
+      // Default prompt for generating generic instructions
+      prompt = form.values.instructions || `You are a professional call center AI assistant. Generate comprehensive and professional response instructions for a call center AI that should handle customer service interactions effectively according to language of the prompt.
 
 The instructions should include:
 1. Professional greeting and introduction
@@ -221,6 +241,7 @@ The instructions should include:
 Please provide detailed, actionable instructions that will help the AI provide excellent customer service. The instructions should be around 500-800 words and be specific to call center scenarios.
 
 Make the instructions professional, empathetic, and solution-oriented.`
+    }
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -230,7 +251,7 @@ Make the instructions professional, empathetic, and solution-oriented.`
           content: prompt
         }
       ],
-      max_tokens: 1500,
+      max_tokens: 2000,
       temperature: 0.7,
     })
 
@@ -252,6 +273,75 @@ Make the instructions professional, empathetic, and solution-oriented.`
     })
   } finally {
     isGeneratingInstructions.value = false
+  }
+}
+
+// Web crawling functionality
+const crawlUrl = ref('')
+const isCrawling = ref(false)
+
+const crawlWebsite = async () => {
+  if (!crawlUrl.value.trim()) {
+    toast.error('Please enter a valid URL', {
+      description: 'URL is required to crawl website content',
+      duration: 3000,
+    })
+    return
+  }
+
+  try {
+    isCrawling.value = true
+
+    // Call the crawl server
+    const response = await fetch('http://localhost:3010/crawl', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: crawlUrl.value,
+        collection: 'temp_crawl',
+        max_depth: 1,
+        chunk_size: 1000,
+        insert_to_db: false // We don't need to store in DB, just get the content
+      })
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const result = await response.json()
+
+    if (!result.success) {
+      throw new Error(result.message || 'Crawling failed')
+    }
+
+    // Combine all markdown content from crawled pages and remove links to save tokens
+    const combinedContent = result.markdown_content
+      .map((item: { url: string; markdown: string }) => {
+        // Remove markdown links [text](url) and keep only the text
+        return item.markdown.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+      })
+      .join('\n\n---\n\n')
+
+    // Insert the crawled content directly into the instructions field
+    form.setFieldValue('instructions', combinedContent)
+
+    toast.success('Website content crawled successfully', {
+      description: `Crawled ${result.urls_crawled.length} pages and inserted content into instructions. Use "Generate AI Instructions" to convert this content.`,
+      duration: 5000,
+    })
+    crawlUrl.value = '' // Clear the URL input
+
+  } catch (error) {
+    console.error('Error crawling website:', error)
+    toast.error('Error crawling website', {
+      description: error instanceof Error ? error.message : 'Please try again later',
+      duration: 3000,
+    })
+  } finally {
+    isCrawling.value = false
   }
 }
 
@@ -394,6 +484,40 @@ onUnmounted(() => {
       </n-button>
     </header>
     <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 mt-4">
+      <!-- Web Crawling Section -->
+      <n-card>
+        <CardHeader>
+          <div class="grid gap-2">
+            <CardTitle class="flex items-center gap-2">
+              <Globe class="h-5 w-5" />
+              Generate Instructions from Website
+            </CardTitle>
+            <CardDescription>
+              Crawl a website and insert its content into the instructions field. Use "Generate AI Instructions" button
+              afterwards to convert the content.
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div class="flex flex-col sm:flex-row gap-4">
+            <div class="flex-1">
+              <NInput v-model="crawlUrl" type="url" placeholder="Enter website URL (e.g., https://example.com)"
+                class="w-full" :disabled="isCrawling" />
+            </div>
+            <n-button type="button" class="flex items-center justify-center gap-2 whitespace-nowrap"
+              @click="crawlWebsite" :disabled="isCrawling || !crawlUrl.trim()">
+              <Loader2 v-if="isCrawling" class="h-4 w-4 animate-spin" />
+              <Globe v-else class="h-4 w-4" />
+              <span>{{ isCrawling ? 'Crawling...' : 'Crawl Website' }}</span>
+            </n-button>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">
+            This will crawl the website content and insert it into the instructions field. Use the "Generate AI
+            Instructions" button to convert this content into proper AI instructions.
+          </p>
+        </CardContent>
+      </n-card>
+
       <form @submit="onSubmit" class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- First Column: Training Content -->
         <n-card class="max-h-[calc(100vh-200px)] overflow-auto">
