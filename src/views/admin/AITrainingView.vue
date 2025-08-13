@@ -4,6 +4,14 @@ const authStore = useAuthStore()
 import AdminNavbar from '@/components/admin/AdminNavbar.vue'
 import { NCard, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { NButton } from '@/components/ui/button'
+import {
+  NDialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { Bot, Volume2, Loader2, Square, Sparkles, Globe } from 'lucide-vue-next'
 import { TextareaComponent } from '@/components/ui/textarea'
 import { NInput } from '@/components/ui/input'
@@ -20,6 +28,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { NLabel } from '@/components/ui/label'
 import AiCallService from '@/services/AiCallService'
 import axios from '@/services/axiosInstance'
 
@@ -207,41 +216,85 @@ const generateInstructions = async () => {
     isGeneratingInstructions.value = true
 
     let prompt = ''
+    const currentInstructions = form.values.instructions?.trim()
 
-    // Check if instructions already contain crawled content (likely contains page separators)
-    if (form.values.instructions && form.values.instructions.includes('---')) {
-      prompt = `Based on the following website content, generate comprehensive and professional response instructions for a call center AI assistant in the language of website content. The AI should be able to answer customer questions about the products, services, or information found on this website.
+    // Store current instructions as crawled content for reference
+    if (currentInstructions) {
+      crawledContent.value = currentInstructions
+    }
 
-Website Content:
-${form.values.instructions}
+    if (!currentInstructions) {
+      // Generate from scratch if no content exists
+      prompt = `Create comprehensive and professional response instructions for a friendly call center AI voicebot. The AI should be conversational, helpful, and empathetic while maintaining professionalism.
 
-Please create detailed instructions that include:
-1. Professional greeting mentioning the company/service
-2. Key information the AI should know from the website
-3. How to handle common customer inquiries based on the content
-4. Escalation procedures for complex issues
-5. Professional closing guidelines
+Please generate detailed instructions that include:
 
-The instructions should be specific to the business/service described in the website content and help the AI provide accurate, helpful responses to customers. Make the instructions comprehensive but concise (500-1000 words).`
+1. **Greeting & Introduction**
+   - Warm, friendly greeting that puts customers at ease
+   - Clear identification of the AI assistant and company
+   - Setting positive expectations for the conversation
+
+2. **Communication Style**
+   - Use conversational, natural language (avoid robotic responses)
+   - Show empathy and understanding for customer concerns
+   - Use positive language and solution-focused approach
+   - Ask clarifying questions when needed
+
+3. **Customer Service Guidelines**
+   - Active listening techniques for voice interactions
+   - How to handle different customer emotions (frustrated, confused, happy)
+   - Ways to build rapport and trust during voice calls
+   - Techniques for keeping customers engaged
+
+4. **Problem-Solving Approach**
+   - Step-by-step process for understanding customer needs
+   - How to provide clear, actionable solutions
+   - When and how to offer alternatives
+   - Follow-up procedures to ensure satisfaction
+
+5. **Escalation Procedures**
+   - Clear criteria for when to transfer to human agents
+   - How to prepare customers for transfers
+   - Smooth handoff procedures with context preservation
+
+6. **Call Closing**
+   - Professional but warm closing statements
+   - Confirmation of resolution or next steps
+   - Invitation for future contact
+
+Make the instructions around 1200-1500 words, specific to voice interactions, and focused on creating positive customer experiences.`
     } else {
-      // Default prompt for generating generic instructions
-      prompt = form.values.instructions || `You are a professional call center AI assistant. Generate comprehensive and professional response instructions for a call center AI that should handle customer service interactions effectively according to language of the prompt.
+      // Polish and improve existing instructions
+      prompt = `Please polish, improve, and optimize the following voicebot instructions. Focus on making them more friendly, conversational, and effective for voice interactions while fixing any errors or unclear parts.
 
-The instructions should include:
-1. Professional greeting and introduction
-2. Active listening and empathy guidelines
-3. Problem-solving approach
-4. Escalation procedures
-5. Closing conversation guidelines
-6. Tone and language requirements
+Current Instructions:
+${currentInstructions}
 
-Please provide detailed, actionable instructions that will help the AI provide excellent customer service. The instructions should be around 500-800 words and be specific to call center scenarios.
+Please:
+1. **Fix any errors** in grammar, spelling, or clarity
+2. **Improve the tone** to be more friendly and conversational
+3. **Enhance structure** for better organization and flow
+4. **Add missing elements** that would improve customer experience
+5. **Optimize for voice** interactions (not text chat)
+6. **Ensure completeness** with all necessary customer service elements
 
-Make the instructions professional, empathetic, and solution-oriented.`
+Focus on:
+- Making the language more natural and conversational
+- Adding empathy and warmth while maintaining professionalism
+- Improving clarity and reducing ambiguity
+- Enhancing customer experience guidelines
+- Adding specific voice interaction techniques
+- Strengthening problem-resolution approaches
+
+Return improved instructions that are approximately 1200-1500 words and optimized for creating positive voicebot customer experiences.`
     }
 
     const response = await axios.post('/api/openai/chat/completions', {
       messages: [
+        {
+          role: 'system',
+          content: 'You are an expert in customer service and voicebot optimization. Create clear, actionable, and friendly instructions that will help AI assistants provide excellent customer experiences through voice interactions.'
+        },
         {
           role: 'user',
           content: prompt
@@ -249,14 +302,30 @@ Make the instructions professional, empathetic, and solution-oriented.`
       ],
       model: 'gpt-4o-mini',
       max_tokens: 4096,
-      temperature: 0.7,
+      temperature: 0.3, // Lower temperature for more consistent, professional output
     })
 
     const generatedInstructions = response.data?.content
     if (generatedInstructions) {
-      form.setFieldValue('instructions', generatedInstructions)
-      toast.success('Instructions generated successfully', {
-        description: 'AI-generated instructions have been added to the form',
+      // Store the generated content in improvedContent and show preview
+      improvedContent.value = generatedInstructions
+      showPreviewStep.value = true
+
+      // More specific success message based on the action
+      let successMessage = 'Instructions generated successfully'
+      let description = 'Review the improved instructions and apply when ready'
+
+      if (!currentInstructions) {
+        description = 'New voicebot instructions have been created. Review and apply when ready'
+      } else if (currentInstructions.includes('---')) {
+        description = 'Website content has been transformed. Review the improved instructions'
+      } else {
+        successMessage = 'Instructions polished successfully'
+        description = 'Your instructions have been improved. Review and apply when ready'
+      }
+
+      toast.success(successMessage, {
+        description,
         duration: 3000,
       })
     } else {
@@ -264,8 +333,8 @@ Make the instructions professional, empathetic, and solution-oriented.`
     }
   } catch (error) {
     console.error('Error generating instructions:', error)
-    toast.error('Error generating instructions', {
-      description: 'Please try again later',
+    toast.error('Error processing instructions', {
+      description: 'Please check your content and try again',
       duration: 3000,
     })
   } finally {
@@ -275,7 +344,13 @@ Make the instructions professional, empathetic, and solution-oriented.`
 
 // Web crawling functionality
 const crawlUrl = ref('')
+const crawlDepth = ref(1)
 const isCrawling = ref(false)
+const isModalOpen = ref(false)
+const isProcessingCrawl = ref(false)
+const crawledContent = ref('')
+const improvedContent = ref('')
+const showPreviewStep = ref(false)
 
 const crawlWebsite = async () => {
   if (!crawlUrl.value.trim()) {
@@ -291,7 +366,7 @@ const crawlWebsite = async () => {
     const { data: result } = await axios.post('/crawl/', {
       url: crawlUrl.value,
       collection: 'temp_crawl',
-      max_depth: 1,
+      max_depth: crawlDepth.value,
       chunk_size: 1000,
       insert_to_db: false // We don't need to store in DB, just get the content
     })
@@ -308,18 +383,16 @@ const crawlWebsite = async () => {
       })
       .join('\n\n---\n\n')
 
-    // Append the crawled content to the existing instructions field
-    const existingContent = form.values.instructions || ''
-    const newContent = existingContent
-      ? `${existingContent}\n\n---\n\n${combinedContent}`
-      : combinedContent
-    form.setFieldValue('instructions', newContent)
+    // Store the crawled content
+    crawledContent.value = combinedContent
 
     toast.success('Website content crawled successfully', {
-      description: `Crawled ${result.urls_crawled.length} pages and inserted content into instructions. Use "Generate AI Instructions" to convert this content.`,
-      duration: 5000,
+      description: `Crawled ${result.urls_crawled.length} pages. Processing with AI...`,
+      duration: 3000,
     })
-    crawlUrl.value = '' // Clear the URL input
+
+    // Process with AI to improve the content
+    await processWithAI()
 
   } catch (error) {
     console.error('Error crawling website:', error)
@@ -330,6 +403,99 @@ const crawlWebsite = async () => {
   } finally {
     isCrawling.value = false
   }
+}
+
+const processWithAI = async () => {
+  try {
+    isProcessingCrawl.value = true
+
+    const prompt = `Transform the following website content into professional, friendly voicebot instructions. Polish the content to make it conversational and suitable for voice interactions.
+
+Original Content:
+${crawledContent.value}
+
+Please:
+1. **Polish & Improve** the existing content for voice interactions
+2. **Fix any errors** in grammar, clarity, or structure
+3. **Make it friendly** and conversational for voicebot use
+4. **Organize information** logically for customer service scenarios
+5. **Add missing elements** like greetings, empathy guidelines, and closing procedures
+
+Create comprehensive voicebot instructions that include:
+- Warm, professional greeting mentioning the company/service
+- Key information from the website presented conversationally
+- Guidelines for handling customer inquiries based on the content
+- Empathetic response techniques for voice interactions
+- Clear escalation procedures
+- Friendly closing guidelines
+
+Transform the content into 1200-1500 words of actionable, voice-optimized instructions that will help the AI provide excellent customer service while maintaining the original business information.`
+
+    const response = await axios.post('/api/openai/chat/completions', {
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert in customer service and voicebot optimization. Create clear, actionable, and friendly instructions that will help AI assistants provide excellent customer experiences through voice interactions.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      model: 'gpt-4o-mini',
+      max_tokens: 4096,
+      temperature: 0.3, // Lower temperature for more consistent, professional output
+    })
+
+    const generatedInstructions = response.data?.content
+    if (generatedInstructions) {
+      improvedContent.value = generatedInstructions
+      showPreviewStep.value = true
+      isModalOpen.value = false
+
+      toast.success('Content processed successfully', {
+        description: 'Review the improved instructions and apply when ready',
+        duration: 3000,
+      })
+    } else {
+      throw new Error('No content generated')
+    }
+  } catch (error) {
+    console.error('Error processing content with AI:', error)
+    toast.error('Error processing content', {
+      description: 'Please try again later',
+      duration: 3000,
+    })
+  } finally {
+    isProcessingCrawl.value = false
+  }
+}
+
+const applyImprovedContent = () => {
+  form.setFieldValue('instructions', improvedContent.value)
+  showPreviewStep.value = false
+  crawledContent.value = ''
+  improvedContent.value = ''
+  crawlUrl.value = ''
+  crawlDepth.value = 1
+
+  toast.success('Instructions applied successfully', {
+    description: 'The improved content has been added to your instructions',
+    duration: 3000,
+  })
+}
+
+const discardImprovedContent = () => {
+  showPreviewStep.value = false
+  crawledContent.value = ''
+  improvedContent.value = ''
+  crawlUrl.value = ''
+  crawlDepth.value = 1
+
+  toast.info('Content discarded', {
+    description: 'The improved content has been discarded',
+    duration: 2000,
+  })
 }
 
 // Import all voice samples
@@ -446,6 +612,10 @@ onUnmounted(() => {
     currentAudio.value.pause()
     currentAudio.value = null
   }
+  // Clean up crawling state
+  crawledContent.value = ''
+  improvedContent.value = ''
+  showPreviewStep.value = false
 })
 
 </script>
@@ -454,7 +624,7 @@ onUnmounted(() => {
   <div class="flex min-h-screen w-full flex-col">
     <AdminNavbar />
     <header
-      class="sticky top-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-md p-4 md:px-8 z-10 flex items-center justify-between">
+      class="sticky top-[64px] left-0 right-0 bg-white dark:bg-gray-900 shadow-md p-4 md:px-8 z-10 flex items-center justify-between">
       <div class="grid gap-1">
         <h1 class="text-xl font-bold">
           AI Instructions
@@ -471,40 +641,6 @@ onUnmounted(() => {
       </n-button>
     </header>
     <main class="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 mt-4">
-      <!-- Web Crawling Section -->
-      <n-card>
-        <CardHeader>
-          <div class="grid gap-2">
-            <CardTitle class="flex items-center gap-2">
-              <Globe class="h-5 w-5" />
-              Generate Instructions from Website
-            </CardTitle>
-            <CardDescription>
-              Crawl a website and insert its content into the instructions field. Use "Generate AI Instructions" button
-              afterwards to convert the content.
-            </CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div class="flex flex-col sm:flex-row gap-4">
-            <div class="flex-1">
-              <NInput v-model="crawlUrl" type="url" placeholder="Enter website URL (e.g., https://example.com)"
-                class="w-full" :disabled="isCrawling" />
-            </div>
-            <n-button type="button" class="flex items-center justify-center gap-2 whitespace-nowrap"
-              @click="crawlWebsite" :disabled="isCrawling || !crawlUrl.trim()">
-              <Loader2 v-if="isCrawling" class="h-4 w-4 animate-spin" />
-              <Globe v-else class="h-4 w-4" />
-              <span>{{ isCrawling ? 'Crawling...' : 'Crawl Website' }}</span>
-            </n-button>
-          </div>
-          <p class="text-xs text-gray-500 mt-2">
-            This will crawl the website content and insert it into the instructions field. Use the "Generate AI
-            Instructions" button to convert this content into proper AI instructions.
-          </p>
-        </CardContent>
-      </n-card>
-
       <form @submit="onSubmit" class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- First Column: Training Content -->
         <n-card class="max-h-[calc(100vh-200px)] overflow-auto">
@@ -520,15 +656,118 @@ onUnmounted(() => {
             <div class="flex flex-col gap-4 h-full">
               <FormField v-slot="{ componentField }" name="instructions" class="flex-1">
                 <FormItem class="h-full flex flex-col">
-                  <div class="flex items-center justify-between">
+                  <div class="flex items-center justify-between flex-wrap gap-2">
                     <FormLabel>Response Instructions <span class="text-red-500">*</span></FormLabel>
-                    <n-button type="button" variant="outline" size="sm" class="flex items-center gap-2"
-                      @click="generateInstructions" :disabled="isGeneratingInstructions">
-                      <Loader2 v-if="isGeneratingInstructions" class="h-4 w-4 animate-spin" />
-                      <Sparkles v-else class="h-4 w-4" />
-                      <span>{{ isGeneratingInstructions ? 'Generating...' : 'Generate AI Instructions' }}</span>
-                    </n-button>
+                    <div class="flex gap-2">
+                      <NDialog v-model:open="isModalOpen">
+                        <DialogTrigger asChild>
+                          <n-button type="button" variant="outline" size="sm" class="flex items-center gap-2"
+                            :disabled="showPreviewStep">
+                            <Globe class="h-4 w-4" />
+                            <span>Crawl Website</span>
+                          </n-button>
+                        </DialogTrigger>
+                        <DialogContent class="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Generate Instructions from Website</DialogTitle>
+                            <DialogDescription>
+                              Enter a website URL to crawl its content and get AI-improved instructions that you can
+                              review before applying.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div class="flex flex-col gap-4">
+                            <div class="flex flex-col gap-2">
+                              <NLabel for="crawl-url">Website URL</NLabel>
+                              <NInput v-model="crawlUrl" type="url" id="crawl-url"
+                                placeholder="Enter website URL (e.g., https://example.com)" class="w-full"
+                                :disabled="isCrawling || isProcessingCrawl" />
+                            </div>
+                            <div class="flex flex-col gap-2">
+                              <NLabel for="crawl-depth">Crawl Depth</NLabel>
+                              <NInput v-model.number="crawlDepth" type="number" id="crawl-depth" placeholder="1" min="1"
+                                max="5" class="w-full" :disabled="isCrawling || isProcessingCrawl" />
+                              <p class="text-xs text-gray-500">
+                                How many levels deep to crawl (1 = homepage only, 2 = homepage + linked pages, etc.)
+                              </p>
+                            </div>
+                            <div class="flex justify-end gap-2">
+                              <n-button type="button" variant="outline" @click="() => {
+                                isModalOpen = false;
+                                crawlUrl = '';
+                                crawlDepth = 1;
+                              }" :disabled="isCrawling || isProcessingCrawl">
+                                Cancel
+                              </n-button>
+                              <n-button type="button" @click="crawlWebsite"
+                                :disabled="isCrawling || isProcessingCrawl || !crawlUrl.trim()">
+                                <Loader2 v-if="isCrawling || isProcessingCrawl" class="h-4 w-4 animate-spin mr-2" />
+                                <Globe v-else class="h-4 w-4 mr-2" />
+                                <span>{{
+                                  isCrawling ? 'Crawling...' :
+                                    isProcessingCrawl ? 'Processing...' :
+                                      'Crawl & Process'
+                                }}</span>
+                              </n-button>
+                            </div>
+                            <p class="text-xs text-gray-500">
+                              This will crawl the website content at the specified depth, process it with AI, and show
+                              you a preview to review before applying. Higher depths will crawl more pages but take
+                              longer.
+                            </p>
+                          </div>
+                        </DialogContent>
+                      </NDialog>
+
+                      <!-- Preview Improved Content Dialog -->
+                      <NDialog v-model:open="showPreviewStep">
+                        <DialogContent class="sm:max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+                          <DialogHeader>
+                            <DialogTitle>Review AI-Improved Instructions</DialogTitle>
+                            <DialogDescription>
+                              Review and edit the AI-improved content before applying it to your instructions.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div class="flex-1 flex flex-col gap-4 overflow-hidden">
+                            <div class="flex-1 overflow-auto">
+                              <NLabel for="improved-content">Improved Instructions</NLabel>
+                              <TextareaComponent v-model="improvedContent" id="improved-content"
+                                placeholder="AI-improved instructions will appear here..."
+                                class="w-full h-[400px] resize-none mt-2" />
+                              <div class="text-xs text-gray-500 mt-1">
+                                {{ improvedContent.length }} characters
+                              </div>
+                            </div>
+                            <div class="flex justify-end gap-2 pt-4 border-t">
+                              <n-button type="button" variant="outline" @click="discardImprovedContent">
+                                Discard
+                              </n-button>
+                              <n-button type="button" @click="applyImprovedContent" :disabled="!improvedContent.trim()">
+                                Apply to Instructions
+                              </n-button>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </NDialog>
+                      <n-button type="button" variant="outline" size="sm" class="flex items-center gap-2"
+                        @click="generateInstructions" :disabled="isGeneratingInstructions"
+                        title="Generate new instructions from scratch, polish existing content, or improve website-crawled content">
+                        <Loader2 v-if="isGeneratingInstructions" class="h-4 w-4 animate-spin" />
+                        <Sparkles v-else class="h-4 w-4" />
+                        <span>{{ isGeneratingInstructions ? 'Processing...' : 'Polish & Improve' }}</span>
+                      </n-button>
+                    </div>
                   </div>
+                  <!-- Preview notification -->
+                  <!-- <div v-if="showPreviewStep"
+                    class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-3 text-sm text-blue-700 dark:text-blue-300">
+                    <div class="flex items-center gap-2">
+                      <Sparkles class="h-4 w-4" />
+                      <span>AI-improved content is ready for review. Click to open preview dialog.</span>
+                      <n-button type="button" variant="outline" size="sm" @click="showPreviewStep = true">
+                        Review Content
+                      </n-button>
+                    </div>
+                  </div> -->
                   <FormControl>
                     <div class="relative h-full">
                       <TextareaComponent v-bind="componentField" placeholder="Enter response instructions for AI..."
@@ -644,7 +883,7 @@ onUnmounted(() => {
                     <Loader2 v-if="isGeneratingTTS" class="h-5 w-5 animate-spin" />
                     <Volume2 v-else class="h-5 w-5" :class="{ 'animate-pulse': isPlaying }" />
                     <span>{{ isGeneratingTTS ? 'Generating...' : isPlaying ? 'Playing...' : 'Test Voice'
-                      }}</span>
+                    }}</span>
                   </n-button>
                 </div>
               </div>
