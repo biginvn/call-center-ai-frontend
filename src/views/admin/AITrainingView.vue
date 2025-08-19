@@ -883,7 +883,7 @@ onUnmounted(() => {
                     <Loader2 v-if="isGeneratingTTS" class="h-5 w-5 animate-spin" />
                     <Volume2 v-else class="h-5 w-5" :class="{ 'animate-pulse': isPlaying }" />
                     <span>{{ isGeneratingTTS ? 'Generating...' : isPlaying ? 'Playing...' : 'Test Voice'
-                    }}</span>
+                      }}</span>
                   </n-button>
                 </div>
               </div>
