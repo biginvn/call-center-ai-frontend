@@ -311,7 +311,7 @@ const startAICall = async () => {
 
           return {
             success: true,
-            message: 'Thông tin đã được gửi thành công. Nhân viên SunTravel sẽ liên lạc với anh/chị sớm nhất.'
+            message: 'Thông tin đã được gửi thành công. Nhân viên sẽ liên lạc với anh/chị sớm nhất.'
           }
         } catch (error) {
           console.error('Error submitting booking:', error)
@@ -362,7 +362,7 @@ const startAICall = async () => {
             {
               type: 'function',
               name: 'submitBooking',
-              description: 'Gửi thông tin đặt tour hoặc ghi chú của khách hàng đến nhân viên. Sử dụng khi khách hàng muốn để lại thông tin để nhân viên liên lạc lại.',
+              description: 'Gửi thông tin đặt lịch, đặt tour hoặc ghi chú của khách hàng đến nhân viên. Sử dụng khi khách hàng muốn để lại thông tin để nhân viên liên lạc lại.',
               parameters: {
                 type: 'object',
                 properties: {
