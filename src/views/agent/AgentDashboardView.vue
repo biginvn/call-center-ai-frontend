@@ -253,6 +253,14 @@ const startAICall = async () => {
 
     const fns = {
       callAgent: async ({ extension }: { extension: string }) => {
+        // Validate extension format (should be internal extension, not phone number)
+        if (extension.length > 4 || !/^\d+$/.test(extension)) {
+          return {
+            success: false,
+            error: 'Invalid extension format. Only use internal extension numbers.'
+          }
+        }
+
         try {
           await sipStore.makeCall(extension)
           handleBotCallEnd()
@@ -270,11 +278,47 @@ const startAICall = async () => {
           const extensions = activeUsers
             .filter(user => user.extension_number !== authStore.user?.extensionNumber)
             .map(user => user.extension_number)
+
           console.log('Active users:', extensions)
+
+          // Return clear message when no agents available
+          if (extensions.length === 0) {
+            return {
+              success: true,
+              extensions: [],
+              message: 'Hiện tại không có nhân viên nào đang online.'
+            }
+          }
+
           return { success: true, extensions }
         } catch (error) {
           console.error('Error getting active users:', error)
           return { success: false, error }
+        }
+      },
+      submitBooking: async ({ name, phone, note }: { name: string; phone: string; note: string }) => {
+        try {
+          const formData = new FormData()
+          formData.append('entry.772353118', name)
+          formData.append('entry.641869429', phone)
+          formData.append('entry.738069106', note)
+
+          await fetch('https://docs.google.com/forms/u/0/d/e/1FAIpQLScM-MAZXm0o2BbphmvfbDAS55G7ytUU_VbYvdu4Yqfh0bMcIg/formResponse', {
+            method: 'POST',
+            body: formData,
+            mode: 'no-cors' // Required for Google Forms
+          })
+
+          return {
+            success: true,
+            message: 'Thông tin đã được gửi thành công. Nhân viên SunTravel sẽ liên lạc với anh/chị sớm nhất.'
+          }
+        } catch (error) {
+          console.error('Error submitting booking:', error)
+          return {
+            success: false,
+            error: 'Có lỗi xảy ra khi gửi thông tin. Vui lòng thử lại sau.'
+          }
         }
       }
     }
@@ -292,14 +336,14 @@ const startAICall = async () => {
             {
               type: 'function',
               name: 'callAgent',
-              description: 'Tool to make a call to a specific agent using the extension number provided by the user. Use the getActiveAgent tool to query the list of active agents first, then ask the user which number they want to choose. Do not call without user confirmation',
+              description: 'CHỈ sử dụng để kết nối khách hàng với tổng đài viên khi khách YÊU CẦU nói chuyện trực tiếp. KHÔNG BAO GIỜ sử dụng số điện thoại khách hàng làm extension. CHỈ sử dụng extension từ danh sách getActiveAgent. PHẢI có sự xác nhận rõ ràng từ khách trước khi gọi.',
 
               parameters: {
                 type: 'object',
                 properties: {
                   extension: {
                     type: 'string',
-                    description: 'Số máy nội bộ (extension) của tổng đài viên cần kết nối.'
+                    description: 'Extension number của tổng đài viên. KHÔNG PHẢI số điện thoại khách hàng.'
                   }
                 },
                 required: ['extension']
@@ -308,11 +352,34 @@ const startAICall = async () => {
             {
               type: 'function',
               name: 'getActiveAgent',
-              description: 'Lấy danh sách các số máy nội bộ (extension) của tổng đài viên đang hoạt động tại thời điểm hiện tại. Dùng khi cần xác định những số máy đang sẵn sàng nhận cuộc gọi.',
+              description: 'Kiểm tra danh sách tổng đài viên đang online. Sử dụng trước khi đề nghị chuyển cuộc gọi.',
               parameters: {
                 type: 'object',
                 properties: {},
                 required: []
+              }
+            },
+            {
+              type: 'function',
+              name: 'submitBooking',
+              description: 'Gửi thông tin đặt tour hoặc ghi chú của khách hàng đến nhân viên. Sử dụng khi khách hàng muốn để lại thông tin để nhân viên liên lạc lại.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  name: {
+                    type: 'string',
+                    description: 'Họ và tên của khách hàng'
+                  },
+                  phone: {
+                    type: 'string',
+                    description: 'Số điện thoại của khách hàng'
+                  },
+                  note: {
+                    type: 'string',
+                    description: 'Ghi chú về tour quan tâm, thời gian đi, yêu cầu đặc biệt, hoặc tóm tắt cuộc hội thoại'
+                  }
+                },
+                required: ['name', 'phone', 'note']
               }
             }
           ]
