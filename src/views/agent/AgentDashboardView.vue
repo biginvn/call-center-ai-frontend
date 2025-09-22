@@ -434,7 +434,7 @@ const startAICall = async () => {
     const sessionResponse = await AiCallService.getSession()
     const enToken = sessionResponse.client_secret.value
 
-    const sdpResponse = await fetch(`https://api.openai.com/v1/realtime/calls`, {
+    const sdpResponse = await fetch(`https://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2025-06-03`, {
       method: 'POST',
       body: offer.sdp,
       headers: {
