@@ -8,6 +8,8 @@ export const TTS_VOICES = [
   { value: 'onyx', label: 'Onyx' },
   { value: 'sage', label: 'Sage' },
   { value: 'shimmer', label: 'Shimmer' },
+  { value: 'cedar', label: 'Cedar' },
+  { value: 'marin', label: 'Marin' },
 ] as const
 
 export const TTS_VIBES = [

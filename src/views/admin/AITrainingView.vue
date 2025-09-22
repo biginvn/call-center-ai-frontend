@@ -500,16 +500,18 @@ const discardImprovedContent = () => {
 
 // Import all voice samples
 const voiceSamples = {
-  'alloy': new Audio('@/assets/audio/sample_voice/openai-fm-alloy-professional.wav'),
-  'echo': new Audio('@/assets/audio/sample_voice/openai-fm-echo-professional.wav'),
-  'onyx': new Audio('@/assets/audio/sample_voice/openai-fm-onyx-professional.wav'),
-  'nova': new Audio('@/assets/audio/sample_voice/openai-fm-nova-professional.wav'),
-  'shimmer': new Audio('@/assets/audio/sample_voice/openai-fm-shimmer-professional.wav'),
-  'sage': new Audio('@/assets/audio/sample_voice/openai-fm-sage-professional.wav'),
-  'coral': new Audio('@/assets/audio/sample_voice/openai-fm-coral-professional.wav'),
-  'verse': new Audio('@/assets/audio/sample_voice/openai-fm-verse-professional.wav'),
-  'ballad': new Audio('@/assets/audio/sample_voice/openai-fm-ballad-professional.wav'),
-  'ash': new Audio('@/assets/audio/sample_voice/openai-fm-ash-professional.wav'),
+  'alloy': new Audio('/assets/audio/sample_voice/openai-fm-alloy-professional.wav'),
+  'echo': new Audio('/assets/audio/sample_voice/openai-fm-echo-professional.wav'),
+  'onyx': new Audio('/assets/audio/sample_voice/openai-fm-onyx-professional.wav'),
+  'nova': new Audio('/assets/audio/sample_voice/openai-fm-nova-professional.wav'),
+  'shimmer': new Audio('/assets/audio/sample_voice/openai-fm-shimmer-professional.wav'),
+  'sage': new Audio('/assets/audio/sample_voice/openai-fm-sage-professional.wav'),
+  'coral': new Audio('/assets/audio/sample_voice/openai-fm-coral-professional.wav'),
+  'verse': new Audio('/assets/audio/sample_voice/openai-fm-verse-professional.wav'),
+  'ballad': new Audio('/assets/audio/sample_voice/openai-fm-ballad-professional.wav'),
+  'ash': new Audio('/assets/audio/sample_voice/openai-fm-ash-professional.wav'),
+  'cedar': new Audio('/assets/audio/sample_voice/openai-fm-cedar-professional.wav'),
+  'marin': new Audio('/assets/audio/sample_voice/openai-fm-marin-professional.wav'),
 }
 
 const isPlayingSample = ref(false)
@@ -549,7 +551,7 @@ const playVoiceSample = (voice: string) => {
   }
 }
 
-const RECOMMENDED_VOICES = ['sage', 'coral']
+const RECOMMENDED_VOICES = ['sage', 'coral', 'ash', 'cedar', 'marin']
 
 const sortedVoices = computed(() => {
   return [...TTS_VOICES].sort((a, b) => {
@@ -883,7 +885,7 @@ onUnmounted(() => {
                     <Loader2 v-if="isGeneratingTTS" class="h-5 w-5 animate-spin" />
                     <Volume2 v-else class="h-5 w-5" :class="{ 'animate-pulse': isPlaying }" />
                     <span>{{ isGeneratingTTS ? 'Generating...' : isPlaying ? 'Playing...' : 'Test Voice'
-                      }}</span>
+                    }}</span>
                   </n-button>
                 </div>
               </div>
