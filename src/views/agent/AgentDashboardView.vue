@@ -496,13 +496,13 @@ const handleBotCallEnd = () => {
           <TooltipComponent>
             <TooltipTrigger as-child>
               <div class="flex items-center gap-2">
-                <n-badge v-if="true" :variant="isConnected ? 'default' : 'destructive'"
+                <!-- <n-badge v-if="true" :variant="isConnected ? 'default' : 'destructive'"
                   :class="{ 'bg-green-500': isConnected }" class="hidden md:inline-flex">
                   <span class="text-xs font-semibold flex items-center gap-1">
                     {{ isConnected ? 'Connected' : 'Disconnected' }}
                     {{ authStore.user?.extensionNumber }}
                   </span>
-                </n-badge>
+                </n-badge> -->
               </div>
             </TooltipTrigger>
             <TooltipContent>
