@@ -384,52 +384,6 @@
         }
       }
     },
-    "/user/limit": {
-      "post": {
-        "tags": [
-          "user"
-        ],
-        "summary": "Update Voice Limit Endpoint",
-        "operationId": "update_voice_limit_endpoint_user_limit_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateVoiceLimitRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
-      }
-    },
     "/login/agent": {
       "post": {
         "tags": [
@@ -809,6 +763,120 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GetConversationByIdResponseDto"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clients/{client_id}/limit": {
+      "put": {
+        "tags": [
+          "clients"
+        ],
+        "summary": "Update Client Limit",
+        "operationId": "update_client_limit_clients__client_id__limit_put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateClientLimitRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/clients/{client_id}/usage": {
+      "post": {
+        "tags": [
+          "clients"
+        ],
+        "summary": "Add Client Usage",
+        "operationId": "add_client_usage_clients__client_id__usage_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "client_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Client Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddClientUsageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
                 }
               }
             }
@@ -1547,6 +1615,19 @@
         ],
         "title": "AIInstructionResponse"
       },
+      "AddClientUsageRequest": {
+        "properties": {
+          "duration": {
+            "type": "integer",
+            "title": "Duration"
+          }
+        },
+        "type": "object",
+        "required": [
+          "duration"
+        ],
+        "title": "AddClientUsageRequest"
+      },
       "AdminLoginRequest": {
         "properties": {
           "username": {
@@ -1810,12 +1891,22 @@
               }
             ],
             "title": "Description"
+          },
+          "voicebot_usage_limit": {
+            "type": "integer",
+            "title": "Voicebot Usage Limit"
+          },
+          "voicebot_usage_total": {
+            "type": "integer",
+            "title": "Voicebot Usage Total"
           }
         },
         "type": "object",
         "required": [
           "id",
-          "name"
+          "name",
+          "voicebot_usage_limit",
+          "voicebot_usage_total"
         ],
         "title": "ClientResponse"
       },
@@ -2725,23 +2816,18 @@
         "type": "object",
         "title": "TurnDetection"
       },
-      "UpdateVoiceLimitRequest": {
+      "UpdateClientLimitRequest": {
         "properties": {
-          "username": {
-            "type": "string",
-            "title": "Username"
-          },
-          "limit_seconds": {
+          "voicebot_usage_limit": {
             "type": "integer",
-            "title": "Limit Seconds"
+            "title": "Voicebot Usage Limit"
           }
         },
         "type": "object",
         "required": [
-          "username",
-          "limit_seconds"
+          "voicebot_usage_limit"
         ],
-        "title": "UpdateVoiceLimitRequest"
+        "title": "UpdateClientLimitRequest"
       },
       "UserResponseDto": {
         "properties": {
@@ -2869,21 +2955,6 @@
           "client_name": {
             "type": "string",
             "title": "Client Name"
-          },
-          "voice_limit_seconds": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Voice Limit Seconds"
-          },
-          "voice_usage_seconds": {
-            "type": "integer",
-            "title": "Voice Usage Seconds"
           }
         },
         "type": "object",
@@ -2892,9 +2963,7 @@
           "extension_number",
           "role",
           "fullname",
-          "client_name",
-          "voice_limit_seconds",
-          "voice_usage_seconds"
+          "client_name"
         ],
         "title": "UserDataResponse"
       }
