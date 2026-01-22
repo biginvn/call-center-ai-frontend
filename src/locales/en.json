@@ -1,0 +1,118 @@
+{
+  "common": {
+    "dashboard": "Dashboard",
+    "welcome": "Welcome, {name}",
+    "refresh": "Refresh",
+    "loading": "Loading...",
+    "error": "Error",
+    "viewDetails": "View Details",
+    "goBack": "Go Back",
+    "unknown": "Unknown"
+  },
+  "ai_training": {
+    "title": "AI Instructions Configuration (v2)",
+    "description": "Manage and configure your AI model with advanced settings",
+    "save": "Save Configuration",
+    "saving": "Saving...",
+    "instructions": {
+      "title": "Response Instructions",
+      "description": "Enter content to instruct the AI model",
+      "label": "Response Instructions",
+      "placeholder": "Enter response instructions for AI..."
+    },
+    "initial_message": {
+      "label": "Initial Message (Optional)",
+      "placeholder": "Message the bot speaks first (e.g. 'Hello, I'm calling from...')"
+    },
+    "voice": {
+      "title": "Voice Configuration",
+      "description": "Select voice and customize voice instruction",
+      "gender": {
+        "all": "All",
+        "male": "Male",
+        "female": "Female"
+      },
+      "select": "Select Voice",
+      "instruction": {
+        "label": "Voice Instruction",
+        "placeholder": "Giọng điệu thân thiện, tự nhiên"
+      }
+    },
+    "vad": {
+      "title": "VAD (Voice Activity Detection) Settings",
+      "description": "Configure speech detection parameters",
+      "silenceTimeout": "Silence Timeout (seconds)",
+      "silenceTimeoutDesc": "Silence duration to detect end of speech (0.1-5.0)",
+      "responseDelay": "Response Delay (seconds)",
+      "responseDelayDesc": "Padding/Delay before processing speech (0.0-2.0)",
+      "minVolume": "Min Volume (0.0-1.0)",
+      "minVolumeDesc": "Minimum volume threshold",
+      "wadThreshold": "WAD Threshold (0.0-1.0)",
+      "wadThresholdDesc": "Confidence threshold for speech detection"
+    },
+    "idle": {
+      "title": "Idle Settings",
+      "description": "Configure idle timeout and check-in behavior",
+      "idleTimeout": "Idle Timeout (seconds)",
+      "idleTimeoutDesc": "Seconds of silence before bot checks in (1-300)",
+      "maxIdleAttempts": "Max Idle Attempts",
+      "maxIdleAttemptsDesc": "Number of check-in attempts before hanging up (1-10)"
+    }
+  },
+  "navigation": {
+    "configureAI": "Configure AI Instructions",
+    "viewAllCalls": "View All Calls",
+    "viewAllAppointments": "View All Appointments"
+  },
+  "calls": {
+    "title": "Call History",
+    "subtitle": "View all calls made by the voicebot",
+    "recentTitle": "Recent Calls",
+    "recentSubtitle": "Recent calls made by the voicebot",
+    "noCalls": "No calls found",
+    "loading": "Loading calls...",
+    "table": {
+      "date": "Date",
+      "customerPhone": "Customer Phone",
+      "startTime": "Start Time",
+      "endTime": "End Time",
+      "duration": "Duration",
+      "sentiment": "Sentiment",
+      "actions": "Actions"
+    },
+    "status": {
+      "ongoing": "Ongoing"
+    },
+    "mood": {
+      "positive": "Positive",
+      "negative": "Negative",
+      "neutral": "Neutral",
+      "unknown": "Unknown"
+    }
+  },
+  "appointments": {
+    "title": "Appointments",
+    "subtitle": "Recent appointments created by the voicebot",
+    "noAppointments": "No appointments found"
+  },
+  "admin": {
+    "dashboard": "Admin Dashboard (v2)",
+    "subtitle": "Manage users, view statistics, and configure settings",
+    "manageUsers": "Manage Users",
+    "usersOverview": "Users Overview",
+    "noUsers": "No users found",
+    "quickActions": "Quick Actions",
+    "userManagement": "User Management",
+    "status": {
+      "active": "Active",
+      "disabled": "Disabled"
+    },
+    "stats": {
+      "totalUsers": "Total Users",
+      "usersDetail": "{admins} admins, {users} users",
+      "totalAppointments": "Total appointments",
+      "totalCalls": "Total calls"
+    },
+    "roleUsage": "Role: {role} | Usage: {usage}"
+  }
+}

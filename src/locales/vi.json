@@ -1,0 +1,118 @@
+{
+  "common": {
+    "dashboard": "Bảng điều khiển",
+    "welcome": "Xin chào, {name}",
+    "refresh": "Làm mới",
+    "loading": "Đang tải...",
+    "error": "Lỗi",
+    "viewDetails": "Xem chi tiết",
+    "goBack": "Quay lại",
+    "unknown": "Không xác định"
+  },
+  "ai_training": {
+    "title": "Cấu hình hướng dẫn AI (v2)",
+    "description": "Quản lý và cấu hình mô hình AI với các cài đặt nâng cao",
+    "save": "Lưu cấu hình",
+    "saving": "Đang lưu...",
+    "instructions": {
+      "title": "Hướng dẫn phản hồi",
+      "description": "Nhập nội dung để hướng dẫn mô hình AI",
+      "label": "Hướng dẫn phản hồi",
+      "placeholder": "Nhập hướng dẫn phản hồi cho AI..."
+    },
+    "initial_message": {
+      "label": "Tin nhắn chào đầu (Tùy chọn)",
+      "placeholder": "Tin nhắn bot nói đầu tiên (ví dụ: 'Xin chào...')"
+    },
+    "voice": {
+      "title": "Cấu hình giọng nói",
+      "description": "Chọn giọng đọc và tùy chỉnh hướng dẫn giọng nói",
+      "gender": {
+        "all": "Tất cả",
+        "male": "Nam",
+        "female": "Nữ"
+      },
+      "select": "Chọn giọng đọc",
+      "instruction": {
+        "label": "Hướng dẫn giọng nói",
+        "placeholder": "Giọng điệu thân thiện, tự nhiên"
+      }
+    },
+    "vad": {
+      "title": "Cài đặt VAD (Phát hiện giọng nói)",
+      "description": "Cấu hình tham số phát hiện giọng nói",
+      "silenceTimeout": "Thời gian chờ im lặng (giây)",
+      "silenceTimeoutDesc": "Thời gian im lặng để phát hiện kết thúc câu nói (0.1-5.0)",
+      "responseDelay": "Độ trễ phản hồi (giây)",
+      "responseDelayDesc": "Thời gian chờ trước khi xử lý giọng nói (0.0-2.0)",
+      "minVolume": "Âm lượng tối thiểu (0.0-1.0)",
+      "minVolumeDesc": "Ngưỡng âm lượng tối thiểu",
+      "wadThreshold": "Ngưỡng WAD (0.0-1.0)",
+      "wadThresholdDesc": "Độ tin cậy để phát hiện giọng nói"
+    },
+    "idle": {
+      "title": "Cài đặt nhàn rỗi (Idle)",
+      "description": "Cấu hình thời gian chờ và hành vi kiểm tra",
+      "idleTimeout": "Thời gian chờ (giây)",
+      "idleTimeoutDesc": "Số giây im lặng trước khi bot kiểm tra người dùng (1-300)",
+      "maxIdleAttempts": "Số lần thử tối đa",
+      "maxIdleAttemptsDesc": "Số lần kiểm tra trước khi ngắt cuộc gọi (1-10)"
+    }
+  },
+  "navigation": {
+    "configureAI": "Cấu hình AI",
+    "viewAllCalls": "Xem tất cả cuộc gọi",
+    "viewAllAppointments": "Xem tất cả lịch hẹn"
+  },
+  "calls": {
+    "title": "Lịch sử cuộc gọi",
+    "subtitle": "Xem tất cả các cuộc gọi được thực hiện bởi voicebot",
+    "recentTitle": "Cuộc gọi gần đây",
+    "recentSubtitle": "Các cuộc gọi gần đây được thực hiện bởi voicebot",
+    "noCalls": "Không tìm thấy cuộc gọi nào",
+    "loading": "Đang tải cuộc gọi...",
+    "table": {
+      "date": "Ngày",
+      "customerPhone": "Số điện thoại",
+      "startTime": "Thời gian bắt đầu",
+      "endTime": "Thời gian kết thúc",
+      "duration": "Thời lượng",
+      "sentiment": "Cảm xúc",
+      "actions": "Thao tác"
+    },
+    "status": {
+      "ongoing": "Đang diễn ra"
+    },
+    "mood": {
+      "positive": "Tích cực",
+      "negative": "Tiêu cực",
+      "neutral": "Trung tính",
+      "unknown": "Không xác định"
+    }
+  },
+  "appointments": {
+    "title": "Lịch hẹn",
+    "subtitle": "Các lịch hẹn gần đây được tạo bởi voicebot",
+    "noAppointments": "Không tìm thấy lịch hẹn nào"
+  },
+  "admin": {
+    "dashboard": "Bảng điều khiển Admin (v2)",
+    "subtitle": "Quản lý người dùng, xem thống kê và cấu hình cài đặt",
+    "manageUsers": "Quản lý người dùng",
+    "usersOverview": "Tổng quan người dùng",
+    "noUsers": "Không tìm thấy người dùng nào",
+    "quickActions": "Thao tác nhanh",
+    "userManagement": "Quản lý người dùng",
+    "status": {
+      "active": "Hoạt động",
+      "disabled": "Vô hiệu hóa"
+    },
+    "stats": {
+      "totalUsers": "Tổng số người dùng",
+      "usersDetail": "{admins} quản trị viên, {users} người dùng",
+      "totalAppointments": "Tổng số lịch hẹn",
+      "totalCalls": "Tổng số cuộc gọi"
+    },
+    "roleUsage": "Vai trò: {role} | Sử dụng: {usage}"
+  }
+}

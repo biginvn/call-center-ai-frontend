@@ -3,6 +3,7 @@ import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
+import i18n from './i18n'
 import { loadConfig } from './config'
 // import { useAuthStore } from './stores/auth'
 
@@ -15,6 +16,7 @@ const bootstrap = async () => {
     const pinia = createPinia()
     app.use(pinia)
     app.use(router)
+    app.use(i18n)
 
     // Make config available globally
     app.config.globalProperties.$config = config

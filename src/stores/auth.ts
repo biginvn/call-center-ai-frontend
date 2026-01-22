@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import type User from '@/types/User'
 import type AuthState from '@/types/AuthState'
 import { logoutUser, refreshToken, getUserInfo } from '@/services/authService'
+import { getUserInfoV2 } from '@/services/authServiceV2'
+import { useVersionStore } from '@/stores/version'
 import type { AxiosError } from 'axios'
 type UpdateUser = {
   username: string
@@ -21,6 +23,13 @@ export const useAuthStore = defineStore('auth', {
     user: null,
     isUserDataLoaded: false,
     refreshToken: async function () {
+      const savedVersion = localStorage.getItem('app_version') || 'v1'
+
+      // v2 doesn't have refresh token mechanism
+      if (savedVersion === 'v2') {
+        throw new Error('v2 API does not support token refresh')
+      }
+
       if (!this.refresh_token) {
         throw new Error('No refresh token available')
       }
@@ -49,6 +58,7 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     login(this: AuthState, payload: { access_token: string; refresh_token: string; user: User }) {
+      const versionStore = useVersionStore()
       this.access_token = payload.access_token
       this.refresh_token = payload.refresh_token
       this.user = payload.user
@@ -56,11 +66,21 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('access_token', payload.access_token)
       localStorage.setItem('refresh_token', payload.refresh_token)
       localStorage.setItem('user', JSON.stringify(payload.user))
+      // Save current version with auth data
+      localStorage.setItem('app_version', versionStore.isV2 ? 'v2' : 'v1')
     },
 
     logout(this: AuthState) {
-      if (this.access_token) {
-        logoutUser(this.access_token)
+      // Only call logout API for v1 (v2 doesn't have logout endpoint)
+      const savedVersion = localStorage.getItem('app_version') || 'v1'
+      if (this.access_token && savedVersion === 'v1') {
+        try {
+          logoutUser(this.access_token).catch(() => {
+            // Ignore errors during logout
+          })
+        } catch {
+          // Ignore errors
+        }
       }
       this.access_token = null
       this.refresh_token = null
@@ -70,6 +90,7 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('refresh_token')
       localStorage.removeItem('user')
       localStorage.removeItem('extension_number')
+      // Note: We don't remove app_version here so user can stay on their preferred version
     },
 
     updateUser(this: AuthState, user: UpdateUser) {
@@ -100,8 +121,68 @@ export const useAuthStore = defineStore('auth', {
       const access_token = localStorage.getItem('access_token')
       const refresh_token = localStorage.getItem('refresh_token')
       const userStr = localStorage.getItem('user')
+      const savedVersion = localStorage.getItem('app_version') || 'v1'
+      const versionStore = useVersionStore()
+      const currentVersion = versionStore.isV2 ? 'v2' : 'v1'
 
-      if (!access_token || !refresh_token || !userStr) {
+      // If no tokens, clear everything and return
+      if (!access_token) {
+        // Clear any stale data
+        if (refresh_token || userStr) {
+          this.logout()
+        }
+        return
+      }
+
+      // Check version mismatch - if saved version doesn't match current version, clear auth
+      if (savedVersion !== currentVersion) {
+        console.log(`Version mismatch: saved=${savedVersion}, current=${currentVersion}. Clearing auth.`)
+        this.logout()
+        return
+      }
+
+      // For v2, we don't have refresh_token, so skip refresh logic
+      if (currentVersion === 'v2') {
+        if (!userStr) {
+          // Try to get user info from API
+          try {
+            const userData = await getUserInfoV2(access_token)
+            // Convert v2 user to v1 format for compatibility
+            const user: User = {
+              id: userData._id,
+              username: userData.username,
+              email: '',
+              status: userData.disabled ? 'inactive' : 'active',
+              lastLogin: new Date().toISOString(),
+              role: userData.role === 'admin' ? 'admin' : 'agent',
+              fullName: userData.username,
+            }
+            this.access_token = access_token
+            this.refresh_token = access_token // v2 doesn't have separate refresh token
+            this.user = user
+            this.isUserDataLoaded = true
+            localStorage.setItem('user', JSON.stringify(user))
+          } catch (error) {
+            console.error('Failed to load v2 user data:', error)
+            // If 401, token is invalid, clear auth
+            const status = (error && typeof error === 'object' && 'response' in error && (error as AxiosError).response?.status) || null
+            if (status === 401 || status === 403) {
+              this.logout()
+            }
+          }
+        } else {
+          // User data exists, just restore it
+          const user = JSON.parse(userStr)
+          this.access_token = access_token
+          this.refresh_token = access_token
+          this.user = user
+          this.isUserDataLoaded = true
+        }
+        return
+      }
+
+      // v1 logic (existing code)
+      if (!refresh_token || !userStr) {
         return
       }
 

@@ -1,5 +1,6 @@
 export interface RuntimeConfig {
   API_URL: string
+  API_V2_URL?: string
   SIP_SERVER: string
   SIP_URL: string
 }

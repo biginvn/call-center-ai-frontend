@@ -17,12 +17,15 @@ import SelectItem from '@/components/ui/select/SelectItem.vue'
 import { vAutoAnimate } from '@formkit/auto-animate/vue'
 import axios from '@/services/axiosInstance'
 import { loginAgent, loginAdmin, getUserInfo } from '@/services/authService'
+import { loginV2, getUserInfoV2 } from '@/services/authServiceV2'
 import { toTypedSchema } from '@vee-validate/zod'
 import { useForm } from 'vee-validate'
 import { ref, nextTick, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useVersionStore } from '@/stores/version'
 import type { Agent, Admin } from '@/types/User'
+import type { UserV2 } from '@/types/UserV2'
 // import { h } from 'vue'
 import * as z from 'zod'
 
@@ -64,11 +67,17 @@ const isError = ref(false)
 
 const router = useRouter()
 const authStore = useAuthStore()
+const versionStore = useVersionStore()
 
 const availableExtensions = ref<{ label: string; value: string; extension: string }[]>([])
 const loadingExtensions = ref(false)
 
 onMounted(async () => {
+  // v2 doesn't use extensions
+  if (versionStore.isV2) {
+    return
+  }
+
   if (!props.isAdmin) {
     loadingExtensions.value = true
     try {
@@ -101,6 +110,47 @@ const onSubmit = handleSubmit(async (values) => {
     isLoading.value = true
     isError.value = false
 
+    // Handle v2 API login
+    if (versionStore.isV2) {
+      const response = await loginV2({
+        username: values.username,
+        password: values.password
+      });
+
+      // Get user info
+      const userData = await getUserInfoV2(response.access_token);
+
+      // Convert v2 user to v1 format for compatibility
+      const user: Admin = {
+        id: userData._id,
+        username: userData.username,
+        email: '',
+        status: userData.disabled ? 'inactive' : 'active',
+        lastLogin: new Date().toISOString(),
+        role: userData.role === 'admin' ? 'admin' : 'agent', // Map 'user' role to 'agent' for compatibility
+        fullName: userData.username,
+      };
+
+      // Update auth store with tokens and user info
+      authStore.login({
+        access_token: response.access_token,
+        refresh_token: response.access_token, // v2 doesn't have refresh_token, use access_token
+        user
+      });
+
+      await nextTick();
+
+      // Redirect based on role
+      await nextTick();
+      if (userData.role === 'admin') {
+        await router.push('/v2/admin');
+      } else {
+        await router.push('/v2/dashboard');
+      }
+      return;
+    }
+
+    // Handle v1 API login (existing code)
     let response;
     let user: Agent | Admin;
 
@@ -272,7 +322,8 @@ const onSubmit = handleSubmit(async (values) => {
         <FormMessage />
       </FormItem>
     </FormField>
-    <FormField v-if="!props.isAdmin" v-slot="{ componentField }" name="ext" :validate-on-blur="!isFieldDirty">
+    <FormField v-if="!props.isAdmin && !versionStore.isV2" v-slot="{ componentField }" name="ext"
+      :validate-on-blur="!isFieldDirty">
       <FormItem>
         <FormLabel>Ext</FormLabel>
         <NSelect v-bind="componentField">

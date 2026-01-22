@@ -68,6 +68,94 @@
         ]
       }
     },
+    "/users/me/password": {
+      "put": {
+        "summary": "Change Password",
+        "description": "Change your own password. Requires providing the old password for verification.",
+        "operationId": "change_password_users_me_password_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordChange"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/users/me/limit": {
+      "put": {
+        "summary": "Update My Limit",
+        "description": "Update your own seconds limit. Note: seconds_used is managed by the system and cannot be changed here.",
+        "operationId": "update_my_limit_users_me_limit_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserLimitSelfUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
     "/users": {
       "get": {
         "summary": "List Users",
@@ -135,6 +223,61 @@
             "OAuth2PasswordBearer": []
           }
         ]
+      }
+    },
+    "/users/{username}/limit": {
+      "put": {
+        "summary": "Update User Limits (Admin)",
+        "description": "Update the usage limits and used seconds for a specific user.",
+        "operationId": "update_user_limit_users__username__limit_put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Username"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserLimitUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/init-admin": {
@@ -349,6 +492,57 @@
         ]
       }
     },
+    "/calls/{call_id}": {
+      "get": {
+        "tags": [
+          "calls"
+        ],
+        "summary": "Get Call Detail",
+        "description": "Fetch details of a specific call by ID (Mongo ID or Call ID).",
+        "operationId": "get_call_calls__call_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "call_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Call Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/calls/{call_id}/transcript": {
       "post": {
         "tags": [
@@ -380,7 +574,8 @@
               "schema": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/components/schemas/TranscriptSegment"
+                  "type": "object",
+                  "additionalProperties": true
                 },
                 "title": "Transcript"
               }
@@ -458,6 +653,77 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/calls/{call_id}/end": {
+      "post": {
+        "tags": [
+          "calls"
+        ],
+        "summary": "Explicitly End Call",
+        "description": "Marks a call as finished with a specific status and duration.",
+        "operationId": "finish_call_calls__call_id__end_post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "call_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Call Id"
+            }
+          },
+          {
+            "name": "duration",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "default": 0,
+              "title": "Duration"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "completed",
+              "title": "Status"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -725,16 +991,14 @@
             ],
             "title": "End Time"
           },
-          "transcript_text": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Transcript Text"
+          "transcript": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Transcript",
+            "default": []
           },
           "recording_url": {
             "anyOf": [
@@ -746,6 +1010,33 @@
               }
             ],
             "title": "Recording Url"
+          },
+          "duration_seconds": {
+            "type": "number",
+            "title": "Duration Seconds",
+            "default": 0
+          },
+          "sentiment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sentiment"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
           }
         },
         "type": "object",
@@ -829,6 +1120,27 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "PasswordChange": {
+        "properties": {
+          "old_password": {
+            "type": "string",
+            "title": "Old Password",
+            "description": "Current password to verify."
+          },
+          "new_password": {
+            "type": "string",
+            "minLength": 6,
+            "title": "New Password",
+            "description": "New password (minimum 6 characters)."
+          }
+        },
+        "type": "object",
+        "required": [
+          "old_password",
+          "new_password"
+        ],
+        "title": "PasswordChange"
+      },
       "SystemPrompt": {
         "properties": {
           "_id": {
@@ -864,6 +1176,18 @@
             "type": "string",
             "title": "Voice Instruction",
             "default": "Giọng điệu thân thiện, tự nhiên"
+          },
+          "initial_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Initial Message",
+            "description": "Initial user message to start the conversation. If not provided, bot will use default message."
           },
           "silence_timeout": {
             "type": "number",
@@ -931,29 +1255,6 @@
           "token_type"
         ],
         "title": "Token"
-      },
-      "TranscriptSegment": {
-        "properties": {
-          "role": {
-            "type": "string",
-            "title": "Role"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content"
-          },
-          "timestamp": {
-            "type": "number",
-            "title": "Timestamp"
-          }
-        },
-        "type": "object",
-        "required": [
-          "role",
-          "content",
-          "timestamp"
-        ],
-        "title": "TranscriptSegment"
       },
       "User": {
         "properties": {
@@ -1031,6 +1332,50 @@
           "password"
         ],
         "title": "UserCreate"
+      },
+      "UserLimitSelfUpdate": {
+        "properties": {
+          "seconds_limit": {
+            "type": "number",
+            "title": "Seconds Limit",
+            "description": "New total seconds limit for your account."
+          }
+        },
+        "type": "object",
+        "required": [
+          "seconds_limit"
+        ],
+        "title": "UserLimitSelfUpdate"
+      },
+      "UserLimitUpdate": {
+        "properties": {
+          "seconds_limit": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seconds Limit",
+            "description": "New total seconds limit."
+          },
+          "seconds_used": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seconds Used",
+            "description": "Update used seconds (e.g. reset to 0)."
+          }
+        },
+        "type": "object",
+        "title": "UserLimitUpdate"
       },
       "ValidationError": {
         "properties": {
