@@ -166,7 +166,8 @@ defineExpose({
   startTimer,
   stopTimer,
   remoteAudioRef,
-  isMuted
+  isMuted,
+  callDuration
 })
 </script>
 

@@ -13,6 +13,8 @@ interface Client {
   id: string
   name: string
   description: string
+  voicebot_usage_limit?: number
+  voicebot_usage_total?: number
 }
 
 const clients = ref<Client[]>([])
@@ -28,12 +30,17 @@ const createError = ref('')
 
 const editModalOpen = ref(false)
 const deleteModalOpen = ref(false)
+const limitDialogOpen = ref(false)
 const selectedClient = ref<Client | null>(null)
+const selectedClientForLimit = ref<Client | null>(null)
 const editName = ref('')
 const editDescription = ref('')
+const newLimit = ref<number>(0)
 const editError = ref('')
 const editLoading = ref(false)
 const deleteLoading = ref(false)
+const limitLoading = ref(false)
+const limitError = ref('')
 
 async function handleCreateClient() {
   if (!newClientName.value) {
@@ -134,6 +141,39 @@ async function handleDeleteClient() {
     await fetchClients()
   }
 }
+
+function openLimitModal(client: Client) {
+  selectedClientForLimit.value = client
+  newLimit.value = client.voicebot_usage_limit || 0
+  limitError.value = ''
+  limitDialogOpen.value = true
+}
+
+async function handleUpdateClientLimit() {
+  if (!selectedClientForLimit.value) return
+  if (newLimit.value < 0) {
+    limitError.value = 'Limit must be greater than or equal to 0.'
+    return
+  }
+  limitLoading.value = true
+  limitError.value = ''
+  try {
+    await axios.put(`/clients/${selectedClientForLimit.value.id}/limit`, {
+      voicebot_usage_limit: newLimit.value,
+    })
+    limitDialogOpen.value = false
+    await fetchClients()
+  } catch {
+    limitError.value = 'Failed to update client limit.'
+  } finally {
+    limitLoading.value = false
+  }
+}
+
+function formatUsage(used: number | undefined, limit: number | undefined): string {
+  if (used === undefined || limit === undefined) return 'N/A'
+  return `${used}s / ${limit}s`
+}
 </script>
 
 <template>
@@ -198,6 +238,7 @@ async function handleDeleteClient() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Description</TableHead>
+                  <TableHead>Voicebot Usage</TableHead>
                   <TableHead class="w-[100px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -205,8 +246,10 @@ async function handleDeleteClient() {
                 <TableRow v-for="client in clients" :key="client.id" class="hover:bg-gray-100">
                   <TableCell>{{ client.name }}</TableCell>
                   <TableCell>{{ client.description }}</TableCell>
+                  <TableCell>{{ formatUsage(client.voicebot_usage_total, client.voicebot_usage_limit) }}</TableCell>
                   <TableCell class="flex gap-2">
                     <NButton size="sm" variant="outline" @click="openEditModal(client)">Edit</NButton>
+                    <NButton size="sm" variant="outline" @click="openLimitModal(client)">Set Limit</NButton>
                     <NButton v-if="client.name !== 'System Client'" size="sm" variant="destructive"
                       @click="openDeleteModal(client)">Delete</NButton>
                   </TableCell>
@@ -252,6 +295,29 @@ async function handleDeleteClient() {
                 <DialogFooter class="flex flex-row gap-2 items-center justify-end">
                   <NButton variant="outline" @click="deleteModalOpen = false">Cancel</NButton>
                   <NButton :loading="deleteLoading" variant="destructive" @click="handleDeleteClient">Delete</NButton>
+                </DialogFooter>
+              </DialogContent>
+            </NDialog>
+            <!-- Set Limit Modal -->
+            <NDialog v-model:open="limitDialogOpen">
+              <DialogContent class="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Set Voicebot Usage Limit</DialogTitle>
+                  <DialogDescription>
+                    Set the voicebot usage limit for <span class="font-bold">{{ selectedClientForLimit?.name }}</span>.
+                  </DialogDescription>
+                </DialogHeader>
+                <div class="grid gap-4 py-4">
+                  <div class="grid grid-cols-4 items-center gap-4">
+                    <NLabel for="limit" class="text-right">Limit (seconds)</NLabel>
+                    <NInput id="limit" v-model.number="newLimit" type="number" min="0" placeholder="Enter limit in seconds"
+                      class="col-span-3" />
+                  </div>
+                  <div v-if="limitError" class="col-span-4 text-red-500 text-sm">{{ limitError }}</div>
+                </div>
+                <DialogFooter class="flex flex-row gap-2 items-center justify-end">
+                  <NButton variant="outline" @click="limitDialogOpen = false">Cancel</NButton>
+                  <NButton :loading="limitLoading" @click="handleUpdateClientLimit" variant="default">Save</NButton>
                 </DialogFooter>
               </DialogContent>
             </NDialog>

@@ -6,7 +6,7 @@ export const containerClass = 'w-full h-full'
 </script>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { NButton } from '@/components/ui/button'
 import { NCard, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CircleUser, Phone } from 'lucide-vue-next'
@@ -60,6 +60,19 @@ const botCallInterfaceRef = ref<InstanceType<typeof BotCallInterface> | null>(nu
 const config = ref<ConfigurationData | null>(null)
 const runtimeConfig = ref<RuntimeConfig | null>(null)
 
+// Voicebot usage limit info
+interface VoicebotLimitInfo {
+  voicebot_usage_limit: number // -1 means unlimited
+  voicebot_usage_total: number
+  remaining_time: number | null // null if unlimited
+  is_unlimited: boolean
+}
+const voicebotLimitInfo = ref<VoicebotLimitInfo | null>(null)
+const loadingClientInfo = ref(false)
+
+// Track initial remaining time when call starts
+const initialRemainingTime = ref<number | null>(null)
+
 // Watch for incoming calls
 watch(() => sipStore.callStatus, (newStatus) => {
   switch (newStatus) {
@@ -85,6 +98,85 @@ watch(() => sipStore.isConnected, (newStatus) => {
   isConnected.value = newStatus
 })
 
+async function fetchClientInfo() {
+  loadingClientInfo.value = true
+  try {
+    const res = await axiosInstance.get<VoicebotLimitInfo>('/user/limit')
+    voicebotLimitInfo.value = res.data
+    console.log('[DEBUG] Voicebot limit info:', voicebotLimitInfo.value)
+  } catch (error) {
+    console.error('Failed to fetch voicebot limit info:', error)
+    if (axios.isAxiosError(error)) {
+      console.error('Error response:', error.response?.data)
+      console.error('Error status:', error.response?.status)
+    }
+    voicebotLimitInfo.value = null
+  } finally {
+    loadingClientInfo.value = false
+  }
+}
+
+// Calculate remaining time during active call
+const currentRemainingTime = computed(() => {
+  if (!voicebotLimitInfo.value) return 0
+  // If unlimited, return Infinity
+  if (voicebotLimitInfo.value.is_unlimited) {
+    return Infinity
+  }
+  
+  // If call is active, calculate remaining time based on initial time and call duration
+  if (isAICall.value && initialRemainingTime.value !== null && botCallInterfaceRef.value) {
+    const callDuration = botCallInterfaceRef.value.callDuration || 0
+    const remaining = initialRemainingTime.value - callDuration
+    return Math.max(0, remaining)
+  }
+  
+  // Otherwise use remaining_time from API
+  if (voicebotLimitInfo.value.remaining_time !== null) {
+    return Math.max(0, voicebotLimitInfo.value.remaining_time)
+  }
+  
+  // Fallback calculation
+  const limit = voicebotLimitInfo.value.voicebot_usage_limit
+  const used = voicebotLimitInfo.value.voicebot_usage_total
+  if (limit === -1) return Infinity // Unlimited
+  return Math.max(0, limit - used)
+})
+
+const timeLeftSeconds = computed(() => currentRemainingTime.value)
+
+const timeLeftFormatted = computed(() => {
+  const seconds = timeLeftSeconds.value
+  if (seconds === Infinity || (voicebotLimitInfo.value?.is_unlimited)) {
+    return 'Không giới hạn'
+  }
+  if (seconds <= 0) return 'Đã hết hạn'
+  
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = seconds % 60
+  
+  if (hours > 0) {
+    return `${hours} giờ ${minutes} phút ${secs} giây`
+  } else if (minutes > 0) {
+    return `${minutes} phút ${secs} giây`
+  } else {
+    return `${secs} giây`
+  }
+})
+
+function checkCreditBeforeCall(): boolean {
+  if (!voicebotLimitInfo.value) {
+    // If no limit info, allow call (backward compatibility)
+    return true
+  }
+  // If unlimited, always allow
+  if (voicebotLimitInfo.value.is_unlimited) {
+    return true
+  }
+  return timeLeftSeconds.value > 0
+}
+
 onMounted(async () => {
   // Load user data from storage first
   await authStore.loadFromStorage()
@@ -102,6 +194,9 @@ onMounted(async () => {
   } catch (e) {
     console.error('Failed to load config', e)
   }
+
+  // Fetch client info for usage limit
+  await fetchClientInfo()
 
   // Ensure we have valid auth state
   // if (!authStore.isAuthenticated) {
@@ -156,7 +251,51 @@ const handleLogout = async () => {
   router.push('/login')
 }
 
+// Watch for remaining time during call and auto-end when it reaches 0
+watch([() => currentRemainingTime.value, () => isAICall.value, () => botCallInterfaceRef.value?.callState], 
+  ([remaining, isCallActive, callState]) => {
+    // Only auto-end if call is active and remaining time is 0 or less
+    if (isCallActive && callState === 'active' && remaining <= 0 && remaining !== Infinity) {
+      console.log('[DEBUG] Remaining time has run out, ending call automatically')
+      toast.warning('Thời gian đã hết', {
+        description: 'Giới hạn sử dụng voicebot đã hết. Cuộc gọi sẽ được kết thúc.',
+        duration: 3000,
+      })
+      endAICall()
+    }
+  }
+)
+
 const startAICall = async () => {
+  // Check credit before starting call
+  if (!checkCreditBeforeCall()) {
+    toast.error('Không đủ credit', {
+      description: 'Giới hạn sử dụng voicebot đã hết. Vui lòng liên hệ quản trị viên để được hỗ trợ.',
+      duration: 5000,
+    })
+    return
+  }
+
+  // Store initial remaining time when call starts
+  if (voicebotLimitInfo.value) {
+    if (voicebotLimitInfo.value.is_unlimited) {
+      initialRemainingTime.value = Infinity
+    } else if (voicebotLimitInfo.value.remaining_time !== null) {
+      initialRemainingTime.value = voicebotLimitInfo.value.remaining_time
+    } else {
+      // Calculate from limit and used
+      const limit = voicebotLimitInfo.value.voicebot_usage_limit
+      const used = voicebotLimitInfo.value.voicebot_usage_total
+      if (limit === -1) {
+        initialRemainingTime.value = Infinity
+      } else {
+        initialRemainingTime.value = Math.max(0, limit - used)
+      }
+    }
+  } else {
+    initialRemainingTime.value = null
+  }
+
   try {
     isAICall.value = true
     isBotCallOpen.value = true
@@ -453,12 +592,50 @@ const startAICall = async () => {
     console.error('Error starting AI call:', error)
     if (botCallInterfaceRef.value) {
       botCallInterfaceRef.value.callState = 'ended'
+      botCallInterfaceRef.value.stopTimer()
     }
     isAICall.value = false
   }
 }
 
+async function submitCallUsage(duration: number) {
+  if (duration <= 0) {
+    console.log('[DEBUG] Call duration is 0 or negative, skipping usage submission')
+    return
+  }
+
+  try {
+    console.log('[DEBUG] Submitting call usage, duration:', duration)
+    const res = await axiosInstance.post<{
+      message: string
+      voicebot_usage_total: number
+      added_duration: number
+      remaining_time: number | null
+    }>('/user/usage', {
+      duration: duration
+    })
+    console.log('[DEBUG] Usage updated successfully:', res.data)
+    
+    // Refresh limit info to get updated values
+    await fetchClientInfo()
+  } catch (error) {
+    console.error('Failed to submit call usage:', error)
+    if (axios.isAxiosError(error)) {
+      console.error('Error response:', error.response?.data)
+      console.error('Error status:', error.response?.status)
+    }
+    // Don't throw error, just log it - we don't want to block the call ending
+  }
+}
+
 const endAICall = async () => {
+  // Get call duration before stopping timer
+  let callDuration = 0
+  if (botCallInterfaceRef.value) {
+    callDuration = botCallInterfaceRef.value.callDuration || 0
+    botCallInterfaceRef.value.stopTimer()
+  }
+
   if (recorder.value) {
     recorder.value.stop()
   }
@@ -469,8 +646,16 @@ const endAICall = async () => {
     peerConnection.value.close()
   }
   isAICall.value = false
-  if (botCallInterfaceRef.value) {
-    botCallInterfaceRef.value.stopTimer()
+  
+  // Reset initial remaining time
+  initialRemainingTime.value = null
+  
+  // Submit call usage to backend
+  if (callDuration > 0) {
+    await submitCallUsage(callDuration)
+  } else {
+    // If no duration from timer, refresh anyway to get latest info
+    await fetchClientInfo()
   }
 }
 
@@ -492,6 +677,14 @@ const handleBotCallEnd = () => {
       </nav>
       <div class="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
         <form class="ml-auto flex-1 sm:flex-initial"></form>
+        <!-- Voicebot Usage Indicator -->
+        <div v-if="voicebotLimitInfo && !loadingClientInfo" class="flex items-center gap-2">
+          <n-badge :variant="timeLeftSeconds > 0 || timeLeftSeconds === Infinity ? 'default' : 'destructive'" class="hidden md:inline-flex">
+            <span class="text-xs font-semibold">
+              Voicebot: {{ timeLeftFormatted }}
+            </span>
+          </n-badge>
+        </div>
         <TooltipProvider>
           <TooltipComponent>
             <TooltipTrigger as-child>
