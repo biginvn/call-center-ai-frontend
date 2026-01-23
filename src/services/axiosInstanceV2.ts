@@ -27,24 +27,7 @@ const initializeAxiosV2 = async () => {
         },
       });
 
-      // Flag to prevent multiple refresh attempts
-      let isRefreshing = false;
-      // Store pending requests
-      interface QueueItem {
-        resolve: (token: string) => void;
-        reject: (error: unknown) => void;
-      }
-      let failedQueue: QueueItem[] = [];
-
-      const processQueue = (error: unknown, token: string | null = null) =>
-        failedQueue.forEach(prom => {
-          if (error) {
-            prom.reject(error);
-          } else {
-            prom.resolve(token as string);
-          }
-        });
-        failedQueue = [];
+      // Note: Token refresh logic removed as v2 API doesn't support refresh
 
       axiosInstanceV2.interceptors.request.use(
         (config) => {
@@ -66,7 +49,6 @@ const initializeAxiosV2 = async () => {
         },
         async (error) => {
           const authStore = useAuthStore();
-          const originalRequest = error.config;
 
           // v2 API doesn't support token refresh, so on 401 just logout
           if (error.response?.status === 401) {
@@ -105,6 +87,7 @@ const axiosProxy = new Proxy({} as ReturnType<typeof axios.create>, {
     if (!axiosInstanceV2) {
       throw new Error('Axios v2 instance not initialized. Call getAxiosInstanceV2() first.');
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (axiosInstanceV2 as any)[prop];
   }
 });

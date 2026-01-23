@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
 import { NCard, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { NTable, TableHeader, TableHead, TableBody, TableRow, TableCell } from '@/components/ui/table'
 import { NButton } from '@/components/ui/button'
@@ -25,7 +24,6 @@ import { toast } from 'vue-sonner'
 import { Users, Plus, Loader2, Key, Edit, ArrowLeft } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 
-const authStore = useAuthStore()
 const router = useRouter()
 const users = ref<UserV2[]>([])
 const loading = ref(false)

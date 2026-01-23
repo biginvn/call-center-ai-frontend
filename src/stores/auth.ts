@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import type User from '@/types/User'
+import type { Agent, Admin } from '@/types/User'
 import type AuthState from '@/types/AuthState'
 import { logoutUser, refreshToken, getUserInfo } from '@/services/authService'
 import { getUserInfoV2 } from '@/services/authServiceV2'
@@ -22,6 +23,10 @@ export const useAuthStore = defineStore('auth', {
     refresh_token: null,
     user: null,
     isUserDataLoaded: false,
+    logout: function () {
+      // This will be overridden by actions
+      return
+    },
     refreshToken: async function () {
       const savedVersion = localStorage.getItem('app_version') || 'v1'
 
@@ -148,14 +153,23 @@ export const useAuthStore = defineStore('auth', {
           try {
             const userData = await getUserInfoV2(access_token)
             // Convert v2 user to v1 format for compatibility
-            const user: User = {
+            const user: Agent | Admin = userData.role === 'admin' ? {
               id: userData._id,
               username: userData.username,
               email: '',
               status: userData.disabled ? 'inactive' : 'active',
               lastLogin: new Date().toISOString(),
-              role: userData.role === 'admin' ? 'admin' : 'agent',
+              role: 'admin',
               fullName: userData.username,
+            } : {
+              id: userData._id,
+              username: userData.username,
+              email: '',
+              status: userData.disabled ? 'inactive' : 'active',
+              lastLogin: new Date().toISOString(),
+              role: 'agent',
+              fullName: userData.username,
+              extensionNumber: '',
             }
             this.access_token = access_token
             this.refresh_token = access_token // v2 doesn't have separate refresh token

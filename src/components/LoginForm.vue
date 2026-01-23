@@ -25,7 +25,6 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useVersionStore } from '@/stores/version'
 import type { Agent, Admin } from '@/types/User'
-import type { UserV2 } from '@/types/UserV2'
 // import { h } from 'vue'
 import * as z from 'zod'
 
@@ -121,14 +120,23 @@ const onSubmit = handleSubmit(async (values) => {
       const userData = await getUserInfoV2(response.access_token);
 
       // Convert v2 user to v1 format for compatibility
-      const user: Admin = {
+      const user: Agent | Admin = userData.role === 'admin' ? {
         id: userData._id,
         username: userData.username,
         email: '',
         status: userData.disabled ? 'inactive' : 'active',
         lastLogin: new Date().toISOString(),
-        role: userData.role === 'admin' ? 'admin' : 'agent', // Map 'user' role to 'agent' for compatibility
+        role: 'admin',
         fullName: userData.username,
+      } : {
+        id: userData._id,
+        username: userData.username,
+        email: '',
+        status: userData.disabled ? 'inactive' : 'active',
+        lastLogin: new Date().toISOString(),
+        role: 'agent',
+        fullName: userData.username,
+        extensionNumber: '',
       };
 
       // Update auth store with tokens and user info

@@ -11,11 +11,8 @@ import { Bot, Play, Pause, Rewind, FastForward, Download, ArrowLeft, Phone, Cloc
 import type { TranscriptSegment } from '@/services/callsServiceV2'
 import WaveSurfer from 'wavesurfer.js'
 import { toast } from 'vue-sonner'
-import { useAuthStore } from '@/stores/auth'
-
 const route = useRoute()
 const router = useRouter()
-const authStore = useAuthStore()
 const call = ref<CallResponseV2 | null>(null)
 const wavesurfer = ref<WaveSurfer | null>(null)
 const isPlaying = ref(false)

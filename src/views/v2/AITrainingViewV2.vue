@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/stores/auth'
-import { useVersionStore } from '@/stores/version'
 import { NCard, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { NButton } from '@/components/ui/button'
 import { Bot, Loader2, Settings, ArrowLeft, Volume2, Square, History } from 'lucide-vue-next'
@@ -34,7 +33,6 @@ import { formatDistanceToNow } from 'date-fns'
 import { Clock, Check } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
-const versionStore = useVersionStore()
 
 const router = useRouter()
 const { t } = useI18n()

@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import LanguageSwitcher from '@/components/common/LanguageSwitcher.vue'
-import { useAuthStore } from '@/stores/auth'
 import { NCard, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { NButton } from '@/components/ui/button'
 import { listUsersV2 } from '@/services/authServiceV2'
@@ -13,7 +12,6 @@ import { toast } from 'vue-sonner'
 import { Users, Calendar, Phone, Settings, Loader2, History } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 
-const authStore = useAuthStore()
 const router = useRouter()
 const { t } = useI18n()
 const users = ref<UserV2[]>([])
