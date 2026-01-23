@@ -17,7 +17,7 @@ const initializeAxiosV2 = async () => {
     try {
       const config = await loadConfig();
       const baseURL = config.API_V2_URL || config.API_URL;
-      
+
       axiosInstanceV2 = axios.create({
         baseURL,
         headers: {

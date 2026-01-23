@@ -46,17 +46,7 @@ onMounted(() => {
           </CardHeader>
           <CardContent>
             <div class="flex flex-col gap-2 mb-4">
-              <!-- Temporarily disabled Shinhan v2 button -->
-              <n-button class="w-full" variant="outline" @click="toggleVersion" disabled>
-                <template v-if="versionStore.isV2">
-                  <span>Shinhan Bank Version (v2)</span>
-                  <span class="ml-2 text-xs text-muted-foreground">Switch to Standard</span>
-                </template>
-                <template v-else>
-                  <span>Standard Version</span>
-                  <span class="ml-2 text-xs text-muted-foreground">Switch to Shinhan Bank (v2)</span>
-                </template>
-              </n-button>
+              <!-- Shinhan v2 button hidden -->
               <n-button v-if="!versionStore.isV2" class="w-full" variant="outline" @click="toggleLoginMode">
                 <template v-if="isAdmin">Switch to Client Login</template>
                 <template v-else>Switch to Admin Login</template>
